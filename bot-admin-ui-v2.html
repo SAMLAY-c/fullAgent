@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot控制台 - 管理后台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f0f14;
+            --bg-card: #1a1a24;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+        }
+
+        .logo-section {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+
+        .logo-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 0 12px;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 16px 8px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 16px;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+        }
+
+        .badge {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+        }
+
+        .user-section {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .user-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .stat-icon.primary { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+        .stat-icon.success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .stat-icon.warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+
+        .stat-trend {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .stat-trend.up {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* 页面部分 */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Noto Sans SC', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Tab切换 */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px;
+            border-radius: 12px;
+            display: inline-flex;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .tab.active {
+            background: rgba(99, 102, 241, 0.3);
+            color: var(--primary);
+        }
+
+        /* 内容区域 */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Bot卡片 */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .item-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+            border-color: var(--primary);
+        }
+
+        .item-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .item-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .item-avatar.work { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .item-avatar.life { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .item-avatar.love { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .item-avatar.group { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+        .item-avatar.sop { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .item-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-badge.online {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.offline {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .item-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+
+        /* SOP特定样式 */
+        .sop-schedule {
+            background: rgba(245, 158, 11, 0.1);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--warning);
+        }
+
+        .sop-schedule strong {
+            color: var(--warning);
+        }
+
+        .sop-steps {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* 群聊成员 */
+        .group-members {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .member-avatar-small {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            border: 2px solid var(--bg-card);
+        }
+
+        .member-count {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        /* 统计数据 */
+        .item-stats {
+            display: flex;
+            gap: 20px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+
+        .item-stat {
+            text-align: center;
+        }
+
+        .item-stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .item-stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* 操作按钮 */
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .btn-small {
+            padding: 8px 14px;
+            font-size: 12px;
+        }
+
+        /* 执行记录 */
+        .execution-log {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .log-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .log-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .log-content {
+            flex: 1;
+        }
+
+        .log-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .log-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .log-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        /* 滚动条 */
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .items-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">BOT CONTROL</div>
+                <div class="logo-subtitle">管理控制中心</div>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-section">
+                    <div class="nav-section-title">概览</div>
+                    <div class="nav-item active" data-page="dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>仪表盘</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">管理</div>
+                    <div class="nav-item" data-page="bots">
+                        <span class="nav-icon">🤖</span>
+                        <span>Bot管理</span>
+                        <span class="badge">8</span>
+                    </div>
+                    <div class="nav-item" data-page="sop">
+                        <span class="nav-icon">⏰</span>
+                        <span>SOP工作流</span>
+                        <span class="badge">12</span>
+                    </div>
+                    <div class="nav-item" data-page="groups">
+                        <span class="nav-icon">👥</span>
+                        <span>群聊管理</span>
+                        <span class="badge">5</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">数据</div>
+                    <div class="nav-item" data-page="analytics">
+                        <span class="nav-icon">📈</span>
+                        <span>数据分析</span>
+                    </div>
+                    <div class="nav-item" data-page="logs">
+                        <span class="nav-icon">📋</span>
+                        <span>对话记录</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">设置</div>
+                    <div class="nav-item" data-page="templates">
+                        <span class="nav-icon">🎨</span>
+                        <span>场景模板</span>
+                    </div>
+                    <div class="nav-item" data-page="knowledge">
+                        <span class="nav-icon">📚</span>
+                        <span>知识库</span>
+                    </div>
+                    <div class="nav-item" data-page="api">
+                        <span class="nav-icon">🔌</span>
+                        <span>API接口</span>
+                    </div>
+                    <div class="nav-item" data-page="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span>系统设置</span>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="user-section">
+                <div class="user-avatar">👤</div>
+                <div class="user-info">
+                    <h4>管理员</h4>
+                    <p>admin@bot.com</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容 -->
+        <div class="main-content" id="mainContent">
+            <!-- 仪表盘页面 -->
+            <div id="page-dashboard">
+                <div class="page-header">
+                    <h1 class="page-title">仪表盘</h1>
+                    <p class="page-description">实时监控所有Bot、SOP和群聊的运行状态</p>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon primary">🤖</div>
+                            <div class="stat-trend up">↑ 12%</div>
+                        </div>
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">活跃Bot数量</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">⏰</div>
+                            <div class="stat-trend up">↑ 8%</div>
+                        </div>
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">运行中的SOP</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon success">👥</div>
+                            <div class="stat-trend up">↑ 5%</div>
+                        </div>
+                        <div class="stat-value">5</div>
+                        <div class="stat-label">活跃群聊</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon success">💬</div>
+                            <div class="stat-trend up">↑ 28%</div>
+                        </div>
+                        <div class="stat-value">2,847</div>
+                        <div class="stat-label">今日对话次数</div>
+                    </div>
+                </div>
+
+                <!-- 最近活动 -->
+                <div class="section-header">
+                    <h2 class="section-title">最近活动</h2>
+                </div>
+
+                <div class="execution-log">
+                    <div class="log-item">
+                        <div class="log-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">✓</div>
+                        <div class="log-content">
+                            <div class="log-title">SOP执行成功</div>
+                            <div class="log-description">"每日工作启动流程" 已完成，发送了今日计划提醒</div>
+                        </div>
+                        <div class="log-time">8:00 AM</div>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary);">💬</div>
+                        <div class="log-content">
+                            <div class="log-title">群聊新消息</div>
+                            <div class="log-description">"创业顾问团" 中CEO Bot回复了战略建议</div>
+                        </div>
+                        <div class="log-time">15分钟前</div>
+                    </div>
+
+                    <div class="log-item">
+                        <div class="log-icon" style="background: rgba(245, 158, 11, 0.2); color: var(--warning);">⚠️</div>
+                        <div class="log-content">
+                            <div class="log-title">API调用接近限额</div>
+                            <div class="log-description">当前已使用 87% 的月度配额</div>
+                        </div>
+                        <div class="log-time">1小时前</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOP工作流页面 -->
+            <div id="page-sop" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">SOP工作流管理</h1>
+                    <p class="page-description">配置定时任务和自动化工作流</p>
+                </div>
+
+                <div class="section-header">
+                    <h2 class="section-title">我的工作流</h2>
+                    <button class="btn btn-primary">
+                        <span>➕</span>
+                        <span>创建新SOP</span>
+                    </button>
+                </div>
+
+                <div class="items-grid">
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar sop">⏰</div>
+                            <div class="item-info">
+                                <h3 class="item-title">每日工作启动流程</h3>
+                                <p class="item-subtitle">工作助手 · 定时触发</p>
+                                <span class="status-badge active">
+                                    <span class="status-dot"></span>
+                                    运行中
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="sop-schedule">
+                            <strong>⏰ 执行时间：</strong>每天 08:00 (Asia/Shanghai)
+                        </div>
+
+                        <div class="sop-steps">
+                            📋 工作流步骤：<br>
+                            1️⃣ 发送早安问候<br>
+                            2️⃣ 获取日历事件<br>
+                            3️⃣ 生成今日待办清单
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">127</div>
+                                <div class="item-stat-label">执行次数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">98%</div>
+                                <div class="item-stat-label">成功率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">2.3s</div>
+                                <div class="item-stat-label">平均耗时</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-small">编辑</button>
+                            <button class="btn btn-secondary btn-small">执行记录</button>
+                            <button class="btn btn-secondary btn-small">暂停</button>
+                        </div>
+                    </div>
+
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar sop">⏰</div>
+                            <div class="item-info">
+                                <h3 class="item-title">午餐推荐提醒</h3>
+                                <p class="item-subtitle">生活顾问 · 定时触发</p>
+                                <span class="status-badge active">
+                                    <span class="status-dot"></span>
+                                    运行中
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="sop-schedule">
+                            <strong>⏰ 执行时间：</strong>每天 11:30 (Asia/Shanghai)
+                        </div>
+
+                        <div class="sop-steps">
+                            📋 工作流步骤：<br>
+                            1️⃣ 分析今日运动量<br>
+                            2️⃣ 推荐健康午餐<br>
+                            3️⃣ 发送餐厅建议
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">89</div>
+                                <div class="item-stat-label">执行次数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">96%</div>
+                                <div class="item-stat-label">成功率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">1.8s</div>
+                                <div class="item-stat-label">平均耗时</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-small">编辑</button>
+                            <button class="btn btn-secondary btn-small">执行记录</button>
+                            <button class="btn btn-secondary btn-small">暂停</button>
+                        </div>
+                    </div>
+
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar sop">⏰</div>
+                            <div class="item-info">
+                                <h3 class="item-title">每周工作总结</h3>
+                                <p class="item-subtitle">工作助手 · 定时触发</p>
+                                <span class="status-badge active">
+                                    <span class="status-dot"></span>
+                                    运行中
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="sop-schedule">
+                            <strong>⏰ 执行时间：</strong>每周五 17:00 (Asia/Shanghai)
+                        </div>
+
+                        <div class="sop-steps">
+                            📋 工作流步骤：<br>
+                            1️⃣ 统计本周完成任务<br>
+                            2️⃣ 分析工作效率<br>
+                            3️⃣ 生成周报并发送
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">18</div>
+                                <div class="item-stat-label">执行次数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">100%</div>
+                                <div class="item-stat-label">成功率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">4.2s</div>
+                                <div class="item-stat-label">平均耗时</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-small">编辑</button>
+                            <button class="btn btn-secondary btn-small">执行记录</button>
+                            <button class="btn btn-secondary btn-small">暂停</button>
+                        </div>
+                    </div>
+
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar sop">⏰</div>
+                            <div class="item-info">
+                                <h3 class="item-title">晚安关怀提醒</h3>
+                                <p class="item-subtitle">情感导师 · 定时触发</p>
+                                <span class="status-badge offline">
+                                    <span class="status-dot"></span>
+                                    已暂停
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="sop-schedule">
+                            <strong>⏰ 执行时间：</strong>每天 21:00 (Asia/Shanghai)
+                        </div>
+
+                        <div class="sop-steps">
+                            📋 工作流步骤：<br>
+                            1️⃣ 发送晚安问候<br>
+                            2️⃣ 提醒给对象发消息<br>
+                            3️⃣ 推荐睡前活动
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">45</div>
+                                <div class="item-stat-label">执行次数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">94%</div>
+                                <div class="item-stat-label">成功率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">1.5s</div>
+                                <div class="item-stat-label">平均耗时</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-primary btn-small">启动</button>
+                            <button class="btn btn-secondary btn-small">编辑</button>
+                            <button class="btn btn-secondary btn-small">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 群聊管理页面 -->
+            <div id="page-groups" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">群聊管理</h1>
+                    <p class="page-description">管理多Bot协作群组</p>
+                </div>
+
+                <div class="section-header">
+                    <h2 class="section-title">我的群聊</h2>
+                    <button class="btn btn-primary">
+                        <span>➕</span>
+                        <span>创建新群聊</span>
+                    </button>
+                </div>
+
+                <div class="items-grid">
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar group">🎯</div>
+                            <div class="item-info">
+                                <h3 class="item-title">创业顾问团</h3>
+                                <p class="item-subtitle">企业团队 · 关键词路由</p>
+                                <span class="status-badge online">
+                                    <span class="status-dot"></span>
+                                    活跃中
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="item-description">
+                            CEO、CTO、CMO三位专家Bot协同，提供全方位创业建议
+                        </p>
+
+                        <div class="group-members">
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💻</div>
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">📈</div>
+                            <span class="member-count">3个成员</span>
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">234</div>
+                                <div class="item-stat-label">对话数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">97%</div>
+                                <div class="item-stat-label">响应率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">2.8s</div>
+                                <div class="item-stat-label">响应速度</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-small">配置路由</button>
+                            <button class="btn btn-secondary btn-small">成员管理</button>
+                            <button class="btn btn-secondary btn-small">查看记录</button>
+                        </div>
+                    </div>
+
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar group">💪</div>
+                            <div class="item-info">
+                                <h3 class="item-title">成长加速器</h3>
+                                <p class="item-subtitle">个人发展 · AI智能路由</p>
+                                <span class="status-badge online">
+                                    <span class="status-dot"></span>
+                                    活跃中
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="item-description">
+                            工作、学习、健康三大领域Bot协作，全方位助力个人成长
+                        </p>
+
+                        <div class="group-members">
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📚</div>
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🏃</div>
+                            <span class="member-count">3个成员</span>
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">189</div>
+                                <div class="item-stat-label">对话数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">95%</div>
+                                <div class="item-stat-label">响应率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">2.5s</div>
+                                <div class="item-stat-label">响应速度</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-secondary btn-small">配置路由</button>
+                            <button class="btn btn-secondary btn-small">成员管理</button>
+                            <button class="btn btn-secondary btn-small">查看记录</button>
+                        </div>
+                    </div>
+
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-avatar group">🎨</div>
+                            <div class="item-info">
+                                <h3 class="item-title">创意工作室</h3>
+                                <p class="item-subtitle">内容创作 · 全员响应</p>
+                                <span class="status-badge offline">
+                                    <span class="status-dot"></span>
+                                    待激活
+                                </span>
+                            </div>
+                        </div>
+
+                        <p class="item-description">
+                            文案、设计、策划Bot联动，打造一站式创意生产流水线
+                        </p>
+
+                        <div class="group-members">
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">✍️</div>
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">🎨</div>
+                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">💡</div>
+                            <span class="member-count">3个成员</span>
+                        </div>
+
+                        <div class="item-stats">
+                            <div class="item-stat">
+                                <div class="item-stat-value">0</div>
+                                <div class="item-stat-label">对话数</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">--</div>
+                                <div class="item-stat-label">响应率</div>
+                            </div>
+                            <div class="item-stat">
+                                <div class="item-stat-value">--</div>
+                                <div class="item-stat-label">响应速度</div>
+                            </div>
+                        </div>
+
+                        <div class="item-actions">
+                            <button class="btn btn-primary btn-small">激活</button>
+                            <button class="btn btn-secondary btn-small">配置</button>
+                            <button class="btn btn-secondary btn-small">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 导航菜单
+        const navItems = document.querySelectorAll('.nav-item');
+        const pages = {
+            'dashboard': document.getElementById('page-dashboard'),
+            'sop': document.getElementById('page-sop'),
+            'groups': document.getElementById('page-groups')
+        };
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                
+                // 更新导航
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                // 切换页面
+                Object.values(pages).forEach(p => {
+                    if (p) p.style.display = 'none';
+                });
+                
+                if (pages[page]) {
+                    pages[page].style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

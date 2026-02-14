@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Agent - 智能协作平台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --work-primary: #0066FF;
+            --work-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --life-primary: #00D084;
+            --life-bg: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --love-primary: #FF4081;
+            --love-bg: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --custom-primary: #9C27B0;
+            --custom-bg: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #0a0a0f;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .background-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            height: 100vh;
+        }
+
+        /* 左侧导航栏 */
+        .sidebar {
+            width: 280px;
+            background: rgba(20, 20, 30, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+
+        /* Tab切换 */
+        .tab-switcher {
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .tab-btn.active {
+            background: rgba(102, 126, 234, 0.3);
+            color: #667eea;
+        }
+
+        /* 场景/群聊列表 */
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .scene-card, .group-card {
+            position: relative;
+            padding: 16px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            overflow: hidden;
+        }
+
+        .scene-card::before, .group-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            transition: opacity 0.3s;
+        }
+
+        .scene-card:hover::before, .group-card:hover::before {
+            opacity: 0.2;
+        }
+
+        .scene-card.active, .group-card.active {
+            border-color: currentColor;
+            transform: scale(1.02);
+        }
+
+        .scene-card.work {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--work-primary);
+        }
+        .scene-card.work::before { background: var(--work-bg); }
+
+        .scene-card.life {
+            background: rgba(0, 208, 132, 0.1);
+            color: var(--life-primary);
+        }
+        .scene-card.life::before { background: var(--life-bg); }
+
+        .scene-card.love {
+            background: rgba(255, 64, 129, 0.1);
+            color: var(--love-primary);
+        }
+        .scene-card.love::before { background: var(--love-bg); }
+
+        /* 群聊卡片 */
+        .group-card {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .group-card.active {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .card-icon {
+            font-size: 24px;
+        }
+
+        .card-info {
+            flex: 1;
+        }
+
+        .card-name {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .card-desc {
+            font-size: 11px;
+            opacity: 0.7;
+            line-height: 1.3;
+        }
+
+        /* 群聊成员头像组 */
+        .group-members {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 10px;
+        }
+
+        .member-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 2px solid rgba(10, 10, 15, 0.8);
+        }
+
+        .member-count {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-left: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #00D084;
+            animation: pulse 2s infinite;
+            margin-left: auto;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* 新建按钮 */
+        .create-btn {
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans SC', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .create-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        /* 主聊天区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(20, 20, 30, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chat-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-avatar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.2;
+        }
+
+        .chat-avatar.work::before { background: var(--work-bg); }
+        .chat-avatar.life::before { background: var(--life-bg); }
+        .chat-avatar.love::before { background: var(--love-bg); }
+        .chat-avatar.group {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .chat-details h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .chat-details p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 群聊时显示成员 */
+        .group-members-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .header-member-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* 消息区域 */
+        .chat-messages {
+            flex: 1;
+            padding: 28px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .message.bot .message-avatar {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .message-wrapper {
+            max-width: 70%;
+        }
+
+        /* Bot名称标签（群聊时显示） */
+        .bot-name-tag {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 4px;
+            padding-left: 4px;
+        }
+
+        .message-content {
+            padding: 16px 20px;
+            border-radius: 16px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.bot .message-content {
+            background: rgba(255, 255, 255, 0.08);
+            border-top-left-radius: 4px;
+        }
+
+        .message.user .message-content {
+            background: rgba(102, 126, 234, 0.3);
+            border-top-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 6px;
+            padding-left: 4px;
+        }
+
+        /* 定时提醒消息样式 */
+        .message.schedule {
+            justify-content: center;
+        }
+
+        .message.schedule .message-content {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-left: 4px solid #ffc107;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .schedule-icon {
+            font-size: 24px;
+        }
+
+        /* 输入区域 */
+        .chat-input {
+            padding: 20px 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        /* @提及功能 */
+        .mention-btn {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mention-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+            font-family: 'Noto Sans SC', sans-serif;
+            resize: none;
+            outline: none;
+            transition: all 0.3s;
+            min-height: 52px;
+            max-height: 120px;
+        }
+
+        textarea:focus {
+            border-color: rgba(102, 126, 234, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .send-btn {
+            padding: 14px 28px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 滚动条 */
+        .chat-messages::-webkit-scrollbar,
+        .list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track,
+        .list-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb,
+        .list-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+            }
+
+            .chat-area {
+                height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-particles" id="particles"></div>
+
+    <div class="container">
+        <!-- 左侧导航 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">BOT NEXUS</div>
+                <div class="subtitle">多场景智能协作</div>
+            </div>
+
+            <!-- Tab切换 -->
+            <div class="tab-switcher">
+                <button class="tab-btn active" data-tab="scenes">单Bot</button>
+                <button class="tab-btn" data-tab="groups">群聊</button>
+            </div>
+
+            <!-- 场景列表 -->
+            <div class="list-container" id="scenesList">
+                <div class="scene-card work active" data-type="scene" data-id="work">
+                    <div class="card-header">
+                        <span class="card-icon">💼</span>
+                        <div class="card-info">
+                            <div class="card-name">工作助手</div>
+                            <div class="card-desc">效率管理专家</div>
+                        </div>
+                        <div class="status-dot"></div>
+                    </div>
+                </div>
+
+                <div class="scene-card life" data-type="scene" data-id="life">
+                    <div class="card-header">
+                        <span class="card-icon">🌿</span>
+                        <div class="card-info">
+                            <div class="card-name">生活顾问</div>
+                            <div class="card-desc">健康生活专家</div>
+                        </div>
+                        <div class="status-dot"></div>
+                    </div>
+                </div>
+
+                <div class="scene-card love" data-type="scene" data-id="love">
+                    <div class="card-header">
+                        <span class="card-icon">💕</span>
+                        <div class="card-info">
+                            <div class="card-name">情感导师</div>
+                            <div class="card-desc">关系维护专家</div>
+                        </div>
+                        <div class="status-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 群聊列表（默认隐藏） -->
+            <div class="list-container" id="groupsList" style="display: none;">
+                <div class="group-card" data-type="group" data-id="group1">
+                    <div class="card-header">
+                        <span class="card-icon">🎯</span>
+                        <div class="card-info">
+                            <div class="card-name">创业顾问团</div>
+                            <div class="card-desc">CEO + CTO + CMO</div>
+                        </div>
+                    </div>
+                    <div class="group-members">
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💻</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">📈</div>
+                        <span class="member-count">3个成员</span>
+                    </div>
+                </div>
+
+                <div class="group-card" data-type="group" data-id="group2">
+                    <div class="card-header">
+                        <span class="card-icon">💪</span>
+                        <div class="card-info">
+                            <div class="card-name">成长加速器</div>
+                            <div class="card-desc">工作 + 学习 + 健康</div>
+                        </div>
+                    </div>
+                    <div class="group-members">
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📚</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🏃</div>
+                        <span class="member-count">3个成员</span>
+                    </div>
+                </div>
+
+                <button class="create-btn">
+                    <span>➕</span>
+                    <span>创建新群聊</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 聊天区域 -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-info">
+                    <div class="chat-avatar work" id="chatAvatar">💼</div>
+                    <div class="chat-details">
+                        <h2 id="chatName">工作助手</h2>
+                        <p id="chatStatus">在线 · 准备就绪</p>
+                        <div class="group-members-header" id="groupMembersHeader" style="display: none;">
+                            <!-- 群聊时动态添加成员头像 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn" id="sopBtn">⏰ SOP</button>
+                    <button class="action-btn">📋 历史</button>
+                    <button class="action-btn">⚙️ 设置</button>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="messages">
+                <!-- 定时提醒示例 -->
+                <div class="message schedule">
+                    <div class="message-content">
+                        <span class="schedule-icon">⏰</span>
+                        <div>
+                            <strong>定时提醒</strong><br>
+                            <span style="opacity: 0.8;">早上好！今天是周一，让我为你准备今日工作计划...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message bot">
+                    <div class="message-avatar">💼</div>
+                    <div class="message-wrapper">
+                        <div class="message-content">
+                            你好！我是你的工作助手。我可以帮你管理任务、优化时间表。今天有什么需要协助的吗？
+                        </div>
+                        <div class="message-time">08:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <button class="mention-btn" id="mentionBtn" title="@提及Bot" style="display: none;">@</button>
+                <div class="input-wrapper">
+                    <textarea id="input" placeholder="输入消息..."></textarea>
+                </div>
+                <button class="send-btn" id="sendBtn">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 背景粒子
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.width = Math.random() * 100 + 50 + 'px';
+            particle.style.height = particle.style.width;
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.top = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.animationDuration = Math.random() * 10 + 15 + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Tab切换
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const scenesList = document.getElementById('scenesList');
+        const groupsList = document.getElementById('groupsList');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const tab = btn.dataset.tab;
+                if (tab === 'scenes') {
+                    scenesList.style.display = 'flex';
+                    groupsList.style.display = 'none';
+                } else {
+                    scenesList.style.display = 'none';
+                    groupsList.style.display = 'flex';
+                }
+            });
+        });
+
+        // 场景/群聊切换
+        const allCards = document.querySelectorAll('.scene-card, .group-card');
+        const chatAvatar = document.getElementById('chatAvatar');
+        const chatName = document.getElementById('chatName');
+        const chatStatus = document.getElementById('chatStatus');
+        const groupMembersHeader = document.getElementById('groupMembersHeader');
+        const mentionBtn = document.getElementById('mentionBtn');
+        const messages = document.getElementById('messages');
+
+        const scenesData = {
+            work: {
+                name: '工作助手',
+                icon: '💼',
+                status: '在线 · 准备就绪',
+                greeting: '你好！我是你的工作助手。今天有什么需要协助的吗？'
+            },
+            life: {
+                name: '生活顾问',
+                icon: '🌿',
+                status: '在线 · 准备就绪',
+                greeting: '嗨！我是你的生活顾问。需要健康或生活方面的建议吗？'
+            },
+            love: {
+                name: '情感导师',
+                icon: '💕',
+                status: '在线 · 准备就绪',
+                greeting: '你好呀～有什么感情问题想聊聊吗？'
+            }
+        };
+
+        const groupsData = {
+            group1: {
+                name: '创业顾问团',
+                icon: '🎯',
+                members: [
+                    { name: 'CEO Bot', icon: '💼', role: '战略决策' },
+                    { name: 'CTO Bot', icon: '💻', role: '技术架构' },
+                    { name: 'CMO Bot', icon: '📈', role: '市场增长' }
+                ],
+                greeting: '创业顾问团已就位！我们可以从战略、技术、市场等多角度为你提供建议。'
+            },
+            group2: {
+                name: '成长加速器',
+                icon: '💪',
+                members: [
+                    { name: '工作Bot', icon: '💼', role: '效率管理' },
+                    { name: '学习Bot', icon: '📚', role: '知识总结' },
+                    { name: '健康Bot', icon: '🏃', role: '运动规划' }
+                ],
+                greeting: '成长加速器启动！工作、学习、健康三位一体，全方位助力你的成长。'
+            }
+        };
+
+        allCards.forEach(card => {
+            card.addEventListener('click', () => {
+                allCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+
+                const type = card.dataset.type;
+                const id = card.dataset.id;
+
+                if (type === 'scene') {
+                    // 单Bot模式
+                    const data = scenesData[id];
+                    chatAvatar.className = `chat-avatar ${id}`;
+                    chatAvatar.textContent = data.icon;
+                    chatName.textContent = data.name;
+                    chatStatus.textContent = data.status;
+                    groupMembersHeader.style.display = 'none';
+                    mentionBtn.style.display = 'none';
+
+                    messages.innerHTML = `
+                        <div class="message bot">
+                            <div class="message-avatar">${data.icon}</div>
+                            <div class="message-wrapper">
+                                <div class="message-content">${data.greeting}</div>
+                                <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 群聊模式
+                    const data = groupsData[id];
+                    chatAvatar.className = 'chat-avatar group';
+                    chatAvatar.textContent = data.icon;
+                    chatName.textContent = data.name;
+                    chatStatus.textContent = `${data.members.length}个Bot成员`;
+                    
+                    // 显示成员
+                    groupMembersHeader.style.display = 'flex';
+                    groupMembersHeader.innerHTML = data.members.map(m => `
+                        <div class="header-member-avatar" title="${m.name} - ${m.role}">${m.icon}</div>
+                    `).join('');
+                    
+                    mentionBtn.style.display = 'flex';
+
+                    messages.innerHTML = `
+                        <div class="message bot">
+                            <div class="message-avatar">${data.icon}</div>
+                            <div class="message-wrapper">
+                                <div class="message-content">${data.greeting}</div>
+                                <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        });
+
+        // 发送消息
+        const input = document.getElementById('input');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            const time = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+            
+            const userMsg = `
+                <div class="message user">
+                    <div class="message-avatar">👤</div>
+                    <div class="message-wrapper">
+                        <div class="message-content">${text}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                </div>
+            `;
+            messages.insertAdjacentHTML('beforeend', userMsg);
+
+            input.value = '';
+            input.style.height = 'auto';
+            messages.scrollTop = messages.scrollHeight;
+
+            // 模拟群聊多Bot回复
+            const activeCard = document.querySelector('.group-card.active');
+            if (activeCard) {
+                const groupId = activeCard.dataset.id;
+                const group = groupsData[groupId];
+                
+                // 随机2个Bot回复
+                const respondingBots = group.members.slice(0, 2);
+                
+                respondingBots.forEach((bot, index) => {
+                    setTimeout(() => {
+                        const botMsg = `
+                            <div class="message bot">
+                                <div class="message-avatar">${bot.icon}</div>
+                                <div class="message-wrapper">
+                                    <div class="bot-name-tag">${bot.name}</div>
+                                    <div class="message-content">这是${bot.name}的回复。在实际应用中会调用AI生成针对性的回答。</div>
+                                    <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
+                                </div>
+                            </div>
+                        `;
+                        messages.insertAdjacentHTML('beforeend', botMsg);
+                        messages.scrollTop = messages.scrollHeight;
+                    }, 1000 + index * 1500);
+                });
+            } else {
+                // 单Bot回复
+                setTimeout(() => {
+                    const activeScene = document.querySelector('.scene-card.active');
+                    const sceneId = activeScene.dataset.id;
+                    const scene = scenesData[sceneId];
+                    
+                    const botMsg = `
+                        <div class="message bot">
+                            <div class="message-avatar">${scene.icon}</div>
+                            <div class="message-wrapper">
+                                <div class="message-content">这是模拟回复。实际应用中会调用AI接口。</div>
+                                <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
+                            </div>
+                        </div>
+                    `;
+                    messages.insertAdjacentHTML('beforeend', botMsg);
+                    messages.scrollTop = messages.scrollHeight;
+                }, 1000);
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 自动调整高度
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // SOP按钮
+        document.getElementById('sopBtn').addEventListener('click', () => {
+            alert('SOP工作流配置功能 - 可在后台管理界面配置定时任务');
+        });
+
+        // @提及功能
+        mentionBtn.addEventListener('click', () => {
+            alert('@提及功能 - 可以选择特定的Bot回复');
+        });
+    </script>
+</body>
+</html>
