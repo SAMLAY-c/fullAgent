@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Agent - 智能协作平台</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>Bot Agent - 你的AI伙伴</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,51 +12,107 @@
             box-sizing: border-box;
         }
 
+        /* ==============================
+           人文关怀风格 - 完整变量系统
+           ============================== */
         :root {
-            --work-primary: #0066FF;
-            --work-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --life-primary: #00D084;
-            --life-bg: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            --love-primary: #FF4081;
-            --love-bg: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            --custom-primary: #9C27B0;
-            --custom-bg: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%);
+            /* 温暖色板 */
+            --color-bg: #FAF9F6;
+            --color-surface: #FFFFFF;
+            --color-surface-soft: #F8F6F2;
+
+            /* 主色调 */
+            --color-primary: #9B8BF5;
+            --color-primary-light: #B8A5E8;
+            --color-primary-dark: #7C6FCC;
+
+            /* 辅助色 */
+            --color-secondary: #90EE90;
+            --color-accent: #FFB6C1;
+            --color-cream: #FFF5E6;
+
+            /* 场景色 */
+            --work-primary: #9B8BF5;
+            --work-bg: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);
+            --life-primary: #90EE90;
+            --life-bg: linear-gradient(135deg, #E8FFE8 0%, #F0FFF0 100%);
+            --love-primary: #FFB6C1;
+            --love-bg: linear-gradient(135deg, #FFE8EC 0%, #FFF0F3 100%);
+
+            /* 文字颜色 */
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-muted: #A0AEC0;
+
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+
+            /* 间距 */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* 动画 */
+            --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms;
+            --duration-normal: 300ms;
+            --duration-slow: 600ms;
+
+            /* 阴影 */
+            --shadow-sm: 0 2px 8px rgba(148, 163, 184, 0.1);
+            --shadow-md: 0 4px 16px rgba(148, 163, 184, 0.12);
+            --shadow-lg: 0 8px 28px rgba(148, 163, 184, 0.15);
+            --shadow-soft: 8px 8px 16px rgba(163, 177, 198, 0.1),
+                           -8px -8px 16px rgba(255, 255, 255, 0.8);
         }
 
         body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background: #0a0a0f;
-            color: #ffffff;
+            font-family: 'Nunito Sans', sans-serif;
+            background: var(--color-bg);
+            background-image: radial-gradient(circle at 20% 50%, rgba(155, 139, 245, 0.08) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, rgba(255, 182, 193, 0.08) 0%, transparent 50%);
+            color: var(--text-primary);
             overflow: hidden;
+            min-height: 100vh;
         }
 
-        .background-particles {
+        /* 呼吸光环效果 */
+        .breathing-glow {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(155, 139, 245, 0.12) 0%, transparent 70%);
+            animation: breathe 8s ease-in-out infinite;
             pointer-events: none;
+            transform: translate(-50%, -50%);
             z-index: 0;
         }
 
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            animation: float 20s infinite ease-in-out;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -30px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
+        @keyframes breathe {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.15);
+                opacity: 1;
+            }
         }
 
         .container {
             position: relative;
             z-index: 1;
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
             display: flex;
@@ -64,67 +120,71 @@
             height: 100vh;
         }
 
-        /* 左侧导航栏 */
+        /* ==================== 左侧导航栏 ==================== */
         .sidebar {
-            width: 280px;
-            background: rgba(20, 20, 30, 0.8);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 300px;
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-md);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: var(--space-md);
         }
 
         .sidebar-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: var(--space-sm);
         }
 
         .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 28px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Varela Round', sans-serif;
+            font-size: 32px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            margin-bottom: var(--space-xs);
         }
 
         .subtitle {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-            letter-spacing: 2px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 400;
         }
 
         /* Tab切换 */
         .tab-switcher {
             display: flex;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px;
-            border-radius: 12px;
-            margin-bottom: 16px;
+            gap: var(--space-sm);
+            background: var(--color-surface-soft);
+            padding: var(--space-xs);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--space-md);
         }
 
         .tab-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px var(--space-sm);
             border: none;
             background: transparent;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 13px;
+            color: var(--text-secondary);
+            font-size: 14px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Noto Sans SC', sans-serif;
+            transition: all var(--duration-normal) var(--ease-smooth);
+            font-family: 'Nunito Sans', sans-serif;
         }
 
         .tab-btn.active {
-            background: rgba(102, 126, 234, 0.3);
-            color: #667eea;
+            background: var(--color-surface);
+            color: var(--color-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(155, 139, 245, 0.08);
         }
 
         /* 场景/群聊列表 */
@@ -133,78 +193,64 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: var(--space-sm);
         }
 
         .scene-card, .group-card {
             position: relative;
-            padding: 16px;
-            border-radius: 14px;
+            padding: var(--space-md);
+            border-radius: var(--radius-lg);
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
+            transition: all var(--duration-normal) var(--ease-spring);
             overflow: hidden;
         }
 
-        .scene-card::before, .group-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.1;
-            transition: opacity 0.3s;
+        .scene-card {
+            background: linear-gradient(145deg, #ffffff, #f5f3ff);
+            box-shadow: var(--shadow-soft);
         }
 
-        .scene-card:hover::before, .group-card:hover::before {
-            opacity: 0.2;
+        .scene-card:hover {
+            box-shadow: 12px 12px 24px rgba(163, 177, 198, 0.15),
+                        -12px -12px 24px rgba(255, 255, 255, 0.9);
+            transform: translateY(-3px);
         }
 
-        .scene-card.active, .group-card.active {
-            border-color: currentColor;
-            transform: scale(1.02);
+        .scene-card.active {
+            background: linear-gradient(145deg, #f5f3ff, #ede9fe);
+            box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.1),
+                        inset -4px -4px 8px rgba(255, 255, 255, 0.8);
         }
 
-        .scene-card.work {
-            background: rgba(102, 126, 234, 0.1);
-            color: var(--work-primary);
-        }
-        .scene-card.work::before { background: var(--work-bg); }
+        .scene-card.work { --card-color: var(--work-primary); }
+        .scene-card.life { --card-color: var(--life-primary); }
+        .scene-card.love { --card-color: var(--love-primary); }
 
-        .scene-card.life {
-            background: rgba(0, 208, 132, 0.1);
-            color: var(--life-primary);
-        }
-        .scene-card.life::before { background: var(--life-bg); }
-
-        .scene-card.love {
-            background: rgba(255, 64, 129, 0.1);
-            color: var(--love-primary);
-        }
-        .scene-card.love::before { background: var(--love-bg); }
-
-        /* 群聊卡片 */
         .group-card {
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--color-surface);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .group-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
 
         .group-card.active {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.15);
+            border-color: var(--color-primary);
+            background: var(--work-bg);
         }
 
         .card-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 8px;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-xs);
         }
 
         .card-icon {
-            font-size: 24px;
+            font-size: 26px;
         }
 
         .card-info {
@@ -212,209 +258,239 @@
         }
 
         .card-name {
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
             margin-bottom: 2px;
+            font-family: 'Varela Round', sans-serif;
         }
 
         .card-desc {
-            font-size: 11px;
-            opacity: 0.7;
-            line-height: 1.3;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
         }
 
         /* 群聊成员头像组 */
         .group-members {
             display: flex;
             align-items: center;
-            gap: 4px;
-            margin-top: 10px;
+            gap: 6px;
+            margin-top: var(--space-sm);
         }
 
         .member-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
-            border: 2px solid rgba(10, 10, 15, 0.8);
+            font-size: 14px;
+            border: 2px solid var(--color-surface);
+            box-shadow: var(--shadow-sm);
         }
 
         .member-count {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-left: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: var(--space-xs);
         }
 
         .status-dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: #00D084;
-            animation: pulse 2s infinite;
+            background: var(--color-secondary);
+            animation: gentle-pulse 3s ease-in-out infinite;
             margin-left: auto;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        .scene-card.love .status-dot {
+            background: var(--love-primary);
+        }
+
+        .scene-card.work .status-dot {
+            background: var(--work-primary);
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(144, 238, 144, 0.4);
+            }
+            50% {
+                opacity: 0.75;
+                box-shadow: 0 0 0 6px rgba(144, 238, 144, 0);
+            }
         }
 
         /* 新建按钮 */
         .create-btn {
-            padding: 12px;
-            border-radius: 12px;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            border: 2px dashed rgba(155, 139, 245, 0.3);
             background: transparent;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 13px;
+            color: var(--color-primary);
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Noto Sans SC', sans-serif;
+            transition: all var(--duration-normal);
+            font-family: 'Nunito Sans', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: var(--space-sm);
         }
 
         .create-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            border-color: var(--color-primary);
+            background: rgba(155, 139, 245, 0.08);
+            transform: translateY(-2px);
         }
 
-        /* 主聊天区域 */
+        /* ==================== 主聊天区域 ==================== */
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: rgba(20, 20, 30, 0.6);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
             overflow: hidden;
         }
 
         .chat-header {
-            padding: 20px 28px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: var(--space-lg) var(--space-xl);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background: var(--color-surface);
         }
 
         .chat-info {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: var(--space-md);
         }
 
         .chat-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            border-radius: var(--radius-lg);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 28px;
             position: relative;
             overflow: hidden;
+            box-shadow: var(--shadow-sm);
         }
 
-        .chat-avatar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.2;
+        .chat-avatar.work {
+            background: var(--work-bg);
         }
 
-        .chat-avatar.work::before { background: var(--work-bg); }
-        .chat-avatar.life::before { background: var(--life-bg); }
-        .chat-avatar.love::before { background: var(--love-bg); }
+        .chat-avatar.life {
+            background: var(--life-bg);
+        }
+
+        .chat-avatar.love {
+            background: var(--love-bg);
+        }
+
         .chat-avatar.group {
-            background: rgba(102, 126, 234, 0.2);
+            background: var(--work-bg);
         }
 
         .chat-details h2 {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             margin-bottom: 4px;
+            font-family: 'Varela Round', sans-serif;
         }
 
         .chat-details p {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            color: var(--color-primary);
+            font-weight: 500;
         }
 
-        /* 群聊时显示成员 */
         .group-members-header {
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-top: 6px;
+            gap: var(--space-xs);
+            margin-top: var(--space-xs);
         }
 
         .header-member-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            font-size: 12px;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: var(--work-bg);
+            box-shadow: var(--shadow-sm);
         }
 
         .chat-actions {
             display: flex;
-            gap: 10px;
+            gap: var(--space-sm);
         }
 
         .action-btn {
-            padding: 10px 16px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
+            padding: 10px var(--space-md);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--color-surface);
+            color: var(--text-primary);
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.3s;
-            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 600;
+            transition: all var(--duration-normal) var(--ease-spring);
+            font-family: 'Nunito Sans', sans-serif;
+            box-shadow: var(--shadow-sm);
         }
 
         .action-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--color-surface-soft);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
-        /* 消息区域 */
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            color: white;
+            border: none;
+        }
+
+        /* ==================== 消息区域 ==================== */
         .chat-messages {
             flex: 1;
-            padding: 28px;
+            padding: var(--space-xl);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: var(--space-lg);
+            background: var(--color-bg);
         }
 
         .message {
             display: flex;
-            gap: 12px;
-            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: var(--space-sm);
+            animation: messageIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes slideIn {
+        @keyframes messageIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(16px) scale(0.98);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
@@ -423,22 +499,23 @@
         }
 
         .message-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-md);
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
+            box-shadow: var(--shadow-sm);
         }
 
         .message.bot .message-avatar {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--work-bg);
         }
 
         .message.user .message-avatar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
         }
 
         .message-wrapper {
@@ -447,34 +524,83 @@
 
         /* Bot名称标签（群聊时显示） */
         .bot-name-tag {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 4px;
-            padding-left: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xs);
+            padding-left: var(--space-xs);
+            font-weight: 500;
         }
 
         .message-content {
-            padding: 16px 20px;
-            border-radius: 16px;
-            line-height: 1.6;
-            font-size: 14px;
+            padding: 18px 24px;
+            line-height: 1.8;
+            font-size: 15px;
+            letter-spacing: 0.02em;
+            position: relative;
         }
 
         .message.bot .message-content {
-            background: rgba(255, 255, 255, 0.08);
-            border-top-left-radius: 4px;
+            background: #FFFFFF;
+            border: none;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
         }
 
         .message.user .message-content {
-            background: rgba(102, 126, 234, 0.3);
-            border-top-right-radius: 4px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 16px rgba(155, 139, 245, 0.25);
+            color: white;
         }
 
         .message-time {
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 6px;
+            color: var(--text-muted);
+            margin-top: var(--space-xs);
             padding-left: 4px;
+        }
+
+        .message.user .message-time {
+            text-align: right;
+            padding-right: 4px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* 消息反馈按钮 */
+        .message-actions {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-sm);
+            opacity: 0;
+            transform: translateY(-4px);
+            transition: all var(--duration-normal);
+        }
+
+        .message:hover .message-actions {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .feedback-btn {
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid #E2E8F0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .feedback-btn:hover {
+            background: #F7FAFC;
+            border-color: #CBD5E0;
+        }
+
+        .feedback-btn.active {
+            background: #F0F4FF;
+            border-color: var(--color-primary);
+            color: var(--color-primary);
         }
 
         /* 定时提醒消息样式 */
@@ -483,44 +609,75 @@
         }
 
         .message.schedule .message-content {
-            background: rgba(255, 193, 7, 0.15);
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFF4D6 100%);
             border: 1px solid rgba(255, 193, 7, 0.3);
-            border-left: 4px solid #ffc107;
+            border-radius: var(--radius-lg);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--space-md);
+            box-shadow: var(--shadow-sm);
         }
 
         .schedule-icon {
-            font-size: 24px;
+            font-size: 28px;
         }
 
-        /* 输入区域 */
-        .chat-input {
-            padding: 20px 28px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        /* 正在输入指示器 */
+        .typing-indicator {
             display: flex;
-            gap: 12px;
-            align-items: flex-end;
+            gap: 6px;
+            padding: 12px 20px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            width: fit-content;
         }
 
-        /* @提及功能 */
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: typingBounce 1.4s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+            40% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* ==================== 输入区域 ==================== */
+        .chat-input {
+            padding: var(--space-lg) var(--space-xl);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            display: flex;
+            gap: var(--space-sm);
+            align-items: flex-end;
+            background: var(--color-surface);
+        }
+
         .mention-btn {
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--color-surface);
+            color: var(--text-primary);
             cursor: pointer;
             font-size: 18px;
-            transition: all 0.3s;
+            transition: all var(--duration-normal);
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: var(--shadow-sm);
         }
 
         .mention-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--color-surface-soft);
+            transform: translateY(-2px);
         }
 
         .input-wrapper {
@@ -530,44 +687,74 @@
 
         textarea {
             width: 100%;
-            padding: 14px 18px;
-            border-radius: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.05);
-            color: white;
-            font-size: 14px;
-            font-family: 'Noto Sans SC', sans-serif;
+            padding: 16px 20px;
+            border-radius: var(--radius-lg);
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            background: var(--color-bg);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Nunito Sans', sans-serif;
             resize: none;
             outline: none;
-            transition: all 0.3s;
+            transition: all var(--duration-normal);
             min-height: 52px;
-            max-height: 120px;
+            max-height: 140px;
         }
 
         textarea:focus {
-            border-color: rgba(102, 126, 234, 0.5);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--color-primary);
+            background: var(--color-surface);
+            box-shadow: 0 0 0 4px rgba(155, 139, 245, 0.1);
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
         }
 
         .send-btn {
-            padding: 14px 28px;
-            border-radius: 14px;
+            padding: 16px 32px;
+            border-radius: var(--radius-lg);
             border: none;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
             color: white;
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Noto Sans SC', sans-serif;
+            transition: all var(--duration-normal) var(--ease-spring);
+            font-family: 'Nunito Sans', sans-serif;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(155, 139, 245, 0.3);
+        }
+
+        .send-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .send-btn:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .send-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(155, 139, 245, 0.35);
         }
 
-        /* 滚动条 */
+        .send-btn:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        /* ==================== 滚动条样式 ==================== */
         .chat-messages::-webkit-scrollbar,
         .list-container::-webkit-scrollbar {
             width: 6px;
@@ -575,29 +762,33 @@
 
         .chat-messages::-webkit-scrollbar-track,
         .list-container::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
+            background: transparent;
         }
 
         .chat-messages::-webkit-scrollbar-thumb,
         .list-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(155, 139, 245, 0.2);
             border-radius: 10px;
         }
 
-        /* 响应式 */
+        .chat-messages::-webkit-scrollbar-thumb:hover,
+        .list-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(155, 139, 245, 0.3);
+        }
+
+        /* ==================== 响应式 ==================== */
         @media (max-width: 1024px) {
             .sidebar {
-                width: 240px;
+                width: 260px;
             }
         }
 
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
-                padding: 10px;
+                padding: var(--space-sm);
             }
-            
+
             .sidebar {
                 width: 100%;
                 max-height: 40vh;
@@ -606,18 +797,67 @@
             .chat-area {
                 height: 60vh;
             }
+
+            .chat-header {
+                padding: var(--space-md);
+            }
+
+            .chat-messages {
+                padding: var(--space-md);
+            }
+
+            .chat-input {
+                padding: var(--space-md);
+            }
+
+            .send-btn {
+                padding: 14px 24px;
+                font-size: 14px;
+            }
+        }
+
+        /* ==================== 暗色模式支持 ==================== */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-bg: #1A1924;
+                --color-surface: #242230;
+                --color-surface-soft: #2A2938;
+                --text-primary: #F7FAFC;
+                --text-secondary: #CBD5E0;
+                --text-muted: #718096;
+                --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+                --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+                --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.3);
+                --shadow-soft: 8px 8px 16px rgba(0, 0, 0, 0.2),
+                               -8px -8px 16px rgba(40, 40, 50, 0.5);
+            }
+
+            .message.bot .message-content {
+                background: #2A2938;
+            }
+
+            .feedback-btn {
+                background: #2A2938;
+                border-color: rgba(255, 255, 255, 0.1);
+                color: var(--text-secondary);
+            }
+
+            .feedback-btn:hover {
+                background: #323040;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="background-particles" id="particles"></div>
+    <!-- 呼吸光环背景 -->
+    <div class="breathing-glow"></div>
 
     <div class="container">
         <!-- 左侧导航 -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">BOT NEXUS</div>
-                <div class="subtitle">多场景智能协作</div>
+                <div class="logo">Bot Agent</div>
+                <div class="subtitle">你的AI伙伴，随时陪聊</div>
             </div>
 
             <!-- Tab切换 -->
@@ -632,8 +872,8 @@
                     <div class="card-header">
                         <span class="card-icon">💼</span>
                         <div class="card-info">
-                            <div class="card-name">工作助手</div>
-                            <div class="card-desc">效率管理专家</div>
+                            <div class="card-name">你的工作伙伴</div>
+                            <div class="card-desc">效率管理 · 任务规划</div>
                         </div>
                         <div class="status-dot"></div>
                     </div>
@@ -643,8 +883,8 @@
                     <div class="card-header">
                         <span class="card-icon">🌿</span>
                         <div class="card-info">
-                            <div class="card-name">生活顾问</div>
-                            <div class="card-desc">健康生活专家</div>
+                            <div class="card-name">生活小助手</div>
+                            <div class="card-desc">健康建议 · 生活指南</div>
                         </div>
                         <div class="status-dot"></div>
                     </div>
@@ -652,10 +892,10 @@
 
                 <div class="scene-card love" data-type="scene" data-id="love">
                     <div class="card-header">
-                        <span class="card-icon">💕</span>
+                        <span class="card-icon">💜</span>
                         <div class="card-info">
-                            <div class="card-name">情感导师</div>
-                            <div class="card-desc">关系维护专家</div>
+                            <div class="card-name">心灵朋友</div>
+                            <div class="card-desc">情感陪伴 · 关系建议</div>
                         </div>
                         <div class="status-dot"></div>
                     </div>
@@ -673,9 +913,9 @@
                         </div>
                     </div>
                     <div class="group-members">
-                        <div class="member-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
-                        <div class="member-avatar" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💻</div>
-                        <div class="member-avatar" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">📈</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);">💼</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8FFE8 0%, #F0FFF0 100%);">💻</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #FFE8EC 0%, #FFF0F3 100%);">📈</div>
                         <span class="member-count">3个成员</span>
                     </div>
                 </div>
@@ -689,16 +929,16 @@
                         </div>
                     </div>
                     <div class="group-members">
-                        <div class="member-avatar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
-                        <div class="member-avatar" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📚</div>
-                        <div class="member-avatar" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🏃</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);">💼</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8FFE8 0%, #F0FFF0 100%);">📚</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #FFE8EC 0%, #FFF0F3 100%);">🏃</div>
                         <span class="member-count">3个成员</span>
                     </div>
                 </div>
 
                 <button class="create-btn">
-                    <span>➕</span>
-                    <span>创建新群聊</span>
+                    <span>✨</span>
+                    <span>邀请更多朋友一起聊聊</span>
                 </button>
             </div>
         </div>
@@ -709,17 +949,17 @@
                 <div class="chat-info">
                     <div class="chat-avatar work" id="chatAvatar">💼</div>
                     <div class="chat-details">
-                        <h2 id="chatName">工作助手</h2>
-                        <p id="chatStatus">在线 · 准备就绪</p>
+                        <h2 id="chatName">你的工作伙伴</h2>
+                        <p id="chatStatus">我就在这里，随时陪你聊天 💜</p>
                         <div class="group-members-header" id="groupMembersHeader" style="display: none;">
                             <!-- 群聊时动态添加成员头像 -->
                         </div>
                     </div>
                 </div>
                 <div class="chat-actions">
-                    <button class="action-btn" id="sopBtn">⏰ SOP</button>
-                    <button class="action-btn">📋 历史</button>
-                    <button class="action-btn">⚙️ 设置</button>
+                    <button class="action-btn primary" id="sopBtn">⏰ 提醒</button>
+                    <button class="action-btn">📋</button>
+                    <button class="action-btn">⚙️</button>
                 </div>
             </div>
 
@@ -729,8 +969,8 @@
                     <div class="message-content">
                         <span class="schedule-icon">⏰</span>
                         <div>
-                            <strong>定时提醒</strong><br>
-                            <span style="opacity: 0.8;">早上好！今天是周一，让我为你准备今日工作计划...</span>
+                            <strong>早安提醒</strong><br>
+                            <span style="opacity: 0.8;">早上好！新的一天开始了，让我为你准备今日计划...</span>
                         </div>
                     </div>
                 </div>
@@ -739,7 +979,11 @@
                     <div class="message-avatar">💼</div>
                     <div class="message-wrapper">
                         <div class="message-content">
-                            你好！我是你的工作助手。我可以帮你管理任务、优化时间表。今天有什么需要协助的吗？
+                            你好！我是你的工作伙伴。我可以帮你管理任务、规划时间。今天想聊点什么呢？我随时都在 👋
+                            <div class="message-actions">
+                                <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
+                                <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
+                            </div>
                         </div>
                         <div class="message-time">08:00</div>
                     </div>
@@ -749,28 +993,14 @@
             <div class="chat-input">
                 <button class="mention-btn" id="mentionBtn" title="@提及Bot" style="display: none;">@</button>
                 <div class="input-wrapper">
-                    <textarea id="input" placeholder="输入消息..."></textarea>
+                    <textarea id="input" placeholder="今天想聊点什么呢？我随时都在 💜"></textarea>
                 </div>
-                <button class="send-btn" id="sendBtn">发送</button>
+                <button class="send-btn" id="sendBtn">发送 ✨</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 背景粒子
-        const particlesContainer = document.getElementById('particles');
-        for (let i = 0; i < 30; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.style.width = Math.random() * 100 + 50 + 'px';
-            particle.style.height = particle.style.width;
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.top = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 20 + 's';
-            particle.style.animationDuration = Math.random() * 10 + 15 + 's';
-            particlesContainer.appendChild(particle);
-        }
-
         // Tab切换
         const tabBtns = document.querySelectorAll('.tab-btn');
         const scenesList = document.getElementById('scenesList');
@@ -803,22 +1033,22 @@
 
         const scenesData = {
             work: {
-                name: '工作助手',
+                name: '你的工作伙伴',
                 icon: '💼',
-                status: '在线 · 准备就绪',
-                greeting: '你好！我是你的工作助手。今天有什么需要协助的吗？'
+                status: '我就在这里，随时陪你聊天 💜',
+                greeting: '你好！我是你的工作伙伴。我可以帮你管理任务、规划时间。今天想聊点什么呢？我随时都在 👋'
             },
             life: {
-                name: '生活顾问',
+                name: '生活小助手',
                 icon: '🌿',
-                status: '在线 · 准备就绪',
-                greeting: '嗨！我是你的生活顾问。需要健康或生活方面的建议吗？'
+                status: '随时待命，为你服务 🌸',
+                greeting: '嗨！我是你的生活小助手。健康饮食、运动建议、生活小技巧...你想了解什么呢？'
             },
             love: {
-                name: '情感导师',
-                icon: '💕',
-                status: '在线 · 准备就绪',
-                greeting: '你好呀～有什么感情问题想聊聊吗？'
+                name: '心灵朋友',
+                icon: '💜',
+                status: '用心陪伴，温暖你的一天 🤗',
+                greeting: '你好呀～我是你的心灵朋友。无论是感情困惑还是情绪小情绪，我都在这里倾听 💕'
             }
         };
 
@@ -831,7 +1061,7 @@
                     { name: 'CTO Bot', icon: '💻', role: '技术架构' },
                     { name: 'CMO Bot', icon: '📈', role: '市场增长' }
                 ],
-                greeting: '创业顾问团已就位！我们可以从战略、技术、市场等多角度为你提供建议。'
+                greeting: '创业顾问团已就位！我们可以从战略、技术、市场等多角度为你提供建议。有什么创业问题想讨论呢？ 💡'
             },
             group2: {
                 name: '成长加速器',
@@ -841,7 +1071,7 @@
                     { name: '学习Bot', icon: '📚', role: '知识总结' },
                     { name: '健康Bot', icon: '🏃', role: '运动规划' }
                 ],
-                greeting: '成长加速器启动！工作、学习、健康三位一体，全方位助力你的成长。'
+                greeting: '成长加速器启动！工作、学习、健康三位一体，全方位助力你的成长。准备好开始了吗？ 🚀'
             }
         };
 
@@ -867,7 +1097,13 @@
                         <div class="message bot">
                             <div class="message-avatar">${data.icon}</div>
                             <div class="message-wrapper">
-                                <div class="message-content">${data.greeting}</div>
+                                <div class="message-content">
+                                    ${data.greeting}
+                                    <div class="message-actions">
+                                        <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
+                                        <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
+                                    </div>
+                                </div>
                                 <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
                             </div>
                         </div>
@@ -878,14 +1114,14 @@
                     chatAvatar.className = 'chat-avatar group';
                     chatAvatar.textContent = data.icon;
                     chatName.textContent = data.name;
-                    chatStatus.textContent = `${data.members.length}个Bot成员`;
-                    
+                    chatStatus.textContent = `${data.members.length}个Bot成员在线`;
+
                     // 显示成员
                     groupMembersHeader.style.display = 'flex';
                     groupMembersHeader.innerHTML = data.members.map(m => `
                         <div class="header-member-avatar" title="${m.name} - ${m.role}">${m.icon}</div>
                     `).join('');
-                    
+
                     mentionBtn.style.display = 'flex';
 
                     messages.innerHTML = `
@@ -901,6 +1137,13 @@
             });
         });
 
+        // 反馈按钮交互
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('feedback-btn')) {
+                e.target.classList.toggle('active');
+            }
+        });
+
         // 发送消息
         const input = document.getElementById('input');
         const sendBtn = document.getElementById('sendBtn');
@@ -910,7 +1153,7 @@
             if (!text) return;
 
             const time = new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
-            
+
             const userMsg = `
                 <div class="message user">
                     <div class="message-avatar">👤</div>
@@ -926,50 +1169,78 @@
             input.style.height = 'auto';
             messages.scrollTop = messages.scrollHeight;
 
+            // 显示正在输入
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot';
+            typingIndicator.innerHTML = `
+                <div class="message-avatar"></div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            messages.insertAdjacentElement('beforeend', typingIndicator);
+            messages.scrollTop = messages.scrollHeight;
+
             // 模拟群聊多Bot回复
             const activeCard = document.querySelector('.group-card.active');
             if (activeCard) {
                 const groupId = activeCard.dataset.id;
                 const group = groupsData[groupId];
-                
+
                 // 随机2个Bot回复
                 const respondingBots = group.members.slice(0, 2);
-                
+
                 respondingBots.forEach((bot, index) => {
                     setTimeout(() => {
+                        typingIndicator.remove();
                         const botMsg = `
                             <div class="message bot">
                                 <div class="message-avatar">${bot.icon}</div>
                                 <div class="message-wrapper">
                                     <div class="bot-name-tag">${bot.name}</div>
-                                    <div class="message-content">这是${bot.name}的回复。在实际应用中会调用AI生成针对性的回答。</div>
+                                    <div class="message-content">
+                                        这是${bot.name}的回复。在实际应用中会调用AI生成针对性的回答 🌟
+                                        <div class="message-actions">
+                                            <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
+                                            <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
+                                        </div>
+                                    </div>
                                     <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
                                 </div>
                             </div>
                         `;
                         messages.insertAdjacentHTML('beforeend', botMsg);
                         messages.scrollTop = messages.scrollHeight;
-                    }, 1000 + index * 1500);
+                    }, 1200 + index * 1800);
                 });
             } else {
                 // 单Bot回复
                 setTimeout(() => {
+                    typingIndicator.remove();
                     const activeScene = document.querySelector('.scene-card.active');
                     const sceneId = activeScene.dataset.id;
                     const scene = scenesData[sceneId];
-                    
+
                     const botMsg = `
                         <div class="message bot">
                             <div class="message-avatar">${scene.icon}</div>
                             <div class="message-wrapper">
-                                <div class="message-content">这是模拟回复。实际应用中会调用AI接口。</div>
+                                <div class="message-content">
+                                    这是模拟回复。在实际应用中会调用AI接口，给你更贴心的回答 💜
+                                    <div class="message-actions">
+                                        <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
+                                        <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
+                                    </div>
+                                </div>
                                 <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
                             </div>
                         </div>
                     `;
                     messages.insertAdjacentHTML('beforeend', botMsg);
                     messages.scrollTop = messages.scrollHeight;
-                }, 1000);
+                }, 1200);
             }
         }
 
@@ -984,17 +1255,24 @@
         // 自动调整高度
         input.addEventListener('input', function() {
             this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            this.style.height = Math.min(this.scrollHeight, 140) + 'px';
         });
 
         // SOP按钮
         document.getElementById('sopBtn').addEventListener('click', () => {
-            alert('SOP工作流配置功能 - 可在后台管理界面配置定时任务');
+            alert('定时提醒功能 - 可在后台管理界面配置自动化工作流');
         });
 
         // @提及功能
         mentionBtn.addEventListener('click', () => {
-            alert('@提及功能 - 可以选择特定的Bot回复');
+            alert('@提及功能 - 可以选择特定的Bot来回复你的问题');
+        });
+
+        // 反馈按钮初始化（已有的按钮）
+        document.querySelectorAll('.feedback-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
         });
     </script>
 </body>
