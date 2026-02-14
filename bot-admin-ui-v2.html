@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot控制台 - 管理后台</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <title>Bot 控制台 - 管理中心</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,87 +12,152 @@
             box-sizing: border-box;
         }
 
+        /* ==============================
+           人文关怀风格 - 完整变量系统
+           ============================== */
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg-dark: #0f0f14;
-            --bg-card: #1a1a24;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
+            /* 温暖色板 */
+            --color-bg: #FAF9F6;
+            --color-surface: #FFFFFF;
+            --color-surface-soft: #F8F6F2;
+
+            /* 主色调 */
+            --color-primary: #9B8BF5;
+            --color-primary-light: #B8A5E8;
+            --color-primary-dark: #7C6FCC;
+
+            /* 辅助色 */
+            --color-secondary: #90EE90;
+            --color-accent: #FFB6C1;
+            --color-warning: #FFD966;
+            --color-danger: #FF9999;
+
+            /* 场景色 */
+            --work-primary: #9B8BF5;
+            --work-bg: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);
+            --life-primary: #90EE90;
+            --life-bg: linear-gradient(135deg, #E8FFE8 0%, #F0FFF0 100%);
+            --love-primary: #FFB6C1;
+            --love-bg: linear-gradient(135deg, #FFE8EC 0%, #FFF0F3 100%);
+            --group-bg: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);
+            --sop-bg: linear-gradient(135deg, #FFF4D6 0%, #FFF9E6 100%);
+
+            /* 文字颜色 */
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --text-muted: #A0AEC0;
+
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            /* 间距 */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* 动画 */
+            --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --duration-fast: 150ms;
+            --duration-normal: 300ms;
+
+            /* 阴影 */
+            --shadow-sm: 0 2px 8px rgba(148, 163, 184, 0.1);
+            --shadow-md: 0 4px 16px rgba(148, 163, 184, 0.12);
+            --shadow-lg: 0 8px 28px rgba(148, 163, 184, 0.15);
+            --shadow-soft: 8px 8px 16px rgba(163, 177, 198, 0.1),
+                           -8px -8px 16px rgba(255, 255, 255, 0.8);
         }
 
         body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background: var(--bg-dark);
+            font-family: 'Nunito Sans', sans-serif;
+            background: var(--color-bg);
+            background-image: radial-gradient(circle at 20% 50%, rgba(155, 139, 245, 0.06) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 80%, rgba(255, 182, 193, 0.06) 0%, transparent 50%);
             color: var(--text-primary);
             line-height: 1.6;
+            min-height: 100vh;
         }
 
-        body::before {
-            content: '';
+        /* 呼吸光环 */
+        .breathing-glow {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
+            top: 50%;
+            left: 50%;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(155, 139, 245, 0.08) 0%, transparent 70%);
+            animation: breathe 10s ease-in-out infinite;
             pointer-events: none;
+            transform: translate(-50%, -50%);
             z-index: 0;
+        }
+
+        @keyframes breathe {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.8;
+            }
         }
 
         .container {
             position: relative;
             z-index: 1;
             display: flex;
-            height: 100vh;
+            min-height: 100vh;
         }
 
-        /* 侧边栏 */
+        /* ==================== 侧边栏 ==================== */
         .sidebar {
-            width: 260px;
-            background: var(--bg-card);
-            border-right: 1px solid var(--border);
+            width: 280px;
+            background: var(--color-surface);
+            border-right: 1px solid rgba(0, 0, 0, 0.04);
             display: flex;
             flex-direction: column;
-            padding: 24px 0;
+            padding: var(--space-lg) 0;
+            box-shadow: var(--shadow-sm);
         }
 
         .logo-section {
-            padding: 0 24px 24px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 24px;
+            padding: 0 var(--space-lg) var(--space-lg);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            margin-bottom: var(--space-lg);
         }
 
         .logo {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 22px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            font-family: 'Varela Round', sans-serif;
+            font-size: 26px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 4px;
+            margin-bottom: var(--space-xs);
         }
 
         .logo-subtitle {
-            font-size: 11px;
+            font-size: 13px;
             color: var(--text-secondary);
-            letter-spacing: 1px;
+            font-weight: 400;
         }
 
         .nav-menu {
             flex: 1;
-            padding: 0 12px;
+            padding: 0 var(--space-md);
+            overflow-y: auto;
         }
 
         .nav-section {
-            margin-bottom: 24px;
+            margin-bottom: var(--space-lg);
         }
 
         .nav-section-title {
@@ -100,31 +165,34 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 1px;
-            padding: 0 16px 8px;
+            padding: 0 var(--space-sm) var(--space-sm);
             font-weight: 600;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 11px 16px;
-            margin-bottom: 4px;
-            border-radius: 10px;
+            gap: var(--space-sm);
+            padding: 12px var(--space-sm);
+            margin-bottom: var(--space-xs);
+            border-radius: var(--radius-md);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all var(--duration-normal) var(--ease-smooth);
             color: var(--text-secondary);
             font-size: 14px;
+            font-weight: 500;
         }
 
         .nav-item:hover {
-            background: rgba(99, 102, 241, 0.1);
+            background: rgba(155, 139, 245, 0.06);
             color: var(--text-primary);
+            transform: translateX(2px);
         }
 
         .nav-item.active {
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--primary);
+            background: rgba(155, 139, 245, 0.12);
+            color: var(--color-primary);
+            font-weight: 600;
         }
 
         .nav-icon {
@@ -133,31 +201,32 @@
 
         .badge {
             margin-left: auto;
-            padding: 2px 8px;
-            border-radius: 10px;
+            padding: 2px 10px;
+            border-radius: var(--radius-sm);
             font-size: 11px;
-            font-weight: 700;
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--primary);
+            font-weight: 600;
+            background: rgba(155, 139, 245, 0.12);
+            color: var(--color-primary);
         }
 
         .user-section {
-            padding: 16px 24px;
-            border-top: 1px solid var(--border);
+            padding: var(--space-md) var(--space-lg);
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--space-sm);
         }
 
         .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 20px;
+            box-shadow: var(--shadow-sm);
         }
 
         .user-info h4 {
@@ -170,271 +239,240 @@
             color: var(--text-secondary);
         }
 
-        /* 主内容区 */
+        /* ==================== 主内容区 ==================== */
         .main-content {
             flex: 1;
             overflow-y: auto;
-            padding: 32px;
+            padding: var(--space-xl);
         }
 
         .page-header {
-            margin-bottom: 32px;
+            margin-bottom: var(--space-xl);
         }
 
         .page-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: var(--space-xs);
+            font-family: 'Varela Round', sans-serif;
         }
 
         .page-description {
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: 15px;
         }
 
-        /* 统计卡片 */
+        /* ==================== 统计卡片 ==================== */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-xl);
         }
 
         .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
+            background: linear-gradient(145deg, #ffffff, #f8f6f2);
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            transition: all var(--duration-normal) var(--ease-spring);
+            cursor: pointer;
         }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 12px 12px 24px rgba(163, 177, 198, 0.15),
+                        -12px -12px 24px rgba(255, 255, 255, 0.9);
         }
 
         .stat-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 14px;
+            margin-bottom: var(--space-md);
         }
 
         .stat-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 11px;
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 24px;
         }
 
-        .stat-icon.primary { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
-        .stat-icon.success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .stat-icon.warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .stat-icon.primary { background: rgba(155, 139, 245, 0.12); color: var(--color-primary); }
+        .stat-icon.success { background: rgba(144, 238, 144, 0.12); color: var(--color-secondary); }
+        .stat-icon.warning { background: rgba(255, 217, 102, 0.12); color: var(--color-warning); }
 
         .stat-trend {
             font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
             font-weight: 600;
         }
 
         .stat-trend.up {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
+            background: rgba(144, 238, 144, 0.15);
+            color: #6BCF7F;
         }
 
         .stat-value {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: var(--space-xs);
+            font-family: 'Varela Round', sans-serif;
         }
 
         .stat-label {
-            font-size: 13px;
+            font-size: 14px;
             color: var(--text-secondary);
         }
 
-        /* 页面部分 */
+        /* ==================== 页面部分 ==================== */
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: var(--space-lg);
         }
 
         .section-title {
-            font-size: 19px;
+            font-size: 22px;
             font-weight: 700;
+            font-family: 'Varela Round', sans-serif;
         }
 
         .btn {
             padding: 10px 20px;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             border: none;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Noto Sans SC', sans-serif;
+            transition: all var(--duration-normal) var(--ease-spring);
+            font-family: 'Nunito Sans', sans-serif;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: var(--space-sm);
         }
 
         .btn-primary {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
             color: white;
+            box-shadow: 0 4px 16px rgba(155, 139, 245, 0.3);
         }
 
         .btn-primary:hover {
-            background: var(--primary-dark);
             transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(155, 139, 245, 0.35);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--color-surface);
             color: var(--text-primary);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--color-surface-soft);
+            transform: translateY(-2px);
         }
 
-        /* Tab切换 */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 4px;
-            border-radius: 12px;
-            display: inline-flex;
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
         }
 
-        .tab {
-            padding: 10px 20px;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Noto Sans SC', sans-serif;
-        }
-
-        .tab.active {
-            background: rgba(99, 102, 241, 0.3);
-            color: var(--primary);
-        }
-
-        /* 内容区域 */
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Bot卡片 */
+        /* ==================== 项目卡片 ==================== */
         .items-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: var(--space-md);
         }
 
         .item-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            transition: all 0.3s;
+            background: linear-gradient(145deg, #ffffff, #f8f6f2);
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            transition: all var(--duration-normal) var(--ease-spring);
             cursor: pointer;
         }
 
         .item-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
-            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 12px 12px 24px rgba(163, 177, 198, 0.15),
+                        -12px -12px 24px rgba(255, 255, 255, 0.9);
         }
 
         .item-header {
             display: flex;
             align-items: flex-start;
-            gap: 14px;
-            margin-bottom: 14px;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
         }
 
         .item-avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 28px;
             flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
         }
 
-        .item-avatar.work { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .item-avatar.life { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-        .item-avatar.love { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-        .item-avatar.group { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
-        .item-avatar.sop { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+        .item-avatar.work { background: var(--work-bg); }
+        .item-avatar.life { background: var(--life-bg); }
+        .item-avatar.love { background: var(--love-bg); }
+        .item-avatar.group { background: var(--group-bg); }
+        .item-avatar.sop { background: var(--sop-bg); }
 
         .item-info {
             flex: 1;
         }
 
         .item-title {
-            font-size: 17px;
-            font-weight: 700;
-            margin-bottom: 4px;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: var(--space-xs);
+            font-family: 'Varela Round', sans-serif;
         }
 
         .item-subtitle {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            margin-bottom: var(--space-sm);
         }
 
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
             font-weight: 600;
         }
 
         .status-badge.online {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
+            background: rgba(144, 238, 144, 0.15);
+            color: #6BCF7F;
         }
 
         .status-badge.offline {
-            background: rgba(148, 163, 184, 0.2);
-            color: var(--text-secondary);
+            background: rgba(160, 174, 192, 0.15);
+            color: var(--text-muted);
         }
 
         .status-badge.active {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
+            background: rgba(144, 238, 144, 0.15);
+            color: #6BCF7F;
         }
 
         .status-dot {
@@ -442,66 +480,80 @@
             height: 6px;
             border-radius: 50%;
             background: currentColor;
+            animation: gentle-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 currentColor;
+            }
+            50% {
+                opacity: 0.7;
+                box-shadow: 0 0 0 4px transparent;
+            }
         }
 
         .item-description {
-            font-size: 13px;
+            font-size: 14px;
             color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: 14px;
+            line-height: 1.6;
+            margin-bottom: var(--space-md);
         }
 
-        /* SOP特定样式 */
+        /* ==================== SOP 特定样式 ==================== */
         .sop-schedule {
-            background: rgba(245, 158, 11, 0.1);
-            padding: 10px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            margin-bottom: 12px;
-            border-left: 3px solid var(--warning);
+            background: rgba(255, 217, 102, 0.1);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            margin-bottom: var(--space-md);
+            border-left: 3px solid var(--color-warning);
         }
 
         .sop-schedule strong {
-            color: var(--warning);
+            color: #D4A017;
         }
 
         .sop-steps {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            margin-bottom: 12px;
+            margin-bottom: var(--space-md);
+            line-height: 1.7;
         }
 
-        /* 群聊成员 */
+        /* ==================== 群聊成员 ==================== */
         .group-members {
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 12px;
+            margin-bottom: var(--space-md);
         }
 
         .member-avatar-small {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
+            width: 30px;
+            height: 30px;
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 14px;
-            border: 2px solid var(--bg-card);
+            border: 2px solid var(--color-surface);
+            box-shadow: var(--shadow-sm);
         }
 
         .member-count {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
-            margin-left: 4px;
+            margin-left: var(--space-xs);
         }
 
-        /* 统计数据 */
+        /* ==================== 统计数据 ==================== */
         .item-stats {
             display: flex;
-            gap: 20px;
-            padding-top: 14px;
-            border-top: 1px solid var(--border);
+            gap: var(--space-lg);
+            padding-top: var(--space-md);
+            border-top: 1px solid rgba(0, 0, 0, 0.04);
         }
 
         .item-stat {
@@ -509,44 +561,49 @@
         }
 
         .item-stat-value {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--color-primary);
+            font-family: 'Varela Round', sans-serif;
         }
 
         .item-stat-label {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
             margin-top: 2px;
         }
 
-        /* 操作按钮 */
+        /* ==================== 操作按钮 ==================== */
         .item-actions {
             display: flex;
-            gap: 8px;
-            margin-top: 14px;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
         }
 
-        .btn-small {
-            padding: 8px 14px;
-            font-size: 12px;
-        }
-
-        /* 执行记录 */
+        /* ==================== 执行记录 ==================== */
         .execution-log {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            margin-top: 24px;
+            background: linear-gradient(145deg, #ffffff, #f8f6f2);
+            box-shadow: var(--shadow-soft);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            margin-top: var(--space-lg);
         }
 
         .log-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--border);
+            gap: var(--space-md);
+            padding: var(--space-md) 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            transition: all var(--duration-fast);
+        }
+
+        .log-item:hover {
+            background: rgba(155, 139, 245, 0.03);
+            margin: 0 calc(-1 * var(--space-md));
+            padding-left: var(--space-md);
+            padding-right: var(--space-md);
+            border-radius: var(--radius-md);
         }
 
         .log-item:last-child {
@@ -554,13 +611,13 @@
         }
 
         .log-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 18px;
             flex-shrink: 0;
         }
 
@@ -569,40 +626,52 @@
         }
 
         .log-title {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .log-description {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
         }
 
         .log-time {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             white-space: nowrap;
         }
 
-        /* 滚动条 */
-        .main-content::-webkit-scrollbar {
-            width: 8px;
+        /* ==================== 滚动条 ==================== */
+        .main-content::-webkit-scrollbar,
+        .nav-menu::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .main-content::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+        .main-content::-webkit-scrollbar-track,
+        .nav-menu::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .main-content::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+        .main-content::-webkit-scrollbar-thumb,
+        .nav-menu::-webkit-scrollbar-thumb {
+            background: rgba(155, 139, 245, 0.2);
+            border-radius: 10px;
         }
 
-        /* 响应式 */
+        .main-content::-webkit-scrollbar-thumb:hover,
+        .nav-menu::-webkit-scrollbar-thumb:hover {
+            background: rgba(155, 139, 245, 0.3);
+        }
+
+        /* ==================== 响应式 ==================== */
         @media (max-width: 1024px) {
             .sidebar {
                 width: 240px;
+            }
+
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             }
         }
 
@@ -615,11 +684,11 @@
                 width: 100%;
                 height: auto;
                 border-right: none;
-                border-bottom: 1px solid var(--border);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.04);
             }
 
             .main-content {
-                padding: 20px;
+                padding: var(--space-md);
             }
 
             .stats-grid {
@@ -630,15 +699,46 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ==================== 暗色模式支持 ==================== */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-bg: #1A1924;
+                --color-surface: #242230;
+                --color-surface-soft: #2A2938;
+                --text-primary: #F7FAFC;
+                --text-secondary: #CBD5E0;
+                --text-muted: #718096;
+                --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+                --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+                --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.3);
+                --shadow-soft: 8px 8px 16px rgba(0, 0, 0, 0.2),
+                               -8px -8px 16px rgba(40, 40, 50, 0.5);
+            }
+
+            .stat-card,
+            .item-card,
+            .execution-log {
+                background: linear-gradient(145deg, #2A2938, #242230);
+            }
+
+            .btn-secondary {
+                background: #2A2938;
+                border-color: rgba(255, 255, 255, 0.08);
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- 呼吸光环 -->
+    <div class="breathing-glow"></div>
+
     <div class="container">
         <!-- 侧边栏 -->
         <div class="sidebar">
             <div class="logo-section">
-                <div class="logo">BOT CONTROL</div>
-                <div class="logo-subtitle">管理控制中心</div>
+                <div class="logo">Bot Agent</div>
+                <div class="logo-subtitle">管理中心</div>
             </div>
 
             <nav class="nav-menu">
@@ -654,12 +754,12 @@
                     <div class="nav-section-title">管理</div>
                     <div class="nav-item" data-page="bots">
                         <span class="nav-icon">🤖</span>
-                        <span>Bot管理</span>
+                        <span>Bot 管理</span>
                         <span class="badge">8</span>
                     </div>
                     <div class="nav-item" data-page="sop">
                         <span class="nav-icon">⏰</span>
-                        <span>SOP工作流</span>
+                        <span>提醒工作流</span>
                         <span class="badge">12</span>
                     </div>
                     <div class="nav-item" data-page="groups">
@@ -693,7 +793,7 @@
                     </div>
                     <div class="nav-item" data-page="api">
                         <span class="nav-icon">🔌</span>
-                        <span>API接口</span>
+                        <span>API 接口</span>
                     </div>
                     <div class="nav-item" data-page="settings">
                         <span class="nav-icon">⚙️</span>
@@ -717,7 +817,7 @@
             <div id="page-dashboard">
                 <div class="page-header">
                     <h1 class="page-title">仪表盘</h1>
-                    <p class="page-description">实时监控所有Bot、SOP和群聊的运行状态</p>
+                    <p class="page-description">实时监控所有 Bot、提醒和群聊的运行状态 🌟</p>
                 </div>
 
                 <!-- 统计卡片 -->
@@ -728,7 +828,7 @@
                             <div class="stat-trend up">↑ 12%</div>
                         </div>
                         <div class="stat-value">8</div>
-                        <div class="stat-label">活跃Bot数量</div>
+                        <div class="stat-label">活跃 Bot 数量</div>
                     </div>
 
                     <div class="stat-card">
@@ -737,7 +837,7 @@
                             <div class="stat-trend up">↑ 8%</div>
                         </div>
                         <div class="stat-value">12</div>
-                        <div class="stat-label">运行中的SOP</div>
+                        <div class="stat-label">运行中的提醒</div>
                     </div>
 
                     <div class="stat-card">
@@ -766,27 +866,27 @@
 
                 <div class="execution-log">
                     <div class="log-item">
-                        <div class="log-icon" style="background: rgba(16, 185, 129, 0.2); color: var(--success);">✓</div>
+                        <div class="log-icon" style="background: rgba(144, 238, 144, 0.15); color: var(--color-secondary);">✓</div>
                         <div class="log-content">
-                            <div class="log-title">SOP执行成功</div>
+                            <div class="log-title">提醒执行成功</div>
                             <div class="log-description">"每日工作启动流程" 已完成，发送了今日计划提醒</div>
                         </div>
                         <div class="log-time">8:00 AM</div>
                     </div>
 
                     <div class="log-item">
-                        <div class="log-icon" style="background: rgba(99, 102, 241, 0.2); color: var(--primary);">💬</div>
+                        <div class="log-icon" style="background: rgba(155, 139, 245, 0.15); color: var(--color-primary);">💬</div>
                         <div class="log-content">
                             <div class="log-title">群聊新消息</div>
-                            <div class="log-description">"创业顾问团" 中CEO Bot回复了战略建议</div>
+                            <div class="log-description">"创业顾问团" 中 CEO Bot 回复了战略建议</div>
                         </div>
                         <div class="log-time">15分钟前</div>
                     </div>
 
                     <div class="log-item">
-                        <div class="log-icon" style="background: rgba(245, 158, 11, 0.2); color: var(--warning);">⚠️</div>
+                        <div class="log-icon" style="background: rgba(255, 217, 102, 0.15); color: var(--color-warning);">⚠️</div>
                         <div class="log-content">
-                            <div class="log-title">API调用接近限额</div>
+                            <div class="log-title">API 调用接近限额</div>
                             <div class="log-description">当前已使用 87% 的月度配额</div>
                         </div>
                         <div class="log-time">1小时前</div>
@@ -794,18 +894,18 @@
                 </div>
             </div>
 
-            <!-- SOP工作流页面 -->
+            <!-- 提醒工作流页面 -->
             <div id="page-sop" style="display: none;">
                 <div class="page-header">
-                    <h1 class="page-title">SOP工作流管理</h1>
-                    <p class="page-description">配置定时任务和自动化工作流</p>
+                    <h1 class="page-title">提醒工作流管理</h1>
+                    <p class="page-description">配置定时任务和自动化工作流 ⏰</p>
                 </div>
 
                 <div class="section-header">
                     <h2 class="section-title">我的工作流</h2>
                     <button class="btn btn-primary">
                         <span>➕</span>
-                        <span>创建新SOP</span>
+                        <span>创建新提醒</span>
                     </button>
                 </div>
 
@@ -815,14 +915,14 @@
                             <div class="item-avatar sop">⏰</div>
                             <div class="item-info">
                                 <h3 class="item-title">每日工作启动流程</h3>
-                                <p class="item-subtitle">工作助手 · 定时触发</p>
+                                <p class="item-subtitle">工作伙伴 · 定时触发</p>
                                 <span class="status-badge active">
                                     <span class="status-dot"></span>
                                     运行中
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div class="sop-schedule">
                             <strong>⏰ 执行时间：</strong>每天 08:00 (Asia/Shanghai)
                         </div>
@@ -861,14 +961,14 @@
                             <div class="item-avatar sop">⏰</div>
                             <div class="item-info">
                                 <h3 class="item-title">午餐推荐提醒</h3>
-                                <p class="item-subtitle">生活顾问 · 定时触发</p>
+                                <p class="item-subtitle">生活小助手 · 定时触发</p>
                                 <span class="status-badge active">
                                     <span class="status-dot"></span>
                                     运行中
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div class="sop-schedule">
                             <strong>⏰ 执行时间：</strong>每天 11:30 (Asia/Shanghai)
                         </div>
@@ -907,14 +1007,14 @@
                             <div class="item-avatar sop">⏰</div>
                             <div class="item-info">
                                 <h3 class="item-title">每周工作总结</h3>
-                                <p class="item-subtitle">工作助手 · 定时触发</p>
+                                <p class="item-subtitle">工作伙伴 · 定时触发</p>
                                 <span class="status-badge active">
                                     <span class="status-dot"></span>
                                     运行中
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div class="sop-schedule">
                             <strong>⏰ 执行时间：</strong>每周五 17:00 (Asia/Shanghai)
                         </div>
@@ -953,14 +1053,14 @@
                             <div class="item-avatar sop">⏰</div>
                             <div class="item-info">
                                 <h3 class="item-title">晚安关怀提醒</h3>
-                                <p class="item-subtitle">情感导师 · 定时触发</p>
+                                <p class="item-subtitle">心灵朋友 · 定时触发</p>
                                 <span class="status-badge offline">
                                     <span class="status-dot"></span>
                                     已暂停
                                 </span>
                             </div>
                         </div>
-                        
+
                         <div class="sop-schedule">
                             <strong>⏰ 执行时间：</strong>每天 21:00 (Asia/Shanghai)
                         </div>
@@ -1000,7 +1100,7 @@
             <div id="page-groups" style="display: none;">
                 <div class="page-header">
                     <h1 class="page-title">群聊管理</h1>
-                    <p class="page-description">管理多Bot协作群组</p>
+                    <p class="page-description">管理多 Bot 协作群组 👥</p>
                 </div>
 
                 <div class="section-header">
@@ -1026,14 +1126,14 @@
                         </div>
 
                         <p class="item-description">
-                            CEO、CTO、CMO三位专家Bot协同，提供全方位创业建议
+                            CEO、CTO、CMO 三位专家 Bot 协同，提供全方位创业建议
                         </p>
 
                         <div class="group-members">
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💻</div>
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">📈</div>
-                            <span class="member-count">3个成员</span>
+                            <div class="member-avatar-small" style="background: var(--work-bg);">💼</div>
+                            <div class="member-avatar-small" style="background: var(--life-bg);">💻</div>
+                            <div class="member-avatar-small" style="background: var(--love-bg);">📈</div>
+                            <span class="member-count">3 个成员</span>
                         </div>
 
                         <div class="item-stats">
@@ -1063,7 +1163,7 @@
                             <div class="item-avatar group">💪</div>
                             <div class="item-info">
                                 <h3 class="item-title">成长加速器</h3>
-                                <p class="item-subtitle">个人发展 · AI智能路由</p>
+                                <p class="item-subtitle">个人发展 · AI 智能路由</p>
                                 <span class="status-badge online">
                                     <span class="status-dot"></span>
                                     活跃中
@@ -1072,14 +1172,14 @@
                         </div>
 
                         <p class="item-description">
-                            工作、学习、健康三大领域Bot协作，全方位助力个人成长
+                            工作、学习、健康三大领域 Bot 协作，全方位助力个人成长
                         </p>
 
                         <div class="group-members">
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💼</div>
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">📚</div>
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">🏃</div>
-                            <span class="member-count">3个成员</span>
+                            <div class="member-avatar-small" style="background: var(--work-bg);">💼</div>
+                            <div class="member-avatar-small" style="background: var(--life-bg);">📚</div>
+                            <div class="member-avatar-small" style="background: var(--love-bg);">🏃</div>
+                            <span class="member-count">3 个成员</span>
                         </div>
 
                         <div class="item-stats">
@@ -1118,14 +1218,14 @@
                         </div>
 
                         <p class="item-description">
-                            文案、设计、策划Bot联动，打造一站式创意生产流水线
+                            文案、设计、策划 Bot 联动，打造一站式创意生产流水线
                         </p>
 
                         <div class="group-members">
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">✍️</div>
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">🎨</div>
-                            <div class="member-avatar-small" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">💡</div>
-                            <span class="member-count">3个成员</span>
+                            <div class="member-avatar-small" style="background: var(--work-bg);">✍️</div>
+                            <div class="member-avatar-small" style="background: var(--life-bg);">🎨</div>
+                            <div class="member-avatar-small" style="background: var(--love-bg);">💡</div>
+                            <span class="member-count">3 个成员</span>
                         </div>
 
                         <div class="item-stats">
@@ -1166,7 +1266,7 @@
         navItems.forEach(item => {
             item.addEventListener('click', () => {
                 const page = item.dataset.page;
-                
+
                 // 更新导航
                 navItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
@@ -1175,7 +1275,7 @@
                 Object.values(pages).forEach(p => {
                     if (p) p.style.display = 'none';
                 });
-                
+
                 if (pages[page]) {
                     pages[page].style.display = 'block';
                 }
