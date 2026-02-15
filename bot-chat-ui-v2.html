@@ -196,6 +196,146 @@
             gap: var(--space-sm);
         }
 
+        /* ==================== Bot分组 ==================== */
+        .bot-group {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--space-sm);
+            overflow: hidden;
+            transition: all var(--duration-normal);
+        }
+
+        .bot-group-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .bot-group-header:hover {
+            background: var(--color-surface-soft);
+        }
+
+        .bot-group-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .bot-group-info {
+            flex: 1;
+        }
+
+        .bot-group-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .bot-group-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .bot-group-collapse {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all var(--duration-fast);
+        }
+
+        .bot-group.collapsed .bot-group-collapse {
+            transform: rotate(-90deg);
+        }
+
+        .bot-group-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height var(--duration-normal);
+        }
+
+        .bot-group.collapsed .bot-group-content {
+            max-height: 0;
+        }
+
+        .conversation-list {
+            padding: var(--space-sm);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--duration-fast);
+        }
+
+        .conversation-item:hover {
+            background: var(--color-surface-soft);
+        }
+
+        .conversation-item.active {
+            background: rgba(155, 139, 245, 0.1);
+        }
+
+        .conversation-icon {
+            font-size: 16px;
+        }
+
+        .conversation-info {
+            flex: 1;
+        }
+
+        .conversation-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .conversation-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .new-topic-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            border: 1px dashed rgba(155, 139, 245, 0.4);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--color-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: var(--space-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .new-topic-btn:hover {
+            background: rgba(155, 139, 245, 0.05);
+            border-color: var(--color-primary);
+        }
+
         .scene-card, .group-card {
             position: relative;
             padding: var(--space-md);
@@ -357,6 +497,369 @@
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-md);
             overflow: hidden;
+        }
+
+        /* ==================== Tab导航系统 ==================== */
+        .content-tabs {
+            display: flex;
+            gap: var(--space-sm);
+            background: var(--color-surface-soft);
+            padding: var(--space-sm);
+            border-radius: var(--radius-lg);
+            margin: var(--space-lg) var(--space-xl) 0;
+        }
+
+        .content-tab-btn {
+            flex: 1;
+            padding: 12px var(--space-md);
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--duration-normal) var(--ease-spring);
+            font-family: 'Nunito Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+        }
+
+        .content-tab-btn:hover {
+            background: rgba(155, 139, 245, 0.08);
+            color: var(--color-primary);
+        }
+
+        .content-tab-btn.active {
+            background: var(--color-surface);
+            color: var(--color-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .content-panel {
+            flex: 1;
+            display: none;
+            overflow-y: auto;
+        }
+
+        .content-panel.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ==================== 记忆面板 ==================== */
+        .memory-container {
+            padding: var(--space-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .memory-section-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .memory-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .key-points-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .key-point-item {
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFF4D6 100%);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+            transition: all var(--duration-normal);
+        }
+
+        .key-point-item:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .key-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .key-point-content {
+            flex: 1;
+            color: #D4A017;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .context-memory-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .context-memory-item {
+            background: var(--color-surface-soft);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-sm);
+        }
+
+        .context-memory-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--work-bg);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .context-memory-content {
+            flex: 1;
+        }
+
+        .context-memory-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .context-memory-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* ==================== 知识库面板 ==================== */
+        .knowledge-container {
+            padding: var(--space-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(155, 139, 245, 0.4);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--duration-normal);
+            background: var(--color-surface-soft);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--color-primary);
+            background: rgba(155, 139, 245, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-zone-icon {
+            font-size: 48px;
+            margin-bottom: var(--space-md);
+        }
+
+        .upload-zone-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .upload-zone-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .file-item {
+            background: var(--color-surface);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            transition: all var(--duration-normal);
+        }
+
+        .file-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(4px);
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--color-surface-soft);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .file-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .delete-file-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            transition: all var(--duration-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-file-btn:hover {
+            background: #fee;
+            color: var(--color-danger);
+        }
+
+        /* ==================== 设置面板 ==================== */
+        .settings-container {
+            padding: var(--space-xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .settings-section {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .settings-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-md);
+        }
+
+        .settings-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .edit-prompt-btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(155, 139, 245, 0.3);
+            background: transparent;
+            color: var(--color-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--duration-fast);
+        }
+
+        .edit-prompt-btn:hover {
+            background: rgba(155, 139, 245, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .prompt-display {
+            background: var(--color-surface-soft);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.8;
+            min-height: 100px;
+        }
+
+        .prompt-editor {
+            width: 100%;
+            min-height: 120px;
+            padding: var(--space-md);
+            border-radius: var(--radius-md);
+            border: 2px solid rgba(155, 139, 245, 0.3);
+            background: var(--color-surface);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Nunito Sans', sans-serif;
+            resize: vertical;
+            outline: none;
+            transition: all var(--duration-normal);
+        }
+
+        .prompt-editor:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 4px rgba(155, 139, 245, 0.1);
+        }
+
+        .save-prompt-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--duration-normal);
+            margin-top: var(--space-sm);
+        }
+
+        .save-prompt-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(155, 139, 245, 0.3);
         }
 
         .chat-header {
@@ -868,36 +1371,96 @@
 
             <!-- 场景列表 -->
             <div class="list-container" id="scenesList">
-                <div class="scene-card work active" data-type="scene" data-id="work">
-                    <div class="card-header">
-                        <span class="card-icon">💼</span>
-                        <div class="card-info">
-                            <div class="card-name">你的工作伙伴</div>
-                            <div class="card-desc">效率管理 · 任务规划</div>
+                <!-- 工作伙伴Bot分组 -->
+                <div class="bot-group" id="workBotGroup">
+                    <div class="bot-group-header" onclick="toggleBotGroup('workBotGroup')">
+                        <div class="bot-group-avatar" style="background: var(--work-bg);">💼</div>
+                        <div class="bot-group-info">
+                            <div class="bot-group-name">你的工作伙伴</div>
+                            <div class="bot-group-meta">工作场景 · 3个对话</div>
                         </div>
-                        <div class="status-dot"></div>
+                        <div class="bot-group-collapse">▼</div>
+                    </div>
+                    <div class="bot-group-content">
+                        <div class="conversation-list">
+                            <div class="conversation-item active" data-bot="work" data-topic="project">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">项目管理</div>
+                                    <div class="conversation-meta">24条消息 · 2小时前</div>
+                                </div>
+                            </div>
+                            <div class="conversation-item" data-bot="work" data-topic="meeting">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">会议纪要</div>
+                                    <div class="conversation-meta">15条消息 · 昨天</div>
+                                </div>
+                            </div>
+                            <div class="conversation-item" data-bot="work" data-topic="fitness">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">健身计划</div>
+                                    <div class="conversation-meta">32条消息 · 3小时前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="new-topic-btn" onclick="addNewTopic('work')">➕ 新建话题</button>
                     </div>
                 </div>
 
-                <div class="scene-card life" data-type="scene" data-id="life">
-                    <div class="card-header">
-                        <span class="card-icon">🌿</span>
-                        <div class="card-info">
-                            <div class="card-name">生活小助手</div>
-                            <div class="card-desc">健康建议 · 生活指南</div>
+                <!-- 生活小助手Bot分组 -->
+                <div class="bot-group" id="lifeBotGroup">
+                    <div class="bot-group-header" onclick="toggleBotGroup('lifeBotGroup')">
+                        <div class="bot-group-avatar" style="background: var(--life-bg);">🌿</div>
+                        <div class="bot-group-info">
+                            <div class="bot-group-name">生活小助手</div>
+                            <div class="bot-group-meta">生活场景 · 2个对话</div>
                         </div>
-                        <div class="status-dot"></div>
+                        <div class="bot-group-collapse">▼</div>
+                    </div>
+                    <div class="bot-group-content">
+                        <div class="conversation-list">
+                            <div class="conversation-item" data-bot="life" data-topic="diet">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">饮食建议</div>
+                                    <div class="conversation-meta">18条消息 · 1小时前</div>
+                                </div>
+                            </div>
+                            <div class="conversation-item" data-bot="life" data-topic="health">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">健康检查</div>
+                                    <div class="conversation-meta">8条消息 · 2天前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="new-topic-btn" onclick="addNewTopic('life')">➕ 新建话题</button>
                     </div>
                 </div>
 
-                <div class="scene-card love" data-type="scene" data-id="love">
-                    <div class="card-header">
-                        <span class="card-icon">💜</span>
-                        <div class="card-info">
-                            <div class="card-name">心灵朋友</div>
-                            <div class="card-desc">情感陪伴 · 关系建议</div>
+                <!-- 心灵朋友Bot分组 -->
+                <div class="bot-group" id="loveBotGroup">
+                    <div class="bot-group-header" onclick="toggleBotGroup('loveBotGroup')">
+                        <div class="bot-group-avatar" style="background: var(--love-bg);">💜</div>
+                        <div class="bot-group-info">
+                            <div class="bot-group-name">心灵朋友</div>
+                            <div class="bot-group-meta">情感场景 · 1个对话</div>
                         </div>
-                        <div class="status-dot"></div>
+                        <div class="bot-group-collapse">▼</div>
+                    </div>
+                    <div class="bot-group-content">
+                        <div class="conversation-list">
+                            <div class="conversation-item" data-bot="love" data-topic="relationship">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">关系建议</div>
+                                    <div class="conversation-meta">42条消息 · 30分钟前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="new-topic-btn" onclick="addNewTopic('love')">➕ 新建话题</button>
                     </div>
                 </div>
             </div>
@@ -963,7 +1526,17 @@
                 </div>
             </div>
 
-            <div class="chat-messages" id="messages">
+            <!-- Tab导航系统 -->
+            <div class="content-tabs">
+                <button class="content-tab-btn active" data-tab="chat">💬 对话</button>
+                <button class="content-tab-btn" data-tab="memory">🧠 记忆</button>
+                <button class="content-tab-btn" data-tab="knowledge">📚 知识库</button>
+                <button class="content-tab-btn" data-tab="settings">⚙️ 设置</button>
+            </div>
+
+            <!-- 对话内容面板 -->
+            <div class="content-panel active" id="chatPanel">
+                <div class="chat-messages" id="messages">
                 <!-- 定时提醒示例 -->
                 <div class="message schedule">
                     <div class="message-content">
@@ -997,10 +1570,235 @@
                 </div>
                 <button class="send-btn" id="sendBtn">发送 ✨</button>
             </div>
+            </div>
+
+            <!-- 记忆内容面板 -->
+            <div class="content-panel" id="memoryPanel">
+                <div class="memory-container">
+                    <div class="memory-section-card">
+                        <div class="memory-section-title">
+                            <span>📌</span>
+                            <span>关键要点</span>
+                        </div>
+                        <div class="key-points-list" id="keyPointsList">
+                            <div class="key-point-item">
+                                <span class="key-point-icon">🎯</span>
+                                <div class="key-point-content">每周运动4次</div>
+                            </div>
+                            <div class="key-point-item">
+                                <span class="key-point-icon">🎯</span>
+                                <div class="key-point-content">目标减重5kg</div>
+                            </div>
+                            <div class="key-point-item">
+                                <span class="key-point-icon">🎯</span>
+                                <div class="key-point-content">偏好有氧运动</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="memory-section-card">
+                        <div class="memory-section-title">
+                            <span>📝</span>
+                            <span>上下文记忆</span>
+                        </div>
+                        <div class="context-memory-list" id="contextMemoryList">
+                            <div class="context-memory-item">
+                                <div class="context-memory-icon">🕐</div>
+                                <div class="context-memory-content">
+                                    <div class="context-memory-title">上下文记忆</div>
+                                    <div class="context-memory-text">跟踪了30天的运动数据，了解用户的体能水平和偏好</div>
+                                </div>
+                            </div>
+                            <div class="context-memory-item">
+                                <div class="context-memory-icon">💪</div>
+                                <div class="context-memory-content">
+                                    <div class="context-memory-title">健身目标</div>
+                                    <div class="context-memory-text">用户希望在3个月内完成半程马拉松训练</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 知识库内容面板 -->
+            <div class="content-panel" id="knowledgePanel">
+                <div class="knowledge-container">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-zone-icon">📤</div>
+                        <div class="upload-zone-title">点击上传文件</div>
+                        <div class="upload-zone-desc">支持 PDF, Word, Excel, TXT 等格式</div>
+                    </div>
+
+                    <div class="file-list" id="fileList">
+                        <div class="file-item">
+                            <div class="file-icon">📄</div>
+                            <div class="file-info">
+                                <div class="file-name">健身记录.csv</div>
+                                <div class="file-meta">234KB · 添加于 2024-01-15</div>
+                            </div>
+                            <button class="delete-file-btn" title="删除文件">🗑</button>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">📄</div>
+                            <div class="file-info">
+                                <div class="file-name">营养指南.pdf</div>
+                                <div class="file-meta">1.8MB · 添加于 2024-01-10</div>
+                            </div>
+                            <button class="delete-file-btn" title="删除文件">🗑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置内容面板 -->
+            <div class="content-panel" id="settingsPanel">
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <div class="settings-section-title">
+                                <span>⚙️</span>
+                                <span>系统提示词</span>
+                            </div>
+                            <button class="edit-prompt-btn" id="editPromptBtn">✏️ 编辑</button>
+                        </div>
+                        <div class="prompt-display" id="promptDisplay">
+                            你是一个贴心的生活顾问，关注健康、运动、饮食和日常生活的方方面面。你会提供实用的建议，帮助用户建立健康的生活习惯。
+                        </div>
+                        <div id="promptEditorContainer" style="display: none;">
+                            <textarea class="prompt-editor" id="promptEditor">你是一个贴心的生活顾问，关注健康、运动、饮食和日常生活的方方面面。你会提供实用的建议，帮助用户建立健康的生活习惯。</textarea>
+                            <button class="save-prompt-btn" id="savePromptBtn">保存提示词</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        // ==================== Tab导航切换 ====================
+        const contentTabBtns = document.querySelectorAll('.content-tab-btn');
+        const contentPanels = document.querySelectorAll('.content-panel');
+
+        contentTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+
+                // 更新按钮状态
+                contentTabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // 切换面板显示
+                contentPanels.forEach(panel => {
+                    panel.classList.remove('active');
+                    if (panel.id === `${tab}Panel`) {
+                        panel.classList.add('active');
+                    }
+                });
+            });
+        });
+
+        // ==================== 提示词编辑功能 ====================
+        const editPromptBtn = document.getElementById('editPromptBtn');
+        const promptDisplay = document.getElementById('promptDisplay');
+        const promptEditorContainer = document.getElementById('promptEditorContainer');
+        const promptEditor = document.getElementById('promptEditor');
+        const savePromptBtn = document.getElementById('savePromptBtn');
+
+        editPromptBtn.addEventListener('click', () => {
+            promptDisplay.style.display = 'none';
+            promptEditorContainer.style.display = 'block';
+            editPromptBtn.style.display = 'none';
+        });
+
+        savePromptBtn.addEventListener('click', () => {
+            promptDisplay.textContent = promptEditor.value;
+            promptDisplay.style.display = 'block';
+            promptEditorContainer.style.display = 'none';
+            editPromptBtn.style.display = 'block';
+        });
+
+        // ==================== 文件上传功能 ====================
+        const uploadZone = document.getElementById('uploadZone');
+        const fileList = document.getElementById('fileList');
+
+        uploadZone.addEventListener('click', () => {
+            alert('文件上传功能 - 在实际应用中会打开文件选择器');
+        });
+
+        // 文件删除功能
+        fileList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-file-btn')) {
+                const fileItem = e.target.closest('.file-item');
+                if (confirm('确定要删除这个文件吗？')) {
+                    fileItem.remove();
+                }
+            }
+        });
+
+        // ==================== 原有的Tab切换逻辑 ====================
+        // Bot分组展开/折叠
+        function toggleBotGroup(groupId) {
+            const group = document.getElementById(groupId);
+            group.classList.toggle('collapsed');
+        }
+
+        // 新建话题
+        function addNewTopic(botType) {
+            const topicTitle = prompt('请输入新话题名称：');
+            if (topicTitle) {
+                alert(`创建新话题 "${topicTitle}" 用于 ${botType} Bot`);
+                // 在实际应用中会添加到数据结构并重新渲染
+            }
+        }
+
+        // 对话项点击事件
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const botType = item.dataset.bot;
+                const topic = item.dataset.topic;
+                const title = item.querySelector('.conversation-title').textContent;
+
+                // 更新聊天区域标题
+                const chatName = document.getElementById('chatName');
+                const chatStatus = document.getElementById('chatStatus');
+                const chatAvatar = document.getElementById('chatAvatar');
+
+                const botNames = {
+                    work: { name: '你的工作伙伴', icon: '💼', status: '我就在这里，随时陪你聊天 💜' },
+                    life: { name: '生活小助手', icon: '🌿', status: '随时待命，为你服务 🌸' },
+                    love: { name: '心灵朋友', icon: '💜', status: '用心陪伴，温暖你的一天 🤗' }
+                };
+
+                const bot = botNames[botType];
+                chatName.textContent = title;
+                chatStatus.textContent = bot.status;
+                chatAvatar.textContent = bot.icon;
+                chatAvatar.className = `chat-avatar ${botType}`;
+
+                // 清空消息并显示欢迎消息
+                const messages = document.getElementById('messages');
+                messages.innerHTML = `
+                    <div class="message bot">
+                        <div class="message-avatar">${bot.icon}</div>
+                        <div class="message-wrapper">
+                            <div class="message-content">
+                                你好！我是${bot.name}。我们现在讨论"${title}"这个话题。有什么想了解的呢？💭
+                                <div class="message-actions">
+                                    <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
+                                    <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
+                                </div>
+                            </div>
+                            <div class="message-time">${new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
         // Tab切换
         const tabBtns = document.querySelectorAll('.tab-btn');
         const scenesList = document.getElementById('scenesList');
