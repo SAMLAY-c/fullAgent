@@ -1,0 +1,2287 @@
+openapi: 3.0.3
+info:
+  title: Bot Agent API
+  description: |
+    Bot Agent 多场景AI助手协作平台 - 后端API接口文档
+
+    ## 功能概述
+    - **Bot管理**: 创建、配置、管理多个场景化的AI助手
+    - **SOP工作流**: 定时任务、自动化工作流编排
+    - **群聊协作**: 多Bot协同对话，智能消息路由
+    - **记忆管理**: Bot上下文记忆存储
+    - **数据分析**: 对话统计、性能分析
+
+    ## 认证方式
+    API使用Bearer Token认证，请在请求头中添加:
+    ```
+    Authorization: Bearer {your_token}
+    ```
+  version: 1.0.0
+  contact:
+    name: Bot Agent Team
+    email: support@botagent.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: 本地开发环境
+  - url: https://api.botagent.com/api
+    description: 生产环境
+
+tags:
+  - name: Auth
+    description: 认证与会话管理
+  - name: Dashboard
+    description: 仪表盘数据
+  - name: Bots
+    description: Bot管理
+  - name: Workflows
+    description: SOP工作流管理
+  - name: Groups
+    description: 群聊管理
+  - name: Memories
+    description: 记忆管理
+  - name: Knowledge
+    description: 知识库管理
+  - name: Analytics
+    description: 数据分析
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: 用户登录
+      description: 使用账号密码登录并获取访问令牌
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: 刷新访问令牌
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: 获取当前用户信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功返回当前用户信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: 退出登录
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: 退出成功
+
+  /dashboard/stats:
+    get:
+      tags:
+        - Dashboard
+      summary: 获取仪表盘统计数据
+      description: 获取系统关键指标，包括活跃Bot数、运行中的工作流、活跃群聊数、今日对话次数
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功返回统计数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+              example:
+                active_bots: 8
+                running_workflows: 12
+                active_groups: 5
+                today_conversations: 156
+
+  /dashboard/activities:
+    get:
+      tags:
+        - Dashboard
+      summary: 获取最近活动记录
+      description: 获取系统最近的活动日志，包括工作流执行、新消息、警告等
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: 返回记录数量
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 成功返回活动记录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Activity'
+              example:
+                activities:
+                  - execution_id: exec_001
+                    title: 工作流执行成功
+                    description: 每日工作启动流程 已完成
+                    type: success
+                    icon: ✓
+                    time: 8:00 AM
+                    timestamp: 2024-01-15T08:00:00Z
+
+  /bots:
+    get:
+      tags:
+        - Bots
+      summary: 获取Bot列表
+      description: 获取当前用户的所有Bot，支持按类型和状态筛选
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          description: 按类型筛选 (work/life/love/group/sop)
+          schema:
+            type: string
+            enum: [work, life, love, group, sop]
+        - name: status
+          in: query
+          description: 按状态筛选 (online/offline/suspended)
+          schema:
+            type: string
+            enum: [online, offline, suspended]
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 成功返回Bot列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Bot'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  page_size:
+                    type: integer
+    post:
+      tags:
+        - Bots
+      summary: 创建新Bot
+      description: 创建一个新的Bot实例
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BotCreateRequest'
+            example:
+              name: 写作助手
+              avatar: ✍️
+              type: work
+              scene: work
+              description: 专业的写作辅助AI助手
+              config:
+                model: gpt-4
+                temperature: 0.7
+                max_tokens: 2000
+      responses:
+        '201':
+          description: Bot创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bot'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /bots/{bot_id}:
+    get:
+      tags:
+        - Bots
+      summary: 获取Bot详情
+      description: 获取指定Bot的完整信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+      responses:
+        '200':
+          description: 成功返回Bot详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bot'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Bots
+      summary: 更新Bot信息
+      description: 更新Bot的基本信息和配置
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BotUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bot'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Bots
+      summary: 删除Bot
+      description: 删除指定的Bot及其相关数据
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+      responses:
+        '204':
+          description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /bots/{bot_id}/status:
+    put:
+      tags:
+        - Bots
+      summary: 更新Bot状态
+      description: 启用/禁用/暂停Bot
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [online, offline, suspended]
+                  description: online=在线, offline=离线, suspended=暂停
+            example:
+              status: online
+      responses:
+        '200':
+          description: 状态更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bot'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /bots/{bot_id}/conversations:
+    get:
+      tags:
+        - Bots
+      summary: 获取Bot对话历史
+      description: 获取指定Bot的对话记录
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BotId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          description: 获取此时间戳之前的消息
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功返回对话记录
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  has_more:
+                    type: boolean
+
+  /workflows:
+    get:
+      tags:
+        - Workflows
+      summary: 获取工作流列表
+      description: 获取SOP工作流列表，支持按Bot筛选
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bot_id
+          in: query
+          description: 筛选指定Bot的工作流
+          schema:
+            type: string
+        - name: enabled
+          in: query
+          description: 筛选启用状态
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: 成功返回工作流列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                  total:
+                    type: integer
+    post:
+      tags:
+        - Workflows
+      summary: 创建工作流
+      description: 创建新的SOP工作流
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+            example:
+              bot_id: work_bot_001
+              name: 每日工作启动流程
+              description: 每天8点自动发送工作计划
+              triggers:
+                - type: cron
+                  expression: 0 8 * * *
+                  timezone: Asia/Shanghai
+              workflow_steps:
+                - step: 1
+                  action: send_message
+                  content: 早上好！今天是{date}
+                  ai_generate: true
+                - step: 2
+                  action: fetch_calendar
+                  source: google_calendar
+              enabled: true
+      responses:
+        '201':
+          description: 工作流创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /workflows/{workflow_id}:
+    get:
+      tags:
+        - Workflows
+      summary: 获取工作流详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+      responses:
+        '200':
+          description: 成功返回工作流详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Workflows
+      summary: 更新工作流
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+    delete:
+      tags:
+        - Workflows
+      summary: 删除工作流
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+      responses:
+        '204':
+          description: 删除成功
+
+  /workflows/{workflow_id}/enable:
+    put:
+      tags:
+        - Workflows
+      summary: 启用/禁用工作流
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+            example:
+              enabled: true
+      responses:
+        '200':
+          description: 状态更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+
+  /workflows/{workflow_id}/execute:
+    post:
+      tags:
+        - Workflows
+      summary: 手动执行工作流
+      description: 立即执行指定的工作流
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                params:
+                  type: object
+                  description: 工作流执行参数
+                  additionalProperties: true
+      responses:
+        '202':
+          description: 工作流已开始执行
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowRun'
+
+  /workflows/{workflow_id}/executions:
+    get:
+      tags:
+        - Workflows
+      summary: 获取工作流执行历史
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: 成功返回执行历史
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowRun'
+                  total:
+                    type: integer
+
+  /workflows/{workflow_id}/executions/{execution_id}:
+    get:
+      tags:
+        - Workflows
+      summary: 获取执行详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/WorkflowId'
+        - name: execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功返回执行详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowRun'
+
+  /groups:
+    get:
+      tags:
+        - Groups
+      summary: 获取群聊列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [personal, team, public]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, archived]
+      responses:
+        '200':
+          description: 成功返回群聊列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupChat'
+    post:
+      tags:
+        - Groups
+      summary: 创建群聊
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreateRequest'
+            example:
+              name: 创业顾问团
+              type: team
+              description: CEO、CTO、CMO三位专家Bot协同
+              routing_strategy: keyword_match
+              conversation_mode: multi_turn
+      responses:
+        '201':
+          description: 群聊创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupChat'
+
+  /groups/{group_id}:
+    get:
+      tags:
+        - Groups
+      summary: 获取群聊详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: 成功返回群聊详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupChat'
+    put:
+      tags:
+        - Groups
+      summary: 更新群聊信息
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupChat'
+    delete:
+      tags:
+        - Groups
+      summary: 删除群聊
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '204':
+          description: 删除成功
+
+  /groups/{group_id}/members:
+    post:
+      tags:
+        - Groups
+      summary: 添加Bot到群聊
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupMemberAddRequest'
+            example:
+              bot_id: ceo_bot_001
+              role: CEO
+              permissions: [read, write, mention]
+              trigger_keywords: [战略, 决策, 资源]
+              priority: 1
+      responses:
+        '201':
+          description: Bot添加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMember'
+        '400':
+          description: Bot已在群聊中
+
+  /groups/{group_id}/members/{member_id}:
+    delete:
+      tags:
+        - Groups
+      summary: 从群聊移除Bot
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: 移除成功
+
+  /groups/{group_id}/routing:
+    put:
+      tags:
+        - Groups
+      summary: 更新群聊路由策略
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [routing_strategy]
+              properties:
+                routing_strategy:
+                  type: string
+                  enum: [keyword_match, ai_judge, round_robin, broadcast]
+                conversation_mode:
+                  type: string
+                  enum: [single_turn, multi_turn]
+            example:
+              routing_strategy: ai_judge
+              conversation_mode: multi_turn
+      responses:
+        '200':
+          description: 路由策略更新成功
+
+  /groups/{group_id}/messages:
+    get:
+      tags:
+        - Groups
+      summary: 获取群聊消息历史
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: before
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功返回消息历史
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GroupMessage'
+                  has_more:
+                    type: boolean
+    post:
+      tags:
+        - Groups
+      summary: 发送消息到群聊
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  description: 消息内容
+                mentioned_bots:
+                  type: array
+                  items:
+                    type: string
+                  description: '@提及的Bot ID列表'
+            example:
+              content: 帮我分析一下市场策略
+              mentioned_bots: [cmo_bot_001]
+      responses:
+        '201':
+          description: 消息发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /memories:
+    get:
+      tags:
+        - Memories
+      summary: 获取记忆列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bot_id
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [conversation, preference, fact, instruction]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: 成功返回记忆列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memories:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Memory'
+    post:
+      tags:
+        - Memories
+      summary: 创建记忆
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryCreateRequest'
+      responses:
+        '201':
+          description: 记忆创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Memory'
+
+  /memories/{memory_id}:
+    put:
+      tags:
+        - Memories
+      summary: 更新记忆
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                importance:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 1
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Memory'
+    delete:
+      tags:
+        - Memories
+      summary: 删除记忆
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: memory_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 删除成功
+
+  /knowledge/files:
+    get:
+      tags:
+        - Knowledge
+      summary: 获取知识文件列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bot_id
+          in: query
+          description: 按Bot筛选
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: 文件处理状态
+          schema:
+            type: string
+            enum: [uploading, processing, ready, failed]
+      responses:
+        '200':
+          description: 成功返回知识文件列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/KnowledgeFile'
+    post:
+      tags:
+        - Knowledge
+      summary: 上传知识文件
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [bot_id, file]
+              properties:
+                bot_id:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeFile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /knowledge/files/{file_id}:
+    delete:
+      tags:
+        - Knowledge
+      summary: 删除知识文件
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/KnowledgeFileId'
+      responses:
+        '204':
+          description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /knowledge/search:
+    post:
+      tags:
+        - Knowledge
+      summary: 知识检索
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeSearchRequest'
+      responses:
+        '200':
+          description: 检索成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /analytics/conversations:
+    get:
+      tags:
+        - Analytics
+      summary: 获取对话分析数据
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: bot_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功返回对话分析数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationAnalytics'
+
+  /analytics/bots:
+    get:
+      tags:
+        - Analytics
+      summary: 获取Bot性能分析
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 成功返回Bot性能数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bot_stats:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BotStats'
+
+  /analytics/workflows:
+    get:
+      tags:
+        - Analytics
+      summary: 获取工作流执行分析
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 成功返回工作流分析数据
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflow_stats:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowStats'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    BotId:
+      name: bot_id
+      in: path
+      required: true
+      description: Bot ID
+      schema:
+        type: string
+      example: work_bot_001
+
+    WorkflowId:
+      name: workflow_id
+      in: path
+      required: true
+      description: 工作流 ID
+      schema:
+        type: string
+      example: sop_001
+
+    GroupId:
+      name: group_id
+      in: path
+      required: true
+      description: 群聊 ID
+      schema:
+        type: string
+      example: group_001
+
+    KnowledgeFileId:
+      name: file_id
+      in: path
+      required: true
+      description: 知识文件 ID
+      schema:
+        type: string
+      example: file_001
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 6
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    AuthUser:
+      type: object
+      required:
+        - user_id
+        - username
+        - role
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+
+    AuthTokens:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - expires_in
+        - user
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          default: Bearer
+        expires_in:
+          type: integer
+          description: access_token有效期（秒）
+        user:
+          $ref: '#/components/schemas/AuthUser'
+
+    DashboardStats:
+      type: object
+      required:
+        - active_bots
+        - running_workflows
+        - active_groups
+        - today_conversations
+      properties:
+        active_bots:
+          type: integer
+          description: 活跃Bot数量
+        running_workflows:
+          type: integer
+          description: 运行中的工作流数量
+        active_groups:
+          type: integer
+          description: 活跃群聊数量
+        today_conversations:
+          type: integer
+          description: 今日对话次数
+
+    Activity:
+      type: object
+      required:
+        - execution_id
+        - title
+        - description
+        - type
+        - time
+        - timestamp
+      properties:
+        execution_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [success, error, warning, info]
+        icon:
+          type: string
+        time:
+          type: string
+          description: 格式化的时间显示
+        timestamp:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      required:
+        - user_id
+        - username
+      properties:
+        user_id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar:
+          type: string
+          description: 头像URL或emoji
+        role:
+          type: string
+          enum: [admin, user]
+          default: user
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Bot:
+      type: object
+      required:
+        - bot_id
+        - name
+        - type
+        - scene
+        - status
+      properties:
+        bot_id:
+          type: string
+          description: Bot唯一标识
+          example: work_bot_001
+        name:
+          type: string
+          description: Bot名称
+          example: 工作伙伴
+        avatar:
+          type: string
+          description: 头像emoji或URL
+          example: 💼
+        type:
+          type: string
+          enum: [work, life, love, group, sop]
+          description: Bot类型
+        scene:
+          type: string
+          enum: [work, life, love, group, sop]
+          description: 场景类型
+        status:
+          type: string
+          enum: [online, offline, suspended]
+          description: online=在线, offline=离线, suspended=暂停
+        description:
+          type: string
+          description: Bot描述
+        config:
+          type: object
+          description: Bot配置（模型、参数等）
+          properties:
+            model:
+              type: string
+              example: gpt-4
+            temperature:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 2
+            max_tokens:
+              type: integer
+            system_prompt:
+              type: string
+        stats:
+          type: object
+          description: 统计数据
+          properties:
+            conversation_count:
+              type: integer
+            response_rate:
+              type: string
+              pattern: ^\d+%$
+            avg_response_time:
+              type: string
+              example: 2.3s
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BotCreateRequest:
+      type: object
+      required:
+        - name
+        - type
+        - scene
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        avatar:
+          type: string
+          maxLength: 100
+        type:
+          type: string
+          enum: [work, life, love, group, sop]
+        scene:
+          type: string
+          enum: [work, life, love, group, sop]
+        description:
+          type: string
+          maxLength: 500
+        config:
+          type: object
+          properties:
+            model:
+              type: string
+            temperature:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 2
+            max_tokens:
+              type: integer
+              minimum: 1
+              maximum: 32000
+            system_prompt:
+              type: string
+              maxLength: 2000
+
+    BotUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        avatar:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        config:
+          type: object
+          properties:
+            model:
+              type: string
+            temperature:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 2
+            max_tokens:
+              type: integer
+            system_prompt:
+              type: string
+              maxLength: 2000
+
+    BotStats:
+      type: object
+      properties:
+        bot_id:
+          type: string
+        bot_name:
+          type: string
+        total_conversations:
+          type: integer
+        avg_response_time:
+          type: number
+          format: float
+        success_rate:
+          type: number
+          format: float
+          description: 成功率（0-1）
+
+    Topic:
+      type: object
+      required:
+        - topic_id
+        - name
+        - type
+      properties:
+        topic_id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [work, life, love, group, sop]
+        theme_config:
+          type: object
+          description: 主题配色配置
+          properties:
+            primary:
+              type: string
+              pattern: ^#[0-9A-Fa-f]{6}$
+            background:
+              type: string
+              description: 渐变背景CSS
+        is_active:
+          type: boolean
+          default: true
+
+    Message:
+      type: object
+      required:
+        - message_id
+        - conversation_id
+        - sender_type
+        - sender_id
+        - content
+        - timestamp
+      properties:
+        message_id:
+          type: string
+        conversation_id:
+          type: string
+          description: 对话ID（对于群聊为group_id）
+        sender_type:
+          type: string
+          enum: [user, bot, system]
+        sender_id:
+          type: string
+          description: 发送者ID（user_id或bot_id）
+        content:
+          type: string
+        metadata:
+          type: object
+          description: 消息元数据（如模型、token数等）
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+    Workflow:
+      type: object
+      required:
+        - sop_id
+        - bot_id
+        - name
+        - triggers
+        - workflow_steps
+        - enabled
+      properties:
+        sop_id:
+          type: string
+          description: 工作流唯一标识
+          example: sop_001
+        bot_id:
+          type: string
+          description: 关联的Bot ID
+        name:
+          type: string
+          description: 工作流名称
+          example: 每日工作启动流程
+        description:
+          type: string
+          description: 工作流描述
+        triggers:
+          type: array
+          description: 触发条件列表
+          items:
+            type: object
+            required: [type]
+            properties:
+              type:
+                type: string
+                enum: [cron, event, condition, chain]
+              expression:
+                type: string
+                description: cron表达式或条件表达式
+              timezone:
+                type: string
+                description: 时区（用于cron触发）
+              event_type:
+                type: string
+                description: 事件类型（用于事件触发）
+        workflow_steps:
+          type: array
+          description: 工作流步骤
+          items:
+            type: object
+            required: [step, action]
+            properties:
+              step:
+                type: integer
+                description: 步骤序号
+              action:
+                type: string
+                enum: [send_message, fetch_calendar, generate_summary, call_api, wait, condition]
+              content:
+                type: string
+              ai_generate:
+                type: boolean
+                description: 是否使用AI生成内容
+              source:
+                type: string
+                description: 数据源
+              prompt:
+                type: string
+                description: AI提示词
+        enabled:
+          type: boolean
+          description: 是否启用
+        stats:
+          type: object
+          description: 执行统计
+          properties:
+            execution_count:
+              type: integer
+            success_rate:
+              type: string
+              pattern: ^\d+%$
+            avg_duration:
+              type: string
+              example: 2.3s
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WorkflowCreateRequest:
+      type: object
+      required:
+        - bot_id
+        - name
+        - triggers
+        - workflow_steps
+      properties:
+        bot_id:
+          type: string
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        triggers:
+          type: array
+          items:
+            type: object
+            required: [type]
+            properties:
+              type:
+                type: string
+                enum: [cron, event, condition, chain]
+              expression:
+                type: string
+              timezone:
+                type: string
+        workflow_steps:
+          type: array
+          items:
+            type: object
+            required: [step, action]
+            properties:
+              step:
+                type: integer
+              action:
+                type: string
+              content:
+                type: string
+              ai_generate:
+                type: boolean
+        enabled:
+          type: boolean
+          default: true
+
+    WorkflowUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        triggers:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              expression:
+                type: string
+              timezone:
+                type: string
+        workflow_steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step:
+                type: integer
+              action:
+                type: string
+              content:
+                type: string
+
+    WorkflowRun:
+      type: object
+      required:
+        - execution_id
+        - sop_id
+        - status
+      properties:
+        execution_id:
+          type: string
+          description: 执行记录ID
+        sop_id:
+          type: string
+          description: 工作流ID
+        trigger_time:
+          type: string
+          format: date-time
+          description: 计划触发时间
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+          description: pending=等待执行, running=执行中, completed=已完成, failed=失败, cancelled=已取消
+        result:
+          type: object
+          description: 执行结果（成功时）
+          additionalProperties: true
+        error_message:
+          type: string
+          description: 错误信息（失败时）
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        duration:
+          type: string
+          description: 执行时长
+          example: 2.3s
+        steps:
+          type: array
+          description: 步骤执行详情
+          items:
+            type: object
+            properties:
+              step:
+                type: integer
+              action:
+                type: string
+              status:
+                type: string
+              result:
+                type: object
+              error:
+                type: string
+
+    WorkflowStats:
+      type: object
+      properties:
+        sop_id:
+          type: string
+        sop_name:
+          type: string
+        total_executions:
+          type: integer
+        success_count:
+          type: integer
+        failed_count:
+          type: integer
+        avg_duration:
+          type: number
+          format: float
+
+    GroupChat:
+      type: object
+      required:
+        - group_id
+        - name
+        - type
+        - routing_strategy
+        - conversation_mode
+      properties:
+        group_id:
+          type: string
+          description: 群聊唯一标识
+          example: group_001
+        name:
+          type: string
+          description: 群聊名称
+          example: 创业顾问团
+        type:
+          type: string
+          enum: [personal, team, public]
+          description: personal=个人群, team=团队群, public=公共群
+        description:
+          type: string
+          description: 群聊描述
+        routing_strategy:
+          type: string
+          enum: [keyword_match, ai_judge, round_robin, broadcast]
+          description: keyword_match=关键词匹配, ai_judge=AI判断, round_robin=轮询, broadcast=全员响应
+        conversation_mode:
+          type: string
+          enum: [single_turn, multi_turn]
+          description: single_turn=单轮对话, multi_turn=多轮对话
+        status:
+          type: string
+          enum: [active, inactive, archived]
+          default: active
+        created_by:
+          type: string
+          description: 创建者user_id
+        members:
+          type: array
+          description: 群成员列表
+          items:
+            $ref: '#/components/schemas/GroupMember'
+        stats:
+          type: object
+          description: 群聊统计
+          properties:
+            conversation_count:
+              type: integer
+            response_rate:
+              type: string
+            response_speed:
+              type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GroupCreateRequest:
+      type: object
+      required:
+        - name
+        - type
+        - routing_strategy
+        - conversation_mode
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        type:
+          type: string
+          enum: [personal, team, public]
+        description:
+          type: string
+          maxLength: 500
+        routing_strategy:
+          type: string
+          enum: [keyword_match, ai_judge, round_robin, broadcast]
+        conversation_mode:
+          type: string
+          enum: [single_turn, multi_turn]
+
+    GroupUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 500
+        status:
+          type: string
+          enum: [active, inactive, archived]
+
+    GroupMember:
+      type: object
+      required:
+        - id
+        - group_id
+        - bot_id
+        - role
+      properties:
+        id:
+          type: integer
+          description: 成员记录ID
+        group_id:
+          type: string
+        bot_id:
+          type: string
+        role:
+          type: string
+          description: 角色名称
+          example: CEO
+        permissions:
+          type: array
+          description: 权限列表
+          items:
+            type: string
+            enum: [read, write, mention, admin]
+        trigger_keywords:
+          type: array
+          description: 触发关键词列表
+          items:
+            type: string
+        priority:
+          type: integer
+          description: 优先级（数字越小优先级越高）
+          minimum: 1
+          default: 10
+
+    GroupMemberAddRequest:
+      type: object
+      required:
+        - bot_id
+        - role
+      properties:
+        bot_id:
+          type: string
+        role:
+          type: string
+          maxLength: 50
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, write, mention, admin]
+          default: [read, write]
+        trigger_keywords:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
+          minimum: 1
+          default: 10
+
+    GroupMessage:
+      type: object
+      required:
+        - message_id
+        - group_id
+        - sender_type
+        - sender_id
+        - content
+        - timestamp
+      properties:
+        message_id:
+          type: string
+        group_id:
+          type: string
+        sender_type:
+          type: string
+          enum: [user, bot, system]
+        sender_id:
+          type: string
+        content:
+          type: string
+        mentioned_bots:
+          type: array
+          description: '@提及的Bot ID列表'
+          items:
+            type: string
+        status:
+          type: string
+          enum: [sending, sent, failed]
+          description: sending=发送中, sent=已发送, failed=发送失败
+        timestamp:
+          type: string
+          format: date-time
+
+    Memory:
+      type: object
+      required:
+        - memory_id
+        - bot_id
+        - type
+        - content
+      properties:
+        memory_id:
+          type: string
+        bot_id:
+          type: string
+        user_id:
+          type: string
+          description: 关联的用户ID（可选）
+        type:
+          type: string
+          enum: [conversation, preference, fact, instruction]
+          description: conversation=对话记录, preference=用户偏好, fact=事实信息, instruction=指令
+        content:
+          type: string
+          description: 记忆内容
+        importance:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: 重要性评分（0-1）
+          default: 0.5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MemoryCreateRequest:
+      type: object
+      required:
+        - bot_id
+        - type
+        - content
+      properties:
+        bot_id:
+          type: string
+        user_id:
+          type: string
+        type:
+          type: string
+          enum: [conversation, preference, fact, instruction]
+        content:
+          type: string
+          minLength: 1
+        importance:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.5
+
+    KnowledgeFile:
+      type: object
+      required:
+        - file_id
+        - bot_id
+        - filename
+        - status
+      properties:
+        file_id:
+          type: string
+        bot_id:
+          type: string
+        filename:
+          type: string
+        mime_type:
+          type: string
+        size_bytes:
+          type: integer
+        status:
+          type: string
+          enum: [uploading, processing, ready, failed]
+        chunk_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    KnowledgeSearchRequest:
+      type: object
+      required:
+        - bot_id
+        - query
+      properties:
+        bot_id:
+          type: string
+        query:
+          type: string
+          minLength: 1
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 5
+
+    KnowledgeSearchResult:
+      type: object
+      properties:
+        query:
+          type: string
+        hits:
+          type: array
+          items:
+            type: object
+            properties:
+              file_id:
+                type: string
+              chunk_id:
+                type: string
+              score:
+                type: number
+                format: float
+              content:
+                type: string
+              metadata:
+                type: object
+                additionalProperties: true
+
+    ConversationAnalytics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+        total_conversations:
+          type: integer
+        total_messages:
+          type: integer
+        avg_conversation_length:
+          type: number
+          format: float
+        daily_stats:
+          type: array
+          description: 每日统计数据
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              conversation_count:
+                type: integer
+              message_count:
+                type: integer
+        bot_breakdown:
+          type: array
+          description: 按Bot分组的统计
+          items:
+            type: object
+            properties:
+              bot_id:
+                type: string
+              bot_name:
+                type: string
+              conversation_count:
+                type: integer
+              message_count:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: 错误码
+              example: BOT_NOT_FOUND
+            numeric_code:
+              type: integer
+              description: 错误编号（用于内部归类）
+              example: 1001
+            message:
+              type: string
+              description: 错误信息
+              example: Bot不存在
+            details:
+              type: object
+              description: 额外的错误详情
+              additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: BAD_REQUEST
+              message: 请求参数无效
+              details:
+                field: name
+                reason: 长度不能超过50字符
+
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: NOT_FOUND
+              message: 请求的资源不存在
+
+    Unauthorized:
+      description: 未授权
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: 请先登录
+
+    Forbidden:
+      description: 权限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: FORBIDDEN
+              message: 您没有权限执行此操作
+
+    InternalError:
+      description: 服务器内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: 服务器内部错误，请稍后重试
