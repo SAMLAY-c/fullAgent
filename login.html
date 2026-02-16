@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Bot Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-bg: #FAF9F6;
+            --color-surface: #FFFFFF;
+            --color-primary: #9B8BF5;
+            --color-primary-light: #B8A5E8;
+            --color-primary-dark: #7C6FCC;
+            --text-primary: #2D3748;
+            --text-secondary: #718096;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --shadow-md: 0 4px 16px rgba(148, 163, 184, 0.12);
+            --shadow-lg: 0 8px 28px rgba(148, 163, 184, 0.15);
+        }
+
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background: var(--color-bg);
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(155, 139, 245, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 182, 193, 0.08) 0%, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: 48px 40px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(155, 139, 245, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #CBD5E0;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(155, 139, 245, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #FED7D7;
+            color: #C53030;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .demo-hint {
+            margin-top: 24px;
+            padding: 16px;
+            background: #F0F4FF;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: left;
+        }
+
+        .demo-hint strong {
+            color: var(--color-primary-dark);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">🤖</div>
+            <h1 class="title">欢迎回来</h1>
+            <p class="subtitle">登录 Bot Agent，开始你的 AI 之旅</p>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">用户名</label>
+                    <input
+                        type="text"
+                        id="username"
+                        class="form-input"
+                        placeholder="请输入用户名"
+                        value="admin"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">密码</label>
+                    <input
+                        type="password"
+                        id="password"
+                        class="form-input"
+                        placeholder="请输入密码"
+                        value="admin123"
+                        required
+                    >
+                </div>
+
+                <button type="submit" id="loginBtn" class="login-btn">
+                    登录
+                </button>
+            </form>
+
+            <div class="demo-hint">
+                <strong>💡 演示账号</strong>
+                用户名: admin / 密码: admin123
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载 API 客户端和认证管理器 -->
+    <script src="tests/lib/api-client.js"></script>
+    <script src="tests/lib/auth-manager.js"></script>
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 表单提交处理
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showError('请输入用户名和密码');
+                return;
+            }
+
+            // 显示加载状态
+            setLoading(true);
+
+            try {
+                const result = await authManager.login(username, password);
+                console.log('登录成功:', result);
+
+                // 登录成功，跳转到聊天界面
+                window.location.href = 'bot-chat-ui-v2.html';
+            } catch (error) {
+                console.error('登录失败:', error);
+                showError(error.message || '登录失败，请重试');
+                setLoading(false);
+            }
+        });
+
+        // 回车键提交
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function setLoading(loading) {
+            if (loading) {
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="spinner"></span>登录中...';
+                errorMessage.classList.remove('show');
+            } else {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '登录';
+            }
+        }
+
+        // 检查是否已登录
+        if (authManager.isAuthenticated()) {
+            console.log('用户已登录，跳转到聊天界面...');
+            window.location.href = 'bot-chat-ui-v2.html';
+        }
+    </script>
+</body>
+</html>

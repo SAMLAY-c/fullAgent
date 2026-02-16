@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  user_id       String    @id
+  username      String    @unique
+  email         String    @unique
+  password_hash String
+  avatar        String?
+  role          String    @default("user") // admin | user
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  refresh_tokens RefreshToken[]
+  conversations  Conversation[]
+  messages       Message[]
+}
+
+// Refresh Token model
+model RefreshToken {
+  id           String    @id @default(uuid())
+  token        String    @unique
+  user_id      String
+  expires_at   DateTime
+  created_at   DateTime  @default(now())
+  revoked_at   DateTime?
+
+  user User @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+// Bot model
+model Bot {
+  bot_id      String    @id
+  name        String
+  avatar      String?
+  type        String    // work | life | love | group | sop
+  scene       String    // work | life | love | group | sop
+  status      String    @default("offline") // online | offline | suspended
+  description String?
+  config      Json?     // { model, temperature, max_tokens, system_prompt }
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  // Relations
+  conversations  Conversation[]
+  group_members  GroupMember[]
+  workflows      Workflow[]
+
+  @@index([type])
+  @@index([status])
+  @@index([scene])
+}
+
+// Conversation model
+model Conversation {
+  conversation_id String    @id
+  bot_id         String
+  user_id        String
+  title          String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // Relations
+  bot     Bot       @relation(fields: [bot_id], references: [bot_id], onDelete: Cascade)
+  user    User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([bot_id])
+  @@index([user_id])
+}
+
+// Message model
+model Message {
+  message_id      String    @id
+  conversation_id String
+  sender_type     String    // user | bot | system
+  sender_id       String
+  content         String    @db.Text
+  metadata        Json?     // { model, usage, mentioned_bots, etc. }
+  timestamp       DateTime  @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
+  user         User?        @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
+
+  @@index([conversation_id])
+  @@index([timestamp])
+}
+
+// Group model
+model Group {
+  group_id         String   @id
+  name             String
+  type             String   // personal | team | public
+  description      String?
+  routing_strategy String   @default("ai_judge") // keyword_match | ai_judge | round_robin | broadcast
+  conversation_mode String @default("multi_turn") // single_turn | multi_turn
+  created_by      String
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  members  GroupMember[]
+  messages GroupMessage[]
+}
+
+// Group Member model
+model GroupMember {
+  id               String   @id @default(uuid())
+  group_id         String
+  bot_id           String
+  role             String?  // e.g., "效率专家", "生活助手"
+  permissions      Json?    // ["read", "write", "mention", "admin"]
+  trigger_keywords  String[] // ["任务", "工作"]
+  priority         Int      @default(0)
+
+  // Relations
+  group Group @relation(fields: [group_id], references: [group_id], onDelete: Cascade)
+  bot   Bot   @relation(fields: [bot_id], references: [bot_id], onDelete: Cascade)
+
+  @@unique([group_id, bot_id])
+  @@index([group_id])
+  @@index([bot_id])
+}
+
+// Group Message model
+model GroupMessage {
+  message_id     String   @id
+  group_id       String
+  sender_type    String   // user | bot
+  sender_id      String
+  content        String   @db.Text
+  mentioned_bots String[] // [bot_id1, bot_id2]
+  timestamp      DateTime @default(now())
+
+  // Relations
+  group Group @relation(fields: [group_id], references: [group_id], onDelete: Cascade)
+
+  @@index([group_id])
+  @@index([timestamp])
+}
+
+// Workflow model
+model Workflow {
+  workflow_id String   @id
+  bot_id      String
+  name        String
+  description String?
+  triggers    Json     // [{ type, expression, timezone, event_type }]
+  workflow_steps Json  // [{ step, action, content, ai_generate, ... }]
+  enabled     Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  bot       Bot         @relation(fields: [bot_id], references: [bot_id], onDelete: Cascade)
+  executions WorkflowExecution[]
+
+  @@index([bot_id])
+  @@index([enabled])
+}
+
+// Workflow Execution model
+model WorkflowExecution {
+  execution_id String   @id
+  workflow_id  String
+  status       String   // pending | running | completed | failed | cancelled
+  trigger_time DateTime @default(now())
+  started_at   DateTime?
+  completed_at DateTime?
+  result       Json?    // Execution results
+  error_message String?
+
+  // Relations
+  workflow Workflow @relation(fields: [workflow_id], references: [workflow_id], onDelete: Cascade)
+
+  @@index([workflow_id])
+  @@index([status])
+}
+
+// Memory model
+model Memory {
+  memory_id   String   @id
+  bot_id      String
+  user_id     String
+  type        String   // conversation | preference | fact | instruction
+  content     String   @db.Text
+  importance  Float    @default(0.5)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([bot_id])
+  @@index([user_id])
+  @@index([type])
+}
+
+// Knowledge File model
+model KnowledgeFile {
+  file_id      String   @id
+  bot_id       String?
+  filename     String
+  file_size    Int
+  status       String   @default("uploading") // uploading | processing | ready | failed
+  error_message String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  // Relations
+  chunks KnowledgeChunk[]
+
+  @@index([bot_id])
+  @@index([status])
+}
+
+// Knowledge Chunk model
+model KnowledgeChunk {
+  chunk_id    String   @id
+  file_id     String
+  chunk_index Int
+  content     String   @db.Text
+  created_at  DateTime @default(now())
+
+  // Relations
+  file KnowledgeFile @relation(fields: [file_id], references: [file_id], onDelete: Cascade)
+
+  @@index([file_id])
+}

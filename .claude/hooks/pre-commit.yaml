@@ -1,0 +1,61 @@
+name: code-quality-check
+trigger: before-git-commit
+description: 代码质量检查，确保提交的代码符合规范
+
+## 检查项
+
+### 1. TypeScript 编译检查
+```bash
+cd backend && npm run build
+```
+如果失败，阻止提交并报告编译错误
+
+### 2. 代码格式检查（如果有配置）
+```bash
+cd backend && npx eslint src/ --ext .ts
+```
+
+### 3. 测试通过检查
+```bash
+cd backend && npm test
+```
+如果有测试，必须全部通过才能提交
+
+### 4. 数据库迁移检查
+如果 prisma/schema.prisma 有修改：
+- [ ] 是否创建了对应的迁移文件？
+- [ ] 是否在本地测试了迁移？
+
+### 5. 敏感信息检查
+使用 Grep 检查是否意外提交：
+- 密码、API key、token
+- 调试用的 console.log
+- 注释掉的代码块
+
+搜索模式：
+```bash
+grep -r "password.*=" backend/src/
+grep -r "console\\.log" backend/src/
+grep -r "// FIXME\\|// TODO\\|// HACK" backend/src/
+```
+
+## 输出格式
+
+```
+🔍 [提交前检查] 正在验证代码质量...
+
+✅ TypeScript 编译通过
+✅ 代码格式检查通过
+✅ 测试全部通过
+✅ 无敏感信息泄露
+
+🚀 可以安全提交！
+```
+
+或
+
+```
+❌ [提交前检查] 发现问题：
+  - TypeScript 编译失败: {错误信息}
+  - 请修复后再提交
+```
