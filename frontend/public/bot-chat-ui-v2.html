@@ -1,0 +1,342 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Agent - 你的AI伙伴</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles/chat.css">
+
+    <!-- API 客户端脚本 -->
+    <script src="assets/lib/api-client.js"></script>
+    <script src="assets/lib/auth-manager.js"></script>
+    <script src="assets/lib/bot-client.js"></script>
+</head>
+<body>
+    <!-- 呼吸光环背景 -->
+    <div class="breathing-glow"></div>
+
+    <div class="container">
+        <!-- 左侧导航 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">Bot Agent</div>
+                <div class="subtitle">你的AI伙伴，随时陪聊</div>
+                <button id="logoutBtn" class="logout-btn" title="登出">➔</button>
+            </div>
+
+            <!-- Tab切换 -->
+            <div class="tab-switcher">
+                <button class="tab-btn active" data-tab="scenes">单Bot</button>
+                <button class="tab-btn" data-tab="groups">群聊</button>
+            </div>
+
+            <!-- 场景列表 -->
+            <div class="list-container" id="scenesList">
+                <!-- 工作伙伴Bot分组 -->
+                <div class="bot-group" id="workBotGroup">
+                    <div class="bot-group-header" onclick="toggleBotGroup('workBotGroup')">
+                        <div class="bot-group-avatar" style="background: var(--work-bg);">💼</div>
+                        <div class="bot-group-info">
+                            <div class="bot-group-name">你的工作伙伴</div>
+                            <div class="bot-group-meta">工作场景 · 3个对话</div>
+                        </div>
+                        <div class="bot-group-collapse">▼</div>
+                    </div>
+                    <div class="bot-group-content">
+                        <div class="conversation-list">
+                            <div class="conversation-item active" data-bot="work" data-topic="project">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">项目管理</div>
+                                    <div class="conversation-meta">24条消息 · 2小时前</div>
+                                </div>
+                            </div>
+                            <div class="conversation-item" data-bot="work" data-topic="meeting">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">会议纪要</div>
+                                    <div class="conversation-meta">15条消息 · 昨天</div>
+                                </div>
+                            </div>
+                            <div class="conversation-item" data-bot="work" data-topic="fitness">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">健身计划</div>
+                                    <div class="conversation-meta">32条消息 · 3小时前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="new-topic-btn" onclick="addNewTopic('work')">➕ 新建话题</button>
+                    </div>
+                </div>
+
+                <!-- 生活小助手Bot分组 -->
+                <div class="bot-group" id="lifeBotGroup">
+                    <div class="bot-group-header" onclick="toggleBotGroup('lifeBotGroup')">
+                        <div class="bot-group-avatar" style="background: var(--life-bg);">🌿</div>
+                        <div class="bot-group-info">
+                            <div class="bot-group-name">生活小助手</div>
+                            <div class="bot-group-meta">生活场景 · 2个对话</div>
+                        </div>
+                        <div class="bot-group-collapse">▼</div>
+                    </div>
+                    <div class="bot-group-content">
+                        <div class="conversation-list">
+                            <div class="conversation-item" data-bot="life" data-topic="diet">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">饮食建议</div>
+                                    <div class="conversation-meta">18条消息 · 1小时前</div>
+                                </div>
+                            </div>
+                            <div class="conversation-item" data-bot="life" data-topic="health">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">健康检查</div>
+                                    <div class="conversation-meta">8条消息 · 2天前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="new-topic-btn" onclick="addNewTopic('life')">➕ 新建话题</button>
+                    </div>
+                </div>
+
+                <!-- 心灵朋友Bot分组 -->
+                <div class="bot-group" id="loveBotGroup">
+                    <div class="bot-group-header" onclick="toggleBotGroup('loveBotGroup')">
+                        <div class="bot-group-avatar" style="background: var(--love-bg);">💜</div>
+                        <div class="bot-group-info">
+                            <div class="bot-group-name">心灵朋友</div>
+                            <div class="bot-group-meta">情感场景 · 1个对话</div>
+                        </div>
+                        <div class="bot-group-collapse">▼</div>
+                    </div>
+                    <div class="bot-group-content">
+                        <div class="conversation-list">
+                            <div class="conversation-item" data-bot="love" data-topic="relationship">
+                                <span class="conversation-icon">💬</span>
+                                <div class="conversation-info">
+                                    <div class="conversation-title">关系建议</div>
+                                    <div class="conversation-meta">42条消息 · 30分钟前</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="new-topic-btn" onclick="addNewTopic('love')">➕ 新建话题</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 群聊列表（默认隐藏） -->
+            <div class="list-container" id="groupsList" style="display: none;">
+                <div class="group-card" data-type="group" data-id="group1">
+                    <div class="card-header">
+                        <span class="card-icon">🎯</span>
+                        <div class="card-info">
+                            <div class="card-name">创业顾问团</div>
+                            <div class="card-desc">CEO + CTO + CMO</div>
+                        </div>
+                    </div>
+                    <div class="group-members">
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);">💼</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8FFE8 0%, #F0FFF0 100%);">💻</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #FFE8EC 0%, #FFF0F3 100%);">📈</div>
+                        <span class="member-count">3个成员</span>
+                    </div>
+                </div>
+
+                <div class="group-card" data-type="group" data-id="group2">
+                    <div class="card-header">
+                        <span class="card-icon">💪</span>
+                        <div class="card-info">
+                            <div class="card-name">成长加速器</div>
+                            <div class="card-desc">工作 + 学习 + 健康</div>
+                        </div>
+                    </div>
+                    <div class="group-members">
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);">💼</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #E8FFE8 0%, #F0FFF0 100%);">📚</div>
+                        <div class="member-avatar" style="background: linear-gradient(135deg, #FFE8EC 0%, #FFF0F3 100%);">🏃</div>
+                        <span class="member-count">3个成员</span>
+                    </div>
+                </div>
+
+                <button class="create-btn">
+                    <span>✨</span>
+                    <span>邀请更多朋友一起聊聊</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 聊天区域 -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-info">
+                    <div class="chat-avatar work" id="chatAvatar">💼</div>
+                    <div class="chat-details">
+                        <h2 id="chatName">你的工作伙伴</h2>
+                        <p id="chatStatus">我就在这里，随时陪你聊天 💜</p>
+                        <div class="group-members-header" id="groupMembersHeader" style="display: none;">
+                            <!-- 群聊时动态添加成员头像 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn primary" id="sopBtn">⏰ 提醒</button>
+                    <button class="action-btn">📋</button>
+                    <button class="action-btn">⚙️</button>
+                </div>
+            </div>
+
+            <!-- Tab导航系统 -->
+            <div class="content-tabs">
+                <button class="content-tab-btn active" data-tab="chat">💬 对话</button>
+                <button class="content-tab-btn" data-tab="memory">🧠 记忆</button>
+                <button class="content-tab-btn" data-tab="knowledge">📚 知识库</button>
+                <button class="content-tab-btn" data-tab="settings">⚙️ 设置</button>
+            </div>
+
+            <!-- 对话内容面板 -->
+            <div class="content-panel active" id="chatPanel">
+                <div class="chat-messages" id="messages">
+                <!-- 定时提醒示例 -->
+                <div class="message schedule">
+                    <div class="message-content">
+                        <span class="schedule-icon">⏰</span>
+                        <div>
+                            <strong>早安提醒</strong><br>
+                            <span style="opacity: 0.8;">早上好！新的一天开始了，让我为你准备今日计划...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message bot">
+                    <div class="message-avatar">💼</div>
+                    <div class="message-wrapper">
+                        <div class="message-content">
+                            你好！我是你的工作伙伴。我可以帮你管理任务、规划时间。今天想聊点什么呢？我随时都在 👋
+                            <div class="message-actions">
+                                <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
+                                <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
+                            </div>
+                        </div>
+                        <div class="message-time">08:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <button class="mention-btn" id="mentionBtn" title="@提及Bot" style="display: none;">@</button>
+                <div class="input-wrapper">
+                    <textarea id="input" placeholder="今天想聊点什么呢？我随时都在 💜"></textarea>
+                </div>
+                <button class="send-btn" id="sendBtn">发送 ✨</button>
+            </div>
+            </div>
+
+            <!-- 记忆内容面板 -->
+            <div class="content-panel" id="memoryPanel">
+                <div class="memory-container">
+                    <div class="memory-section-card">
+                        <div class="memory-section-title">
+                            <span>📌</span>
+                            <span>关键要点</span>
+                        </div>
+                        <div class="key-points-list" id="keyPointsList">
+                            <div class="key-point-item">
+                                <span class="key-point-icon">🎯</span>
+                                <div class="key-point-content">每周运动4次</div>
+                            </div>
+                            <div class="key-point-item">
+                                <span class="key-point-icon">🎯</span>
+                                <div class="key-point-content">目标减重5kg</div>
+                            </div>
+                            <div class="key-point-item">
+                                <span class="key-point-icon">🎯</span>
+                                <div class="key-point-content">偏好有氧运动</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="memory-section-card">
+                        <div class="memory-section-title">
+                            <span>📝</span>
+                            <span>上下文记忆</span>
+                        </div>
+                        <div class="context-memory-list" id="contextMemoryList">
+                            <div class="context-memory-item">
+                                <div class="context-memory-icon">🕐</div>
+                                <div class="context-memory-content">
+                                    <div class="context-memory-title">上下文记忆</div>
+                                    <div class="context-memory-text">跟踪了30天的运动数据，了解用户的体能水平和偏好</div>
+                                </div>
+                            </div>
+                            <div class="context-memory-item">
+                                <div class="context-memory-icon">💪</div>
+                                <div class="context-memory-content">
+                                    <div class="context-memory-title">健身目标</div>
+                                    <div class="context-memory-text">用户希望在3个月内完成半程马拉松训练</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 知识库内容面板 -->
+            <div class="content-panel" id="knowledgePanel">
+                <div class="knowledge-container">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-zone-icon">📤</div>
+                        <div class="upload-zone-title">点击上传文件</div>
+                        <div class="upload-zone-desc">支持 PDF, Word, Excel, TXT 等格式</div>
+                    </div>
+
+                    <div class="file-list" id="fileList">
+                        <div class="file-item">
+                            <div class="file-icon">📄</div>
+                            <div class="file-info">
+                                <div class="file-name">健身记录.csv</div>
+                                <div class="file-meta">234KB · 添加于 2024-01-15</div>
+                            </div>
+                            <button class="delete-file-btn" title="删除文件">🗑</button>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon">📄</div>
+                            <div class="file-info">
+                                <div class="file-name">营养指南.pdf</div>
+                                <div class="file-meta">1.8MB · 添加于 2024-01-10</div>
+                            </div>
+                            <button class="delete-file-btn" title="删除文件">🗑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置内容面板 -->
+            <div class="content-panel" id="settingsPanel">
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <div class="settings-section-title">
+                                <span>⚙️</span>
+                                <span>系统提示词</span>
+                            </div>
+                            <button class="edit-prompt-btn" id="editPromptBtn">✏️ 编辑</button>
+                        </div>
+                        <div class="prompt-display" id="promptDisplay">
+                            你是一个贴心的生活顾问，关注健康、运动、饮食和日常生活的方方面面。你会提供实用的建议，帮助用户建立健康的生活习惯。
+                        </div>
+                        <div id="promptEditorContainer" style="display: none;">
+                            <textarea class="prompt-editor" id="promptEditor">你是一个贴心的生活顾问，关注健康、运动、饮食和日常生活的方方面面。你会提供实用的建议，帮助用户建立健康的生活习惯。</textarea>
+                            <button class="save-prompt-btn" id="savePromptBtn">保存提示词</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/scripts/chat.js"></script>
+</body>
+</html>
