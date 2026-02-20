@@ -558,18 +558,20 @@
                         <div class="field">
                             <select class="select" id="bots-filter-status">
                                 <option value="">全部状态</option>
-                                <option value="running">运行中</option>
-                                <option value="paused">已暂停</option>
-                                <option value="error">异常</option>
+                                <option value="online">在线</option>
+                                <option value="offline">离线</option>
+                                <option value="suspended">暂停</option>
                             </select>
                         </div>
 
                         <div class="field">
                             <select class="select" id="bots-filter-channel">
-                                <option value="">全部渠道</option>
-                                <option value="feishu">飞书</option>
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="webhook">Webhook</option>
+                                <option value="">全部场景</option>
+                                <option value="work">工作</option>
+                                <option value="life">生活</option>
+                                <option value="love">情感</option>
+                                <option value="group">群聊</option>
+                                <option value="sop">SOP</option>
                             </select>
                         </div>
 
@@ -586,10 +588,10 @@
                             <thead>
                                 <tr>
                                     <th>机器人</th>
-                                    <th>渠道</th>
+                                    <th>场景</th>
                                     <th>状态</th>
-                                    <th>最近心跳</th>
-                                    <th>负责人</th>
+                                    <th>最近更新</th>
+                                    <th>类型</th>
                                     <th style="width: 220px;">操作</th>
                                 </tr>
                             </thead>
@@ -599,7 +601,7 @@
                         <!-- 空状态 -->
                         <div class="empty" id="bots-empty" style="display: none;">
                             <div class="empty-title">还没有机器人</div>
-                            <div class="empty-desc">你可以先新建一个机器人，配置渠道与密钥，再发布上线。</div>
+                            <div class="empty-desc">你可以先新建一个机器人，配置场景和类型后上线。</div>
                             <button class="btn btn-primary" id="btn-bot-create-empty" style="margin-top: var(--space-md);">
                                 <span>➕</span>
                                 <span>新建机器人</span>
@@ -626,6 +628,9 @@
         </div>
     </div>
 
+    <script src="assets/lib/api-client.js"></script>
+    <script src="assets/lib/auth-manager.js"></script>
+    <script src="assets/lib/bot-client.js"></script>
     <script src="assets/scripts/admin.js"></script>
 </body>
 </html>

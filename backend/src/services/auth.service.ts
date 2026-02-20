@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -153,7 +154,10 @@ class AuthService {
     });
 
     const refresh_token = jwt.sign(
-      { user_id: payload.user_id },
+      {
+        user_id: payload.user_id,
+        jti: randomUUID()
+      },
       this.JWT_SECRET,
       { expiresIn: this.REFRESH_TOKEN_EXPIRES_IN }
     );

@@ -55,6 +55,17 @@ router.get('/:bot_id', async (req, res: Response) => {
 // POST /bots - 创建 Bot
 router.post('/', async (req, res: Response) => {
   try {
+    const { name, type, scene } = req.body || {};
+    if (!name || !type || !scene) {
+      return res.status(400).json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'name, type, scene are required',
+          numeric_code: 400
+        }
+      });
+    }
+
     const bot = await botService.createBot(req.body);
     res.status(201).json(bot);
   } catch (error) {

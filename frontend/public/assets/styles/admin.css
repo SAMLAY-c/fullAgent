@@ -874,6 +874,21 @@
             box-shadow: 0 0 0 6px rgba(231, 76, 60, 0.12);
         }
 
+        .dot.online {
+            background: #2ecc71;
+            box-shadow: 0 0 0 6px rgba(46, 204, 113, 0.12);
+        }
+
+        .dot.offline {
+            background: #95a5a6;
+            box-shadow: 0 0 0 6px rgba(149, 165, 166, 0.12);
+        }
+
+        .dot.suspended {
+            background: #f39c12;
+            box-shadow: 0 0 0 6px rgba(243, 156, 18, 0.12);
+        }
+
         /* Button Variants */
         .btn-ghost {
             background: rgba(255, 255, 255, 0.5);

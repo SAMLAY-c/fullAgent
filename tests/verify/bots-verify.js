@@ -247,8 +247,8 @@ async function runTests() {
       res.status === 404,
       '返回 404 未找到'
     ) && assert(
-      res.data.error.code === 'BOT_NOT_FOUND',
-      '错误码为 BOT_NOT_FOUND'
+      res.data.error.code === 'NOT_FOUND',
+      '错误码为 NOT_FOUND'
     );
 
     testResults.push({ name: '不存在的 Bot', passed });
