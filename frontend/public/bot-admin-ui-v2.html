@@ -585,6 +585,115 @@
                     </div>
                 </div>
             </div>
+
+            <div id="page-analytics" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">数据分析</h1>
+                    <p class="page-description">查看近 7 天对话与消息趋势 📈</p>
+                </div>
+                <div style="background: linear-gradient(145deg, #ffffff, #f8f6f2); box-shadow: var(--shadow-soft); border-radius: var(--radius-lg); padding: var(--space-lg);">
+                    <div class="stats-grid" style="margin-bottom: var(--space-lg);">
+                        <div class="stat-card"><div class="stat-label">机器人总数</div><div class="stat-value" id="analytics-bots-total">-</div></div>
+                        <div class="stat-card"><div class="stat-label">在线机器人</div><div class="stat-value" id="analytics-bots-online">-</div></div>
+                        <div class="stat-card"><div class="stat-label">总对话数</div><div class="stat-value" id="analytics-conversations-total">-</div></div>
+                        <div class="stat-card"><div class="stat-label">总消息数</div><div class="stat-value" id="analytics-messages-total">-</div></div>
+                    </div>
+                    <div class="execution-log" id="analytics-trends" style="min-height: 120px;"></div>
+                </div>
+            </div>
+
+            <div id="page-logs" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">对话记录</h1>
+                    <p class="page-description">查看会话与消息历史 📋</p>
+                </div>
+                <div style="display: grid; gap: var(--space-lg);">
+                    <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                        <h3 style="margin-bottom: 12px;">最近会话</h3>
+                        <div class="table-wrap">
+                            <table class="table"><thead><tr><th>标题</th><th>机器人</th><th>用户</th><th>消息数</th><th>更新时间</th></tr></thead><tbody id="logs-conversations-body"></tbody></table>
+                        </div>
+                    </div>
+                    <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                        <h3 style="margin-bottom: 12px;">最近消息</h3>
+                        <div class="table-wrap">
+                            <table class="table"><thead><tr><th>发送方</th><th>内容</th><th>会话</th><th>时间</th></tr></thead><tbody id="logs-messages-body"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-templates" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">场景模板</h1>
+                    <p class="page-description">管理系统提示词模板 🎨</p>
+                </div>
+                <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                        <input class="input" id="template-name" placeholder="模板名称" />
+                        <select class="select" id="template-scene">
+                            <option value="work">工作</option>
+                            <option value="life">生活</option>
+                            <option value="love">情感</option>
+                            <option value="group">群聊</option>
+                            <option value="sop">SOP</option>
+                        </select>
+                        <button class="btn btn-primary" id="template-create-btn">新增模板</button>
+                    </div>
+                    <textarea class="textarea" id="template-content" placeholder="模板内容"></textarea>
+                    <div class="table-wrap" style="margin-top: 16px;">
+                        <table class="table"><thead><tr><th>名称</th><th>场景</th><th>内容</th><th>更新时间</th><th>操作</th></tr></thead><tbody id="templates-body"></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-knowledge" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">知识库</h1>
+                    <p class="page-description">管理知识文件与状态 📚</p>
+                </div>
+                <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                    <div class="table-wrap">
+                        <table class="table"><thead><tr><th>文件名</th><th>大小</th><th>状态</th><th>分片数</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="knowledge-body"></tbody></table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-api" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">API 接口</h1>
+                    <p class="page-description">当前可用接口列表 🔌</p>
+                </div>
+                <div class="execution-log">
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET /api/stats/dashboard</div><div class="log-description">仪表盘统计</div></div></div>
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET /api/analytics/overview</div><div class="log-description">分析总览</div></div></div>
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET /api/logs/conversations</div><div class="log-description">会话日志</div></div></div>
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET /api/logs/messages</div><div class="log-description">消息日志</div></div></div>
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET /api/templates</div><div class="log-description">模板列表</div></div></div>
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET /api/knowledge/files</div><div class="log-description">知识文件</div></div></div>
+                    <div class="log-item"><div class="log-content"><div class="log-title">GET/PUT /api/system/settings</div><div class="log-description">系统设置</div></div></div>
+                </div>
+            </div>
+
+            <div id="page-settings" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">系统设置</h1>
+                    <p class="page-description">配置全局参数 ⚙️</p>
+                </div>
+                <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg); display: grid; gap: 12px; max-width: 700px;">
+                    <label class="label" for="setting-app-name">应用名称</label>
+                    <input class="input" id="setting-app-name" />
+                    <label class="label" for="setting-model">默认模型</label>
+                    <input class="input" id="setting-model" />
+                    <label class="label" for="setting-retention">消息保留天数</label>
+                    <input class="input" id="setting-retention" type="number" min="1" max="3650" />
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input id="setting-registration" type="checkbox" />
+                        <span>启用注册</span>
+                    </label>
+                    <div><button class="btn btn-primary" id="settings-save-btn">保存设置</button></div>
+                </div>
+            </div>
         </div>
     </div>
 

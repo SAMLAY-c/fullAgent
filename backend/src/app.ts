@@ -6,6 +6,11 @@ import authRoutes from './routes/auth';
 import botRoutes from './routes/bots';
 import chatRoutes from './routes/chat';
 import statsRoutes from './routes/stats';
+import analyticsRoutes from './routes/analytics';
+import logsRoutes from './routes/logs';
+import templatesRoutes from './routes/templates';
+import knowledgeRoutes from './routes/knowledge';
+import systemRoutes from './routes/system';
 import { normalizeUtf8Value } from './utils/encoding';
 
 dotenv.config();
@@ -61,6 +66,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bots', botRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/logs', logsRoutes);
+app.use('/api/templates', templatesRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/system', systemRoutes);
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
