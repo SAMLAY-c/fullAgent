@@ -6,6 +6,7 @@ import authRoutes from './routes/auth';
 import botRoutes from './routes/bots';
 import chatRoutes from './routes/chat';
 import statsRoutes from './routes/stats';
+import { normalizeUtf8Value } from './utils/encoding';
 
 dotenv.config();
 
@@ -38,6 +39,17 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use((req, _res, next) => {
+  if (req.body) req.body = normalizeUtf8Value(req.body);
+  if (req.query) req.query = normalizeUtf8Value(req.query) as express.Request['query'];
+  next();
+});
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  }
+  next();
+});
 
 app.use(express.static(FRONTEND_DIR));
 

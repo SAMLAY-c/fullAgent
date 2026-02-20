@@ -10,6 +10,7 @@
     selectedScene: 'work',
     selectedBotId: null,
     selectedConversationId: null,
+    selectedGroupId: null,
     isComposing: false
   };
 
@@ -25,11 +26,18 @@
     contentPanels: Array.from(document.querySelectorAll('.content-panel')),
     tabBtns: Array.from(document.querySelectorAll('.tab-btn')),
     scenesList: document.getElementById('scenesList'),
-    groupsList: document.getElementById('groupsList')
+    groupsList: document.getElementById('groupsList'),
+    groupCards: Array.from(document.querySelectorAll('.group-card')),
+    createGroupBtn: document.querySelector('.create-btn'),
+    promptDisplay: document.getElementById('promptDisplay'),
+    promptEditorContainer: document.getElementById('promptEditorContainer'),
+    promptEditor: document.getElementById('promptEditor'),
+    editPromptBtn: document.getElementById('editPromptBtn'),
+    savePromptBtn: document.getElementById('savePromptBtn')
   };
 
   function escapeHtml(text) {
-    return text
+    return String(text || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -37,9 +45,21 @@
       .replace(/'/g, '&#39;');
   }
 
+  function sceneLabel(scene) {
+    return ({ work: '工作', life: '生活', love: '情感' }[scene] || scene);
+  }
+
   function formatTime(isoOrDate) {
-    const date = typeof isoOrDate === 'string' ? new Date(isoOrDate) : isoOrDate;
+    const date = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate || Date.now());
+    if (Number.isNaN(date.getTime())) {
+      return '--:--';
+    }
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function getCurrentBot() {
+    const sceneBots = state.botsByScene[state.selectedScene] || [];
+    return sceneBots.find((b) => b.bot_id === state.selectedBotId) || sceneBots[0] || null;
   }
 
   async function ensureAuth() {
@@ -52,11 +72,7 @@
 
   async function ensureDefaultBotsIfEmpty() {
     const grouped = await botClient.getBotsByScene();
-    const total =
-      (grouped.work || []).length +
-      (grouped.life || []).length +
-      (grouped.love || []).length;
-
+    const total = (grouped.work || []).length + (grouped.life || []).length + (grouped.love || []).length;
     if (total > 0) return grouped;
 
     const defaults = [
@@ -65,24 +81,24 @@
         avatar: '💼',
         type: 'work',
         scene: 'work',
-        description: '帮助你管理任务、计划和执行。',
-        config: { system_prompt: '你是专业的工作助手。' }
+        description: '帮你管理任务、计划和执行。',
+        config: { system_prompt: '你是专业的工作助手，回答简洁且可执行。' }
       },
       {
         name: '生活小助手',
         avatar: '🌿',
         type: 'life',
         scene: 'life',
-        description: '帮助你规划健康、饮食和日常。',
-        config: { system_prompt: '你是温暖的生活助手。' }
+        description: '帮你规划健康、饮食和日常安排。',
+        config: { system_prompt: '你是温暖的生活助手，给出实用建议。' }
       },
       {
         name: '心灵朋友',
         avatar: '💜',
         type: 'love',
         scene: 'love',
-        description: '倾听并给出情绪支持和关系建议。',
-        config: { system_prompt: '你是有共情能力的陪伴型助手。' }
+        description: '倾听并提供情绪支持与关系建议。',
+        config: { system_prompt: '你有同理心，回复柔和且真诚。' }
       }
     ];
 
@@ -101,7 +117,7 @@
     const meta = group.querySelector('.bot-group-meta');
     if (!list || !meta) return;
 
-    meta.textContent = `${scene} 场景 · ${conversations.length} 个话题`;
+    meta.textContent = `${sceneLabel(scene)}场景 · ${conversations.length} 个话题`;
 
     list.innerHTML = conversations
       .map((c) => {
@@ -109,12 +125,13 @@
         const title = escapeHtml(c.title || '未命名话题');
         const count = c._count?.messages || 0;
         const updated = formatTime(c.updated_at);
+
         return `
           <div class="conversation-item${active}" data-scene="${scene}" data-conversation-id="${c.conversation_id}" data-bot-id="${c.bot_id}">
             <span class="conversation-icon">💬</span>
             <div class="conversation-info">
               <div class="conversation-title">${title}</div>
-              <div class="conversation-meta">${count}条消息 · ${updated}</div>
+              <div class="conversation-meta">${count} 条消息 · ${updated}</div>
             </div>
           </div>
         `;
@@ -126,6 +143,8 @@
         state.selectedScene = item.dataset.scene;
         state.selectedBotId = item.dataset.botId;
         state.selectedConversationId = item.dataset.conversationId;
+        state.selectedGroupId = null;
+
         await refreshCurrentHeader();
         await loadMessages(state.selectedConversationId);
         await refreshAllConversationLists();
@@ -136,11 +155,13 @@
   async function getConversationsByScene(scene) {
     const bots = state.botsByScene[scene] || [];
     const merged = [];
+
     for (const bot of bots) {
       const res = await authManager.get(`/chat/conversations?bot_id=${encodeURIComponent(bot.bot_id)}`);
       const conversations = res.conversations || [];
       merged.push(...conversations);
     }
+
     merged.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
     return merged;
   }
@@ -152,16 +173,30 @@
     }
   }
 
+  function renderSettingsPanel() {
+    if (!ui.promptDisplay || !ui.promptEditor || !ui.promptEditorContainer) return;
+
+    const bot = getCurrentBot();
+    if (!bot) {
+      ui.promptDisplay.textContent = '未选中机器人';
+      return;
+    }
+
+    const systemPrompt = bot.config?.system_prompt || '你是一个 helpful 的 AI 助手。';
+    ui.promptDisplay.textContent = systemPrompt;
+    ui.promptEditor.value = systemPrompt;
+  }
+
   async function refreshCurrentHeader() {
-    const scene = state.selectedScene;
-    const bot = (state.botsByScene[scene] || []).find((b) => b.bot_id === state.selectedBotId) || state.botsByScene[scene]?.[0];
+    const bot = getCurrentBot();
     if (!bot) return;
 
     state.selectedBotId = bot.bot_id;
-    ui.chatAvatar.textContent = bot.avatar || sceneConfig[scene].icon;
-    ui.chatAvatar.className = `chat-avatar ${scene}`;
-    ui.chatName.textContent = bot.name || sceneConfig[scene].defaultName;
-    ui.chatStatus.textContent = bot.description || '已连接后端，支持中文输入与数据持久化';
+    ui.chatAvatar.textContent = bot.avatar || sceneConfig[state.selectedScene].icon;
+    ui.chatAvatar.className = `chat-avatar ${state.selectedScene}`;
+    ui.chatName.textContent = bot.name || sceneConfig[state.selectedScene].defaultName;
+    ui.chatStatus.textContent = bot.description || '已连接后端，支持中文输入与数据库持久化。';
+    renderSettingsPanel();
   }
 
   async function loadMessages(conversationId) {
@@ -172,6 +207,7 @@
       .map((m) => {
         const klass = m.sender_type === 'user' ? 'user' : 'bot';
         const avatar = m.sender_type === 'user' ? '👤' : (ui.chatAvatar.textContent || '🤖');
+
         return `
           <div class="message ${klass}">
             <div class="message-avatar">${avatar}</div>
@@ -205,6 +241,8 @@
     state.selectedScene = scene;
     state.selectedBotId = bot.bot_id;
     state.selectedConversationId = conversation.conversation_id;
+    state.selectedGroupId = null;
+
     await refreshCurrentHeader();
     await refreshAllConversationLists();
     await loadMessages(state.selectedConversationId);
@@ -213,6 +251,7 @@
   function appendMessage(senderType, content) {
     const klass = senderType === 'user' ? 'user' : 'bot';
     const avatar = senderType === 'user' ? '👤' : (ui.chatAvatar.textContent || '🤖');
+
     ui.messages.insertAdjacentHTML(
       'beforeend',
       `
@@ -225,12 +264,14 @@
       </div>
       `
     );
+
     ui.messages.scrollTop = ui.messages.scrollHeight;
   }
 
   async function sendMessage() {
     const content = ui.input.value.trim();
     if (!content) return;
+
     if (!state.selectedConversationId) {
       alert('请先选择或创建一个话题。');
       return;
@@ -240,26 +281,34 @@
     ui.input.style.height = 'auto';
     appendMessage('user', content);
 
-    const result = await authManager.post(
-      `/chat/conversations/${state.selectedConversationId}/messages`,
-      { content }
-    );
-    if (result?.bot_message?.content) {
-      appendMessage('bot', result.bot_message.content);
-    }
+    try {
+      const result = await authManager.post(
+        `/chat/conversations/${state.selectedConversationId}/messages`,
+        { content }
+      );
 
-    await refreshAllConversationLists();
+      if (result?.bot_message?.content) {
+        appendMessage('bot', result.bot_message.content);
+      }
+
+      await refreshAllConversationLists();
+    } catch (err) {
+      appendMessage('bot', '发送失败，请检查后端服务和模型配置后重试。');
+      throw err;
+    }
+  }
+
+  function activateContentTab(tab) {
+    ui.contentTabBtns.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tab));
+    ui.contentPanels.forEach((panel) => panel.classList.toggle('active', panel.id === `${tab}Panel`));
+    if (tab === 'settings') renderSettingsPanel();
   }
 
   function wireTabs() {
     ui.contentTabBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
-        ui.contentTabBtns.forEach((x) => x.classList.remove('active'));
-        btn.classList.add('active');
-        ui.contentPanels.forEach((panel) => {
-          panel.classList.toggle('active', panel.id === `${tab}Panel`);
-        });
+        activateContentTab(tab);
       });
     });
 
@@ -267,6 +316,7 @@
       btn.addEventListener('click', () => {
         ui.tabBtns.forEach((x) => x.classList.remove('active'));
         btn.classList.add('active');
+
         const tab = btn.dataset.tab;
         ui.scenesList.style.display = tab === 'scenes' ? 'flex' : 'none';
         ui.groupsList.style.display = tab === 'groups' ? 'flex' : 'none';
@@ -274,23 +324,103 @@
     });
   }
 
+  function wireGroupCards() {
+    ui.groupCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        ui.groupCards.forEach((x) => x.classList.remove('active'));
+        card.classList.add('active');
+
+        state.selectedGroupId = card.dataset.id || null;
+        state.selectedConversationId = null;
+
+        const title = card.querySelector('.card-name')?.textContent?.trim() || '群聊';
+        const desc = card.querySelector('.card-desc')?.textContent?.trim() || '多人协作讨论';
+
+        ui.chatAvatar.textContent = '👥';
+        ui.chatAvatar.className = 'chat-avatar';
+        ui.chatName.textContent = title;
+        ui.chatStatus.textContent = `${desc} · 群聊模式`;
+
+        ui.messages.innerHTML = `
+          <div class="message bot">
+            <div class="message-avatar">👥</div>
+            <div class="message-wrapper">
+              <div class="message-content">当前群聊为 UI 演示模式，后端群聊接口可在下一步接入。</div>
+              <div class="message-time">${formatTime(new Date())}</div>
+            </div>
+          </div>
+        `;
+      });
+    });
+
+    if (ui.createGroupBtn) {
+      ui.createGroupBtn.addEventListener('click', () => {
+        alert('邀请入口已就绪，群聊创建流程可按你的后端接口继续接入。');
+      });
+    }
+  }
+
+  function wireSettingsActions() {
+    if (ui.editPromptBtn) {
+      ui.editPromptBtn.addEventListener('click', () => {
+        if (!ui.promptEditorContainer || !ui.promptEditor || !ui.promptDisplay) return;
+
+        ui.promptEditorContainer.style.display = 'block';
+        ui.promptDisplay.style.display = 'none';
+        ui.promptEditor.focus();
+      });
+    }
+
+    if (ui.savePromptBtn) {
+      ui.savePromptBtn.addEventListener('click', async () => {
+        const bot = getCurrentBot();
+        if (!bot || !ui.promptEditor || !ui.promptDisplay || !ui.promptEditorContainer) {
+          alert('当前没有可编辑的机器人。');
+          return;
+        }
+
+        const prompt = ui.promptEditor.value.trim();
+        if (!prompt) {
+          alert('提示词不能为空。');
+          return;
+        }
+
+        try {
+          const nextConfig = { ...(bot.config || {}), system_prompt: prompt };
+          await botClient.updateBot(bot.bot_id, { config: nextConfig });
+          bot.config = nextConfig;
+
+          ui.promptDisplay.textContent = prompt;
+          ui.promptDisplay.style.display = 'block';
+          ui.promptEditorContainer.style.display = 'none';
+        } catch (err) {
+          alert(err.message || '保存提示词失败');
+        }
+      });
+    }
+  }
+
   function wireInput() {
     ui.input.addEventListener('compositionstart', () => {
       state.isComposing = true;
     });
+
     ui.input.addEventListener('compositionend', () => {
       state.isComposing = false;
     });
+
     ui.input.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = `${Math.min(this.scrollHeight, 140)}px`;
     });
+
     ui.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !state.isComposing) {
         e.preventDefault();
         sendMessage().catch((err) => alert(err.message || '发送失败'));
       }
     });
+
     ui.sendBtn.addEventListener('click', () => {
       sendMessage().catch((err) => alert(err.message || '发送失败'));
     });
@@ -298,6 +428,7 @@
 
   function wireLogout() {
     if (!ui.logoutBtn) return;
+
     ui.logoutBtn.addEventListener('click', async () => {
       if (confirm('确定要登出吗？')) {
         await authManager.logout();
@@ -326,6 +457,8 @@
     wireTabs();
     wireInput();
     wireLogout();
+    wireGroupCards();
+    wireSettingsActions();
 
     for (const scene of Object.keys(sceneConfig)) {
       const firstBot = state.botsByScene[scene]?.[0];

@@ -7,6 +7,8 @@
     "dev": "ts-node src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
+    "encoding:check": "node scripts/encoding-preprocess.js",
+    "encoding:fix": "node scripts/encoding-preprocess.js --write",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -27,6 +29,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "iconv-lite": "^0.7.0",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
