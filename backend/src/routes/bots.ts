@@ -1,8 +1,12 @@
 import { Router, Response } from 'express';
 import botService from '../services/bot.service';
+import { BOT_NAME_DUPLICATE_ERROR } from '../services/bot.service';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
+const VALID_BOT_TYPES = new Set(['work', 'life', 'love', 'group', 'sop']);
+const MAX_BOT_NAME_LENGTH = 50;
+const MAX_BOT_DESCRIPTION_LENGTH = 500;
 
 // 所有 Bot 路由都需要认证
 router.use(authMiddleware);
@@ -56,7 +60,12 @@ router.get('/:bot_id', async (req, res: Response) => {
 router.post('/', async (req, res: Response) => {
   try {
     const { name, type, scene } = req.body || {};
-    if (!name || !type || !scene) {
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+    const normalizedType = typeof type === 'string' ? type.trim() : '';
+    const normalizedScene = typeof scene === 'string' ? scene.trim() : '';
+    const normalizedDescription = typeof req.body?.description === 'string' ? req.body.description : '';
+
+    if (!normalizedName || !normalizedType || !normalizedScene) {
       return res.status(400).json({
         error: {
           code: 'BAD_REQUEST',
@@ -66,14 +75,46 @@ router.post('/', async (req, res: Response) => {
       });
     }
 
+    if (!VALID_BOT_TYPES.has(normalizedType) || !VALID_BOT_TYPES.has(normalizedScene)) {
+      return res.status(400).json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: 'type and scene must be one of: work, life, love, group, sop',
+          numeric_code: 400
+        }
+      });
+    }
+
+    if (normalizedName.length > MAX_BOT_NAME_LENGTH) {
+      return res.status(400).json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: `name length must be <= ${MAX_BOT_NAME_LENGTH}`,
+          numeric_code: 400
+        }
+      });
+    }
+
+    if (normalizedDescription.length > MAX_BOT_DESCRIPTION_LENGTH) {
+      return res.status(400).json({
+        error: {
+          code: 'BAD_REQUEST',
+          message: `description length must be <= ${MAX_BOT_DESCRIPTION_LENGTH}`,
+          numeric_code: 400
+        }
+      });
+    }
+
     const bot = await botService.createBot(req.body);
     res.status(201).json(bot);
   } catch (error) {
-    res.status(500).json({
+    const message = error instanceof Error ? error.message : '创建 Bot 失败';
+    const statusCode = message === BOT_NAME_DUPLICATE_ERROR ? 409 : 500;
+    res.status(statusCode).json({
       error: {
-        code: 'INTERNAL_ERROR',
-        message: '创建 Bot 失败',
-        numeric_code: 500
+        code: statusCode === 409 ? 'CONFLICT' : 'INTERNAL_ERROR',
+        message: statusCode === 409 ? message : '创建 Bot 失败',
+        numeric_code: statusCode
       }
     });
   }

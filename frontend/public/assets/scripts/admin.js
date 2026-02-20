@@ -499,4 +499,142 @@ const Bots = (() => {
 
 document.addEventListener('DOMContentLoaded', () => {
   Bots.init();
+  Dashboard.init();
 });
+
+// 仪表盘模块
+const Dashboard = (() => {
+  const el = (id) => document.getElementById(id);
+
+  async function loadDashboardStats() {
+    try {
+      const response = await fetch('http://localhost:3000/api/stats/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('获取统计数据失败');
+      }
+
+      const data = await response.json();
+
+      // 更新 Bot 统计
+      if (el('stat-bot-count')) {
+        el('stat-bot-count').textContent = data.bots.active;
+      }
+      if (el('stat-bot-trend')) {
+        el('stat-bot-trend').textContent = `↑ ${data.bots.trend}%`;
+      }
+
+      // 更新 Workflow 统计
+      if (el('stat-workflow-count')) {
+        el('stat-workflow-count').textContent = data.workflows.active;
+      }
+      if (el('stat-workflow-trend')) {
+        el('stat-workflow-trend').textContent = `↑ ${data.workflows.trend}%`;
+      }
+
+      // 更新 Group 统计
+      if (el('stat-group-count')) {
+        el('stat-group-count').textContent = data.groups.active;
+      }
+      if (el('stat-group-trend')) {
+        el('stat-group-trend').textContent = `↑ ${data.groups.trend}%`;
+      }
+
+      // 更新 Message 统计
+      if (el('stat-message-count')) {
+        el('stat-message-count').textContent = data.messages.today.toLocaleString();
+      }
+      if (el('stat-message-trend')) {
+        el('stat-message-trend').textContent = `↑ ${data.messages.trend}%`;
+      }
+
+      // 加载最近活动
+      await loadRecentActivities();
+    } catch (error) {
+      console.error('加载仪表盘数据失败:', error);
+    }
+  }
+
+  async function loadRecentActivities() {
+    try {
+      const response = await fetch('http://localhost:3000/api/stats/recent-activities', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        // 如果没有活动记录，显示空状态
+        if (el('recent-activities')) {
+          el('recent-activities').innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+              暂无最近活动
+            </div>
+          `;
+        }
+        return;
+      }
+
+      const data = await response.json();
+
+      if (el('recent-activities') && data.activities && data.activities.length > 0) {
+        el('recent-activities').innerHTML = data.activities.map(activity => {
+          const iconStyle = {
+            'workflow': 'background: rgba(144, 238, 144, 0.15); color: var(--color-secondary);',
+            'message': 'background: rgba(155, 139, 245, 0.15); color: var(--color-primary);',
+            'warning': 'background: rgba(255, 217, 102, 0.15); color: var(--color-warning);'
+          }[activity.type] || '';
+
+          return `
+            <div class="log-item">
+              <div class="log-icon" style="${iconStyle}">${activity.icon}</div>
+              <div class="log-content">
+                <div class="log-title">${activity.title}</div>
+                <div class="log-description">${activity.description}</div>
+              </div>
+              <div class="log-time">${activity.time}</div>
+            </div>
+          `;
+        }).join('');
+      } else if (el('recent-activities')) {
+        el('recent-activities').innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            暂无最近活动
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('加载活动记录失败:', error);
+      if (el('recent-activities')) {
+        el('recent-activities').innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            加载活动记录失败
+          </div>
+        `;
+      }
+    }
+  }
+
+  function init() {
+    // 当切换到仪表盘页面时加载数据
+    const dashboardNavItem = document.querySelector('[data-page="dashboard"]');
+    if (dashboardNavItem) {
+      dashboardNavItem.addEventListener('click', () => {
+        loadDashboardStats();
+      });
+    }
+
+    // 初始加载（如果当前在仪表盘页面）
+    if (el('page-dashboard') && el('page-dashboard').style.display !== 'none') {
+      loadDashboardStats();
+    }
+  }
+
+  return { init };
+})();

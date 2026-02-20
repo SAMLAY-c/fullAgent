@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto';
 import { PrismaClient } from '@prisma/client';
+import aiService from './ai.service';
+import type { ChatMessage, BotConfig } from './ai.service';
 
 const prisma = new PrismaClient();
 
@@ -79,6 +81,33 @@ class ChatService {
       throw new Error('EMPTY_MESSAGE');
     }
 
+    // Fetch conversation history for context
+    const messageHistory = await prisma.message.findMany({
+      where: { conversation_id: conversationId },
+      orderBy: { timestamp: 'asc' },
+      take: 20 // Last 20 messages for context
+    });
+
+    // Build chat messages for AI
+    const chatMessages: ChatMessage[] = messageHistory
+      .filter(msg => msg.sender_type !== 'system')
+      .map(msg => ({
+        role: msg.sender_type === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+
+    // Add current user message
+    chatMessages.push({
+      role: 'user',
+      content: cleaned
+    });
+
+    // Get bot config for AI parameters
+    const botConfig = conversation.bot.config as BotConfig | null;
+
+    // Generate AI response
+    const aiResponse = await aiService.generateResponse(chatMessages, botConfig || undefined);
+
     const [userMessage, botMessage] = await prisma.$transaction(async (tx) => {
       const uMsg = await tx.message.create({
         data: {
@@ -98,7 +127,11 @@ class ChatService {
           conversation_id: conversationId,
           sender_type: 'bot',
           sender_id: userId,
-          content: this.buildMockReply(conversation.bot.name, cleaned)
+          content: aiResponse,
+          metadata: {
+            model: botConfig?.model || 'deepseek-ai/DeepSeek-V3.2',
+            generated_at: new Date().toISOString()
+          }
         }
       });
 
@@ -122,7 +155,8 @@ class ChatService {
       include: {
         bot: {
           select: {
-            name: true
+            name: true,
+            config: true
           }
         }
       }
@@ -132,10 +166,6 @@ class ChatService {
       throw new Error('CONVERSATION_NOT_FOUND');
     }
     return conversation;
-  }
-
-  private buildMockReply(botName: string, userText: string) {
-    return `${botName}已收到：${userText}\n\n这是已写入数据库的联动回复，后续可以替换为真实大模型调用。`;
   }
 }
 

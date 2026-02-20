@@ -172,10 +172,10 @@
         <div class="chat-area">
             <div class="chat-header">
                 <div class="chat-info">
-                    <div class="chat-avatar work" id="chatAvatar">💼</div>
+                    <div class="chat-avatar work" id="chatAvatar">🤖</div>
                     <div class="chat-details">
-                        <h2 id="chatName">你的工作伙伴</h2>
-                        <p id="chatStatus">我就在这里，随时陪你聊天 💜</p>
+                        <h2 id="chatName">加载中...</h2>
+                        <p id="chatStatus">连接中...</p>
                         <div class="group-members-header" id="groupMembersHeader" style="display: none;">
                             <!-- 群聊时动态添加成员头像 -->
                         </div>
@@ -199,28 +199,8 @@
             <!-- 对话内容面板 -->
             <div class="content-panel active" id="chatPanel">
                 <div class="chat-messages" id="messages">
-                <!-- 定时提醒示例 -->
-                <div class="message schedule">
-                    <div class="message-content">
-                        <span class="schedule-icon">⏰</span>
-                        <div>
-                            <strong>早安提醒</strong><br>
-                            <span style="opacity: 0.8;">早上好！新的一天开始了，让我为你准备今日计划...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="message bot">
-                    <div class="message-avatar">💼</div>
-                    <div class="message-wrapper">
-                        <div class="message-content">
-                            你好！我是你的工作伙伴。我可以帮你管理任务、规划时间。今天想聊点什么呢？我随时都在 👋
-                            <div class="message-actions">
-                                <button class="feedback-btn" aria-label="有帮助">👍 有帮助</button>
-                                <button class="feedback-btn" aria-label="需要改进">🤔 需改进</button>
-                            </div>
-                        </div>
-                        <div class="message-time">08:00</div>
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                        加载对话中...
                     </div>
                 </div>
             </div>
@@ -243,17 +223,8 @@
                             <span>关键要点</span>
                         </div>
                         <div class="key-points-list" id="keyPointsList">
-                            <div class="key-point-item">
-                                <span class="key-point-icon">🎯</span>
-                                <div class="key-point-content">每周运动4次</div>
-                            </div>
-                            <div class="key-point-item">
-                                <span class="key-point-icon">🎯</span>
-                                <div class="key-point-content">目标减重5kg</div>
-                            </div>
-                            <div class="key-point-item">
-                                <span class="key-point-icon">🎯</span>
-                                <div class="key-point-content">偏好有氧运动</div>
+                            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                暂无关键要点
                             </div>
                         </div>
                     </div>
@@ -264,19 +235,8 @@
                             <span>上下文记忆</span>
                         </div>
                         <div class="context-memory-list" id="contextMemoryList">
-                            <div class="context-memory-item">
-                                <div class="context-memory-icon">🕐</div>
-                                <div class="context-memory-content">
-                                    <div class="context-memory-title">上下文记忆</div>
-                                    <div class="context-memory-text">跟踪了30天的运动数据，了解用户的体能水平和偏好</div>
-                                </div>
-                            </div>
-                            <div class="context-memory-item">
-                                <div class="context-memory-icon">💪</div>
-                                <div class="context-memory-content">
-                                    <div class="context-memory-title">健身目标</div>
-                                    <div class="context-memory-text">用户希望在3个月内完成半程马拉松训练</div>
-                                </div>
+                            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                暂无上下文记忆
                             </div>
                         </div>
                     </div>
@@ -293,21 +253,8 @@
                     </div>
 
                     <div class="file-list" id="fileList">
-                        <div class="file-item">
-                            <div class="file-icon">📄</div>
-                            <div class="file-info">
-                                <div class="file-name">健身记录.csv</div>
-                                <div class="file-meta">234KB · 添加于 2024-01-15</div>
-                            </div>
-                            <button class="delete-file-btn" title="删除文件">🗑</button>
-                        </div>
-                        <div class="file-item">
-                            <div class="file-icon">📄</div>
-                            <div class="file-info">
-                                <div class="file-name">营养指南.pdf</div>
-                                <div class="file-meta">1.8MB · 添加于 2024-01-10</div>
-                            </div>
-                            <button class="delete-file-btn" title="删除文件">🗑</button>
+                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            暂无知识库文件
                         </div>
                     </div>
                 </div>
@@ -325,10 +272,10 @@
                             <button class="edit-prompt-btn" id="editPromptBtn">✏️ 编辑</button>
                         </div>
                         <div class="prompt-display" id="promptDisplay">
-                            你是一个贴心的生活顾问，关注健康、运动、饮食和日常生活的方方面面。你会提供实用的建议，帮助用户建立健康的生活习惯。
+                            加载中...
                         </div>
                         <div id="promptEditorContainer" style="display: none;">
-                            <textarea class="prompt-editor" id="promptEditor">你是一个贴心的生活顾问，关注健康、运动、饮食和日常生活的方方面面。你会提供实用的建议，帮助用户建立健康的生活习惯。</textarea>
+                            <textarea class="prompt-editor" id="promptEditor"></textarea>
                             <button class="save-prompt-btn" id="savePromptBtn">保存提示词</button>
                         </div>
                     </div>

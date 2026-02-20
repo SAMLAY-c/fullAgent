@@ -103,36 +103,36 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-icon primary">🤖</div>
-                            <div class="stat-trend up">↑ 12%</div>
+                            <div class="stat-trend" id="stat-bot-trend">↑ 12%</div>
                         </div>
-                        <div class="stat-value">8</div>
+                        <div class="stat-value" id="stat-bot-count">-</div>
                         <div class="stat-label">活跃 Bot 数量</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-icon warning">⏰</div>
-                            <div class="stat-trend up">↑ 8%</div>
+                            <div class="stat-trend" id="stat-workflow-trend">↑ 8%</div>
                         </div>
-                        <div class="stat-value">12</div>
+                        <div class="stat-value" id="stat-workflow-count">-</div>
                         <div class="stat-label">运行中的提醒</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-icon success">👥</div>
-                            <div class="stat-trend up">↑ 5%</div>
+                            <div class="stat-trend" id="stat-group-trend">↑ 5%</div>
                         </div>
-                        <div class="stat-value">5</div>
+                        <div class="stat-value" id="stat-group-count">-</div>
                         <div class="stat-label">活跃群聊</div>
                     </div>
 
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-icon success">💬</div>
-                            <div class="stat-trend up">↑ 28%</div>
+                            <div class="stat-trend" id="stat-message-trend">↑ 28%</div>
                         </div>
-                        <div class="stat-value">2,847</div>
+                        <div class="stat-value" id="stat-message-count">-</div>
                         <div class="stat-label">今日对话次数</div>
                     </div>
                 </div>
@@ -142,33 +142,8 @@
                     <h2 class="section-title">最近活动</h2>
                 </div>
 
-                <div class="execution-log">
-                    <div class="log-item">
-                        <div class="log-icon" style="background: rgba(144, 238, 144, 0.15); color: var(--color-secondary);">✓</div>
-                        <div class="log-content">
-                            <div class="log-title">提醒执行成功</div>
-                            <div class="log-description">"每日工作启动流程" 已完成，发送了今日计划提醒</div>
-                        </div>
-                        <div class="log-time">8:00 AM</div>
-                    </div>
-
-                    <div class="log-item">
-                        <div class="log-icon" style="background: rgba(155, 139, 245, 0.15); color: var(--color-primary);">💬</div>
-                        <div class="log-content">
-                            <div class="log-title">群聊新消息</div>
-                            <div class="log-description">"创业顾问团" 中 CEO Bot 回复了战略建议</div>
-                        </div>
-                        <div class="log-time">15分钟前</div>
-                    </div>
-
-                    <div class="log-item">
-                        <div class="log-icon" style="background: rgba(255, 217, 102, 0.15); color: var(--color-warning);">⚠️</div>
-                        <div class="log-content">
-                            <div class="log-title">API 调用接近限额</div>
-                            <div class="log-description">当前已使用 87% 的月度配额</div>
-                        </div>
-                        <div class="log-time">1小时前</div>
-                    </div>
+                <div class="execution-log" id="recent-activities">
+                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">加载中...</div>
                 </div>
             </div>
 

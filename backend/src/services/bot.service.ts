@@ -1,6 +1,13 @@
 import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
+export const BOT_ID_RANDOM_SLICE_LENGTH = 8;
+export const BOT_NAME_DUPLICATE_ERROR = 'Bot name already exists';
+
+export function generateBotId(type: string, timestamp: number = Date.now()): string {
+  return `bot_${type}_${timestamp}_${randomUUID().slice(0, BOT_ID_RANDOM_SLICE_LENGTH)}`;
+}
 
 interface GetBotsFilters {
   type?: string;
@@ -102,7 +109,14 @@ class BotService {
     description?: string;
     config?: any;
   }) {
-    const bot_id = `bot_${data.type}_${Date.now()}`;
+    const existing = await prisma.bot.findFirst({
+      where: { name: data.name }
+    });
+    if (existing) {
+      throw new Error(BOT_NAME_DUPLICATE_ERROR);
+    }
+
+    const bot_id = generateBotId(data.type);
 
     return await prisma.bot.create({
       data: {

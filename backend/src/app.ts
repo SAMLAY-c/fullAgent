@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import botRoutes from './routes/bots';
 import chatRoutes from './routes/chat';
+import statsRoutes from './routes/stats';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/bots', botRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -77,9 +79,11 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Bot Agent backend listening on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Bot Agent backend listening on http://localhost:${PORT}`);
+  });
+}
 
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
