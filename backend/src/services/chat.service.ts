@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto';
 import { PrismaClient } from '@prisma/client';
-import aiService from './ai.service';
-import type { ChatMessage, BotConfig } from './ai.service';
+import aiService, { type ChatMessage, type BotConfig, type AIResult } from './ai.service';
+import toolsService from './tools.service';
+import { normalizeUtf8Value } from '../utils/encoding';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +30,7 @@ class ChatService {
       }
     });
 
-    return conversations;
+    return conversations.map((conversation) => normalizeUtf8Value(conversation));
   }
 
   async createConversation(userId: string, botId: string, title: string) {
@@ -43,7 +44,7 @@ class ChatService {
         conversation_id: `conv_${randomUUID()}`,
         bot_id: botId,
         user_id: userId,
-        title: title.trim()
+        title: String(normalizeUtf8Value(title)).trim()
       },
       include: {
         bot: {
@@ -61,22 +62,28 @@ class ChatService {
       }
     });
 
-    return conversation;
+    return normalizeUtf8Value(conversation);
   }
 
   async listMessages(userId: string, conversationId: string, limit = 100) {
     await this.assertConversationOwner(userId, conversationId);
 
-    return prisma.message.findMany({
+    const messages = await prisma.message.findMany({
       where: { conversation_id: conversationId },
       orderBy: { timestamp: 'asc' },
       take: limit
     });
+
+    return messages.map((message) => normalizeUtf8Value(message));
   }
 
+  /**
+   * Send message with ReAct Agent support (Tool Calling)
+   * Implements the ReAct loop: Thought → Action → Observation → Thought → ... → Answer
+   */
   async sendMessage(userId: string, conversationId: string, content: string) {
     const conversation = await this.assertConversationOwner(userId, conversationId);
-    const cleaned = content.trim();
+    const cleaned = String(normalizeUtf8Value(content)).trim();
     if (!cleaned) {
       throw new Error('EMPTY_MESSAGE');
     }
@@ -88,8 +95,8 @@ class ChatService {
       take: 20 // Last 20 messages for context
     });
 
-    // Build chat messages for AI
-    const chatMessages: ChatMessage[] = messageHistory
+    // Build initial chat messages for AI
+    let messages: ChatMessage[] = messageHistory
       .filter(msg => msg.sender_type !== 'system')
       .map(msg => ({
         role: msg.sender_type === 'user' ? 'user' : 'assistant',
@@ -97,17 +104,105 @@ class ChatService {
       }));
 
     // Add current user message
-    chatMessages.push({
+    messages.push({
       role: 'user',
       content: cleaned
     });
 
-    // Get bot config for AI parameters
+    // Get bot config and tools
     const botConfig = conversation.bot.config as BotConfig | null;
+    const bot = await prisma.bot.findUnique({
+      where: { bot_id: conversation.bot_id },
+      select: { type: true, scene: true }
+    });
 
-    // Generate AI response
-    const aiResponse = await aiService.generateResponse(chatMessages, botConfig || undefined);
+    // Get available tools for this bot type
+    const tools = bot ? toolsService.getToolsForBot(bot.type, bot.scene) : [];
 
+    // ===== ReAct Loop =====
+    // Maximum iterations to prevent infinite loops
+    const MAX_ITERATIONS = 8;
+    let finalReply = '';
+    const toolCallLog: any[] = []; // Track all tool calls for metadata
+    let totalTokensUsed = 0;
+
+    for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+      console.log(`🔄 ReAct iteration ${iteration + 1}/${MAX_ITERATIONS}`);
+
+      // Call AI with current message history and available tools
+      const result: AIResult = await aiService.generateResponse(
+        messages,
+        botConfig || undefined,
+        tools
+      );
+
+      if (result.tokensUsed) {
+        totalTokensUsed += result.tokensUsed;
+      }
+
+      // Case 1: AI responds with text directly (final answer)
+      if (result.type === 'text') {
+        finalReply = result.content || '';
+        console.log(`✅ ReAct completed with direct response (${iteration + 1} iterations)`);
+        break;
+      }
+
+      // Case 2: AI wants to use tools
+      if (result.type === 'tool_calls' && result.tool_calls) {
+        // Add AI's tool_calls message to history (IMPORTANT!)
+        messages.push({
+          role: 'assistant',
+          content: '',
+          tool_calls: result.tool_calls
+        });
+
+        // Execute each tool call
+        for (const toolCall of result.tool_calls) {
+          console.log(`  🛠️  Executing tool: ${toolCall.function.name}`);
+          console.log(`     Args: ${toolCall.function.arguments}`);
+
+          const execResult = await toolsService.executeTool(
+            toolCall,
+            userId,
+            conversation.bot_id
+          );
+
+          // Log tool execution
+          const toolLog = {
+            tool: toolCall.function.name,
+            args: toolCall.function.arguments,
+            success: execResult.success,
+            result: execResult.result.substring(0, 200), // Truncate for storage
+            error: execResult.error
+          };
+          toolCallLog.push(toolLog);
+
+          // Add tool result message to history
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: execResult.success ? execResult.result : `Error: ${execResult.error}`
+          });
+
+          console.log(`     Result: ${execResult.success ? execResult.result.substring(0, 100) : execResult.error}`);
+        }
+
+        // Continue loop to let AI reason based on tool results
+        continue;
+      }
+
+      // Should not reach here
+      console.warn('⚠️  Unexpected AI result type, breaking loop');
+      break;
+    }
+
+    // If no final reply after all iterations, use fallback
+    if (!finalReply) {
+      finalReply = '抱歉，我在处理你的请求时遇到了一些问题。请稍后再试。';
+      console.warn('⚠️  ReAct loop exhausted without final reply');
+    }
+
+    // Save user message and AI response to database
     const [userMessage, botMessage] = await prisma.$transaction(async (tx) => {
       const uMsg = await tx.message.create({
         data: {
@@ -115,7 +210,7 @@ class ChatService {
           conversation_id: conversationId,
           sender_type: 'user',
           sender_id: userId,
-          content: cleaned
+          content: String(normalizeUtf8Value(cleaned))
         }
       });
 
@@ -127,10 +222,13 @@ class ChatService {
           conversation_id: conversationId,
           sender_type: 'bot',
           sender_id: userId,
-          content: aiResponse,
+          content: String(normalizeUtf8Value(finalReply)),
           metadata: {
             model: botConfig?.model || 'deepseek-ai/DeepSeek-V3.2',
-            generated_at: new Date().toISOString()
+            generated_at: new Date().toISOString(),
+            react_iterations: toolCallLog.length > 0 ? toolCallLog.length : 0,
+            tool_calls: toolCallLog.length > 0 ? toolCallLog : undefined,
+            tokens_used: totalTokensUsed
           }
         }
       });

@@ -1,11 +1,40 @@
 /**
- * AI Service - SiliconFlow API Integration
+ * AI Service - SiliconFlow API Integration with Tool Calling Support
  * Supports DeepSeek-V3.2 and other models via SiliconFlow
+ * Implements ReAct Agent pattern with tool use
  */
 
 interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'system' | 'user' | 'assistant' | 'tool';
   content: string;
+  tool_call_id?: string;
+  tool_calls?: any[];
+}
+
+interface Tool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, any>;
+  };
+}
+
+interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+interface AIResult {
+  type: 'text' | 'tool_calls';
+  content?: string;
+  tool_calls?: ToolCall[];
+  rawMessage?: any;
+  tokensUsed?: number;
 }
 
 interface ChatCompletionRequest {
@@ -17,6 +46,8 @@ interface ChatCompletionRequest {
   top_p?: number;
   enable_thinking?: boolean;
   thinking_budget?: number;
+  tools?: Tool[];
+  tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
 }
 
 interface ChatCompletionResponse {
@@ -28,8 +59,9 @@ interface ChatCompletionResponse {
     index: number;
     message: {
       role: string;
-      content: string;
+      content?: string;
       reasoning_content?: string;
+      tool_calls?: ToolCall[];
     };
     finish_reason: string;
   }>;
@@ -70,14 +102,18 @@ class AIService {
   }
 
   /**
-   * Generate AI response for a conversation
+   * Generate AI response with optional tool calling support (ReAct Agent)
    */
   async generateResponse(
     messages: ChatMessage[],
-    botConfig?: BotConfig
-  ): Promise<string> {
+    botConfig?: BotConfig,
+    tools?: Tool[]
+  ): Promise<AIResult> {
     if (!this.apiKey) {
-      return this.getFallbackResponse(messages);
+      return {
+        type: 'text',
+        content: this.getFallbackResponse(messages)
+      };
     }
 
     const config = { ...this.defaultConfig, ...botConfig };
@@ -101,6 +137,13 @@ class AIService {
       temperature: config.temperature,
       top_p: config.top_p
     };
+
+    // Add tools if provided (ReAct Agent mode)
+    if (tools && tools.length > 0) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = 'auto';
+      console.log(`🔧 Agent mode: Enabled with ${tools.length} tools`);
+    }
 
     // Add thinking parameters for supported models
     if (config.enable_thinking) {
@@ -127,22 +170,51 @@ class AIService {
       }
 
       const data: ChatCompletionResponse = await response.json() as ChatCompletionResponse;
+      const choice = data.choices[0];
+      const message = choice.message;
 
-      // Extract the assistant's response
-      if (data.choices && data.choices.length > 0) {
-        const choice = data.choices[0];
-        if (choice.message && choice.message.content) {
-          console.log(`✅ AI Response generated (${data.usage.total_tokens} tokens)`);
-          return choice.message.content;
-        }
+      // Check if AI decided to use tools
+      if (message.tool_calls && message.tool_calls.length > 0) {
+        console.log(`🛠️  AI decided to use ${message.tool_calls.length} tool(s):`,
+          message.tool_calls.map(tc => tc.function.name).join(', '));
+
+        return {
+          type: 'tool_calls',
+          tool_calls: message.tool_calls,
+          rawMessage: message, // Preserve for conversation history
+          tokensUsed: data.usage.total_tokens
+        };
+      }
+
+      // Direct text response
+      if (message.content) {
+        console.log(`✅ AI Response generated (${data.usage.total_tokens} tokens)`);
+        return {
+          type: 'text',
+          content: message.content,
+          tokensUsed: data.usage.total_tokens
+        };
       }
 
       throw new Error('Invalid response format from API');
     } catch (error) {
       console.error('Error calling SiliconFlow API:', error);
-      // Return fallback response on error
-      return this.getFallbackResponse(messages);
+      return {
+        type: 'text',
+        content: this.getFallbackResponse(messages)
+      };
     }
+  }
+
+  /**
+   * Legacy method for simple text responses (without tools)
+   */
+  async generateSimpleResponse(
+    messages: ChatMessage[],
+    botConfig?: BotConfig
+  ): Promise<string> {
+    const result = await this.generateResponse(messages, botConfig);
+    return result.content || this.getFallbackResponse(messages);
   }
 
   /**
@@ -172,4 +244,12 @@ class AIService {
 }
 
 export default new AIService();
-export type { ChatMessage, BotConfig, ChatCompletionRequest, ChatCompletionResponse };
+export type {
+  ChatMessage,
+  BotConfig,
+  ChatCompletionRequest,
+  ChatCompletionResponse,
+  Tool,
+  ToolCall,
+  AIResult
+};
