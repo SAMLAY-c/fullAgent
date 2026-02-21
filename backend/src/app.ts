@@ -8,9 +8,12 @@ import chatRoutes from './routes/chat';
 import statsRoutes from './routes/stats';
 import analyticsRoutes from './routes/analytics';
 import logsRoutes from './routes/logs';
+import groupsRoutes from './routes/groups';
 import templatesRoutes from './routes/templates';
 import knowledgeRoutes from './routes/knowledge';
 import systemRoutes from './routes/system';
+import scheduleRoutes from './routes/schedule';
+import schedulerService from './services/scheduler.service';
 import { normalizeUtf8Value } from './utils/encoding';
 
 dotenv.config();
@@ -68,9 +71,11 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/groups', groupsRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/schedule', scheduleRoutes);
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -102,8 +107,9 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Bot Agent backend listening on http://localhost:${PORT}`);
+    await schedulerService.init();
   });
 }
 

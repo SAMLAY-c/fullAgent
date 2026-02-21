@@ -37,7 +37,20 @@
       "Bash(git checkout:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidXNlcl9hZG1pbl8wMDEiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzcxMjEwMTMyLCJleHAiOjE3NzEyMTEwMzJ9.qvLmsbIA66dLQ4pvLxOH3q-smYGbdROOPoIrfn5GtpA\")",
       "Bash(npx prisma db seed:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "Bash(start http://localhost:8080/bot-admin-ui-v2.html)",
+      "Bash(start http://localhost:8080/bot-chat-ui-v2.html)",
+      "Bash(sc query:*)",
+      "Bash(pg_ctl:*)",
+      "Bash(docker:*)",
+      "Bash(tasklist:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidXNlcl9hZG1pbl8wMDEiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzcxNTk2NTIxLCJleHAiOjE3NzE1OTc0MjF9.obd4l5eFXYEsP4YKpD0a6jXmi-GNOPtDxxyQiXh-vSs\")",
+      "Bash(pg_isready:*)",
+      "Bash(npx:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)"
     ]
   }
 }

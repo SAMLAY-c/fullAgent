@@ -64,7 +64,7 @@
         }
 
         body {
-            font-family: 'Nunito Sans', sans-serif;
+            font-family: 'Noto Sans SC', 'Nunito Sans', sans-serif;
             background: var(--color-bg);
             background-image: radial-gradient(circle at 20% 50%, rgba(155, 139, 245, 0.08) 0%, transparent 50%),
                               radial-gradient(circle at 80% 80%, rgba(255, 182, 193, 0.08) 0%, transparent 50%);
@@ -113,7 +113,7 @@
         
         .sidebar {
             width: 300px;
-            background: var(--color-surface);
+            background: #ffffff;
             border-radius: var(--radius-xl);
             padding: var(--space-lg);
             box-shadow: var(--shadow-md);
@@ -187,17 +187,17 @@
             border-radius: var(--radius-sm);
             cursor: pointer;
             transition: all var(--duration-normal) var(--ease-smooth);
-            font-family: 'Nunito Sans', sans-serif;
+            font-family: 'Noto Sans SC', 'Nunito Sans', sans-serif;
         }
 
         .tab-btn.active {
-            background: var(--color-surface);
-            color: var(--color-primary);
-            box-shadow: var(--shadow-sm);
+            background: #ffffff;
+            color: #6b4ff6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .tab-btn:hover:not(.active) {
-            background: rgba(155, 139, 245, 0.08);
+            background: rgba(107, 79, 246, 0.08);
         }
 
         
@@ -300,11 +300,24 @@
         }
 
         .conversation-item:hover {
-            background: var(--color-surface-soft);
+            background: rgba(155, 139, 245, 0.05);
         }
 
         .conversation-item.active {
-            background: rgba(155, 139, 245, 0.1);
+            background: rgba(107, 79, 246, 0.08);
+            position: relative;
+        }
+
+        .conversation-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 60%;
+            background: linear-gradient(180deg, #6b4ff6 0%, #8b6dfa 100%);
+            border-radius: 0 2px 2px 0;
         }
 
         .conversation-icon {
@@ -439,8 +452,15 @@
             align-items: center;
             justify-content: center;
             font-size: 14px;
-            border: 2px solid var(--color-surface);
-            box-shadow: var(--shadow-sm);
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            transition: all var(--duration-normal);
+        }
+
+        .member-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(107, 79, 246, 0.2);
+            z-index: 1;
         }
 
         .member-count {
@@ -506,7 +526,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--color-surface);
+            background: #f7f8fc;
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-md);
             overflow: hidden;
@@ -990,7 +1010,7 @@
             display: flex;
             flex-direction: column;
             gap: var(--space-lg);
-            background: var(--color-bg);
+            background: #eef0f7;
         }
 
         .message {
@@ -1045,6 +1065,21 @@
             margin-bottom: var(--space-xs);
             padding-left: var(--space-xs);
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bot-name-tag .bot-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: rgba(107, 79, 246, 0.1);
+            color: #6b4ff6;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .message-content {
@@ -1057,16 +1092,27 @@
 
         .message.bot .message-content {
             background: #FFFFFF;
-            border: none;
+            border: 1px solid rgba(0, 0, 0, 0.04);
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all var(--duration-normal);
+        }
+
+        .message.bot .message-content:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            background: linear-gradient(135deg, #6b4ff6 0%, #8b6dfa 100%);
             border-radius: var(--radius-lg);
-            box-shadow: 0 4px 16px rgba(155, 139, 245, 0.25);
+            box-shadow: 0 2px 8px rgba(107, 79, 246, 0.18);
             color: white;
+            transition: all var(--duration-normal);
+        }
+
+        .message.user .message-content:hover {
+            box-shadow: 0 4px 16px rgba(107, 79, 246, 0.28);
+            transform: translateY(-1px);
         }
 
         .message-time {
@@ -1205,22 +1251,24 @@
             width: 100%;
             padding: 16px 20px;
             border-radius: var(--radius-lg);
-            border: 2px solid rgba(0, 0, 0, 0.08);
-            background: var(--color-bg);
+            border: 1.5px solid rgba(0, 0, 0, 0.08);
+            background: var(--color-surface);
             color: var(--text-primary);
             font-size: 15px;
-            font-family: 'Nunito Sans', sans-serif;
+            font-family: 'Noto Sans SC', 'Nunito Sans', sans-serif;
             resize: none;
             outline: none;
             transition: all var(--duration-normal);
             min-height: 52px;
             max-height: 140px;
+            box-shadow: 0 4px 20px rgba(107, 79, 246, 0.08);
         }
 
         textarea:focus {
-            border-color: var(--color-primary);
+            border-color: #6b4ff6;
             background: var(--color-surface);
-            box-shadow: 0 0 0 4px rgba(155, 139, 245, 0.1);
+            box-shadow: 0 0 0 4px rgba(107, 79, 246, 0.1), 0 4px 24px rgba(107, 79, 246, 0.15);
+            transform: translateY(-1px);
         }
 
         textarea::placeholder {
@@ -1262,8 +1310,8 @@
         }
 
         .send-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 28px rgba(155, 139, 245, 0.35);
+            transform: translateY(-3px) translateX(2px);
+            box-shadow: 0 12px 28px rgba(107, 79, 246, 0.35);
         }
 
         .send-btn:active {

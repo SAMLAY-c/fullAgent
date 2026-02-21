@@ -33,17 +33,17 @@
                     <div class="nav-item" data-page="bots">
                         <span class="nav-icon">🤖</span>
                         <span>Bot 管理</span>
-                        <span class="badge">8</span>
+                        <span class="badge" id="nav-bots-badge">-</span>
                     </div>
                     <div class="nav-item" data-page="sop">
                         <span class="nav-icon">⏰</span>
                         <span>提醒工作流</span>
-                        <span class="badge">12</span>
+                        <span class="badge" id="nav-workflows-badge">-</span>
                     </div>
                     <div class="nav-item" data-page="groups">
                         <span class="nav-icon">👥</span>
                         <span>群聊管理</span>
-                        <span class="badge">5</span>
+                        <span class="badge" id="nav-groups-badge">-</span>
                     </div>
                 </div>
 
@@ -56,6 +56,10 @@
                     <div class="nav-item" data-page="logs">
                         <span class="nav-icon">📋</span>
                         <span>对话记录</span>
+                    </div>
+                    <div class="nav-item" data-page="ai-insights">
+                        <span class="nav-icon">🧠</span>
+                        <span>AI 分析</span>
                     </div>
                 </div>
 
@@ -162,189 +166,10 @@
                     </button>
                 </div>
 
-                <div class="items-grid">
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar sop">⏰</div>
-                            <div class="item-info">
-                                <h3 class="item-title">每日工作启动流程</h3>
-                                <p class="item-subtitle">工作伙伴 · 定时触发</p>
-                                <span class="status-badge active">
-                                    <span class="status-dot"></span>
-                                    运行中
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="sop-schedule">
-                            <strong>⏰ 执行时间：</strong>每天 08:00 (Asia/Shanghai)
-                        </div>
-
-                        <div class="sop-steps">
-                            📋 工作流步骤：<br>
-                            1️⃣ 发送早安问候<br>
-                            2️⃣ 获取日历事件<br>
-                            3️⃣ 生成今日待办清单
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">127</div>
-                                <div class="item-stat-label">执行次数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">98%</div>
-                                <div class="item-stat-label">成功率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">2.3s</div>
-                                <div class="item-stat-label">平均耗时</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-secondary btn-small">编辑</button>
-                            <button class="btn btn-secondary btn-small">执行记录</button>
-                            <button class="btn btn-secondary btn-small">暂停</button>
-                        </div>
-                    </div>
-
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar sop">⏰</div>
-                            <div class="item-info">
-                                <h3 class="item-title">午餐推荐提醒</h3>
-                                <p class="item-subtitle">生活小助手 · 定时触发</p>
-                                <span class="status-badge active">
-                                    <span class="status-dot"></span>
-                                    运行中
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="sop-schedule">
-                            <strong>⏰ 执行时间：</strong>每天 11:30 (Asia/Shanghai)
-                        </div>
-
-                        <div class="sop-steps">
-                            📋 工作流步骤：<br>
-                            1️⃣ 分析今日运动量<br>
-                            2️⃣ 推荐健康午餐<br>
-                            3️⃣ 发送餐厅建议
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">89</div>
-                                <div class="item-stat-label">执行次数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">96%</div>
-                                <div class="item-stat-label">成功率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">1.8s</div>
-                                <div class="item-stat-label">平均耗时</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-secondary btn-small">编辑</button>
-                            <button class="btn btn-secondary btn-small">执行记录</button>
-                            <button class="btn btn-secondary btn-small">暂停</button>
-                        </div>
-                    </div>
-
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar sop">⏰</div>
-                            <div class="item-info">
-                                <h3 class="item-title">每周工作总结</h3>
-                                <p class="item-subtitle">工作伙伴 · 定时触发</p>
-                                <span class="status-badge active">
-                                    <span class="status-dot"></span>
-                                    运行中
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="sop-schedule">
-                            <strong>⏰ 执行时间：</strong>每周五 17:00 (Asia/Shanghai)
-                        </div>
-
-                        <div class="sop-steps">
-                            📋 工作流步骤：<br>
-                            1️⃣ 统计本周完成任务<br>
-                            2️⃣ 分析工作效率<br>
-                            3️⃣ 生成周报并发送
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">18</div>
-                                <div class="item-stat-label">执行次数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">100%</div>
-                                <div class="item-stat-label">成功率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">4.2s</div>
-                                <div class="item-stat-label">平均耗时</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-secondary btn-small">编辑</button>
-                            <button class="btn btn-secondary btn-small">执行记录</button>
-                            <button class="btn btn-secondary btn-small">暂停</button>
-                        </div>
-                    </div>
-
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar sop">⏰</div>
-                            <div class="item-info">
-                                <h3 class="item-title">晚安关怀提醒</h3>
-                                <p class="item-subtitle">心灵朋友 · 定时触发</p>
-                                <span class="status-badge offline">
-                                    <span class="status-dot"></span>
-                                    已暂停
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="sop-schedule">
-                            <strong>⏰ 执行时间：</strong>每天 21:00 (Asia/Shanghai)
-                        </div>
-
-                        <div class="sop-steps">
-                            📋 工作流步骤：<br>
-                            1️⃣ 发送晚安问候<br>
-                            2️⃣ 提醒给对象发消息<br>
-                            3️⃣ 推荐睡前活动
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">45</div>
-                                <div class="item-stat-label">执行次数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">94%</div>
-                                <div class="item-stat-label">成功率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">1.5s</div>
-                                <div class="item-stat-label">平均耗时</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-primary btn-small">启动</button>
-                            <button class="btn btn-secondary btn-small">编辑</button>
-                            <button class="btn btn-secondary btn-small">删除</button>
-                        </div>
+                <div class="items-grid" id="sop-tasks-container">
+                    <div class="empty" style="padding: 3rem; text-align: center;">
+                        <div class="empty-title">加载中...</div>
+                        <div class="empty-desc">正在获取工作流实时数据</div>
                     </div>
                 </div>
             </div>
@@ -364,143 +189,10 @@
                     </button>
                 </div>
 
-                <div class="items-grid">
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar group">🎯</div>
-                            <div class="item-info">
-                                <h3 class="item-title">创业顾问团</h3>
-                                <p class="item-subtitle">企业团队 · 关键词路由</p>
-                                <span class="status-badge online">
-                                    <span class="status-dot"></span>
-                                    活跃中
-                                </span>
-                            </div>
-                        </div>
-
-                        <p class="item-description">
-                            CEO、CTO、CMO 三位专家 Bot 协同，提供全方位创业建议
-                        </p>
-
-                        <div class="group-members">
-                            <div class="member-avatar-small" style="background: var(--work-bg);">💼</div>
-                            <div class="member-avatar-small" style="background: var(--life-bg);">💻</div>
-                            <div class="member-avatar-small" style="background: var(--love-bg);">📈</div>
-                            <span class="member-count">3 个成员</span>
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">234</div>
-                                <div class="item-stat-label">对话数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">97%</div>
-                                <div class="item-stat-label">响应率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">2.8s</div>
-                                <div class="item-stat-label">响应速度</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-secondary btn-small">配置路由</button>
-                            <button class="btn btn-secondary btn-small">成员管理</button>
-                            <button class="btn btn-secondary btn-small">查看记录</button>
-                        </div>
-                    </div>
-
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar group">💪</div>
-                            <div class="item-info">
-                                <h3 class="item-title">成长加速器</h3>
-                                <p class="item-subtitle">个人发展 · AI 智能路由</p>
-                                <span class="status-badge online">
-                                    <span class="status-dot"></span>
-                                    活跃中
-                                </span>
-                            </div>
-                        </div>
-
-                        <p class="item-description">
-                            工作、学习、健康三大领域 Bot 协作，全方位助力个人成长
-                        </p>
-
-                        <div class="group-members">
-                            <div class="member-avatar-small" style="background: var(--work-bg);">💼</div>
-                            <div class="member-avatar-small" style="background: var(--life-bg);">📚</div>
-                            <div class="member-avatar-small" style="background: var(--love-bg);">🏃</div>
-                            <span class="member-count">3 个成员</span>
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">189</div>
-                                <div class="item-stat-label">对话数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">95%</div>
-                                <div class="item-stat-label">响应率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">2.5s</div>
-                                <div class="item-stat-label">响应速度</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-secondary btn-small">配置路由</button>
-                            <button class="btn btn-secondary btn-small">成员管理</button>
-                            <button class="btn btn-secondary btn-small">查看记录</button>
-                        </div>
-                    </div>
-
-                    <div class="item-card">
-                        <div class="item-header">
-                            <div class="item-avatar group">🎨</div>
-                            <div class="item-info">
-                                <h3 class="item-title">创意工作室</h3>
-                                <p class="item-subtitle">内容创作 · 全员响应</p>
-                                <span class="status-badge offline">
-                                    <span class="status-dot"></span>
-                                    待激活
-                                </span>
-                            </div>
-                        </div>
-
-                        <p class="item-description">
-                            文案、设计、策划 Bot 联动，打造一站式创意生产流水线
-                        </p>
-
-                        <div class="group-members">
-                            <div class="member-avatar-small" style="background: var(--work-bg);">✍️</div>
-                            <div class="member-avatar-small" style="background: var(--life-bg);">🎨</div>
-                            <div class="member-avatar-small" style="background: var(--love-bg);">💡</div>
-                            <span class="member-count">3 个成员</span>
-                        </div>
-
-                        <div class="item-stats">
-                            <div class="item-stat">
-                                <div class="item-stat-value">0</div>
-                                <div class="item-stat-label">对话数</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">--</div>
-                                <div class="item-stat-label">响应率</div>
-                            </div>
-                            <div class="item-stat">
-                                <div class="item-stat-value">--</div>
-                                <div class="item-stat-label">响应速度</div>
-                            </div>
-                        </div>
-
-                        <div class="item-actions">
-                            <button class="btn btn-primary btn-small">激活</button>
-                            <button class="btn btn-secondary btn-small">配置</button>
-                            <button class="btn btn-secondary btn-small">删除</button>
-                        </div>
+                <div class="items-grid" id="groups-container">
+                    <div class="empty" style="padding: 3rem; text-align: center;">
+                        <div class="empty-title">加载中...</div>
+                        <div class="empty-desc">正在获取群聊实时数据</div>
                     </div>
                 </div>
             </div>
@@ -609,6 +301,19 @@
                 </div>
                 <div style="display: grid; gap: var(--space-lg);">
                     <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                            <select class="select" id="logs-bot-filter" style="min-width: 220px;">
+                                <option value="">全部 Bot</option>
+                            </select>
+                            <input class="input" id="logs-topic-filter" placeholder="按对话主题筛选" style="min-width: 180px;" />
+                            <input class="input" id="logs-content-filter" placeholder="按内容关键词筛选" style="min-width: 180px;" />
+                            <input class="input" id="logs-start-date" type="date" />
+                            <input class="input" id="logs-end-date" type="date" />
+                            <button class="btn btn-secondary" id="logs-refresh-btn">刷新记录</button>
+                            <button class="btn btn-primary" id="logs-export-csv-btn">导出 CSV</button>
+                        </div>
+                    </div>
+                    <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
                         <h3 style="margin-bottom: 12px;">最近会话</h3>
                         <div class="table-wrap">
                             <table class="table"><thead><tr><th>标题</th><th>机器人</th><th>用户</th><th>消息数</th><th>更新时间</th></tr></thead><tbody id="logs-conversations-body"></tbody></table>
@@ -619,6 +324,47 @@
                         <div class="table-wrap">
                             <table class="table"><thead><tr><th>发送方</th><th>内容</th><th>会话</th><th>时间</th></tr></thead><tbody id="logs-messages-body"></tbody></table>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-ai-insights" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">AI 分析</h1>
+                    <p class="page-description">按主题、日期、内容筛选并用模型生成分析报告 🧠</p>
+                </div>
+                <div style="display: grid; gap: var(--space-lg);">
+                    <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+                            <select class="select" id="ai-bot-filter">
+                                <option value="">全部 Bot</option>
+                            </select>
+                            <input class="input" id="ai-topic-filter" placeholder="主题（会话标题）" />
+                            <input class="input" id="ai-content-filter" placeholder="内容关键词" />
+                            <input class="input" id="ai-start-date" type="date" />
+                            <input class="input" id="ai-end-date" type="date" />
+                            <select class="select" id="ai-model-select">
+                                <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek V3.2（默认）</option>
+                                <option value="deepseek-ai/DeepSeek-R1">DeepSeek R1</option>
+                                <option value="Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            <label><input type="checkbox" id="ai-knowledge-text" checked /> 文本</label>
+                            <label><input type="checkbox" id="ai-knowledge-image" checked /> 图片</label>
+                            <label><input type="checkbox" id="ai-knowledge-drawing" checked /> 绘画</label>
+                            <label><input type="checkbox" id="ai-knowledge-pdf" checked /> PDF</label>
+                        </div>
+                        <textarea class="textarea" id="ai-system-prompt" rows="4" style="margin-top: 12px;" placeholder="系统提示词（可选）">你是运营分析助手。请基于给定对话与知识信息，输出中文分析：总体结论、主要主题、风险点、优化建议。</textarea>
+                        <textarea class="textarea" id="ai-analysis-prompt" rows="3" style="margin-top: 12px;" placeholder="补充分析要求（可选）"></textarea>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-primary" id="ai-run-analysis-btn">开始 AI 分析</button>
+                            <button class="btn btn-secondary" id="ai-export-csv-btn" style="margin-left: 8px;">导出 CSV</button>
+                        </div>
+                    </div>
+                    <div style="background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); padding: var(--space-lg);">
+                        <div id="ai-analysis-meta" class="muted"></div>
+                        <pre id="ai-analysis-result" style="margin-top: 12px; white-space: pre-wrap; background: #faf8f4; border-radius: 10px; padding: 12px; min-height: 180px;">请先设置筛选条件并点击“开始 AI 分析”</pre>
                     </div>
                 </div>
             </div>

@@ -1,9 +1,27 @@
-(function () {
+﻿(function () {
   const loginForm = document.getElementById('loginForm');
   const loginBtn = document.getElementById('loginBtn');
   const errorMessage = document.getElementById('errorMessage');
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
+
+  function getSafeReturnTo() {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('returnTo');
+    const stored = sessionStorage.getItem('auth_return_to');
+    const fallback = stored || 'bot-chat-ui-v2.html';
+    if (!raw) return fallback;
+
+    try {
+      const decoded = decodeURIComponent(raw);
+      if (!decoded || decoded.startsWith('http://') || decoded.startsWith('https://') || decoded.startsWith('//')) {
+        return fallback;
+      }
+      return decoded;
+    } catch {
+      return fallback;
+    }
+  }
 
   function showError(message) {
     errorMessage.textContent = message;
@@ -35,7 +53,9 @@
     setLoading(true);
     try {
       await authManager.login(username, password);
-      window.location.href = 'bot-chat-ui-v2.html';
+      const target = getSafeReturnTo();
+      sessionStorage.removeItem('auth_return_to');
+      window.location.href = target;
     } catch (error) {
       showError(error?.message || '登录失败，请重试');
       setLoading(false);
@@ -43,7 +63,7 @@
   }
 
   if (authManager.isAuthenticated()) {
-    window.location.href = 'bot-chat-ui-v2.html';
+    window.location.href = getSafeReturnTo();
     return;
   }
 

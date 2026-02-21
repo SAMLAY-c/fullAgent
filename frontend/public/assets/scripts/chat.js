@@ -1,4 +1,13 @@
 (function () {
+  function redirectToLoginWithReturnTo() {
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentPath.includes('login.html')) {
+      window.location.href = 'login.html';
+      return;
+    }
+    window.location.href = `login.html?returnTo=${encodeURIComponent(currentPath)}`;
+  }
+
   const sceneConfig = {
     work: { groupId: 'workBotGroup', defaultName: '工作伙伴', icon: '💼' },
     life: { groupId: 'lifeBotGroup', defaultName: '生活助手', icon: '🌿' },
@@ -33,7 +42,10 @@
     promptEditorContainer: document.getElementById('promptEditorContainer'),
     promptEditor: document.getElementById('promptEditor'),
     editPromptBtn: document.getElementById('editPromptBtn'),
-    savePromptBtn: document.getElementById('savePromptBtn')
+    savePromptBtn: document.getElementById('savePromptBtn'),
+    sopBtn: document.getElementById('sopBtn'),
+    logBtn: document.getElementById('logBtn'),
+    quickSettingsBtn: document.getElementById('quickSettingsBtn')
   };
 
   function escapeHtml(text) {
@@ -64,7 +76,7 @@
 
   async function ensureAuth() {
     if (!authManager.isAuthenticated()) {
-      window.location.href = 'login.html';
+      redirectToLoginWithReturnTo();
       return false;
     }
     return true;
@@ -400,6 +412,31 @@
     }
   }
 
+  function wireTopActions() {
+    if (ui.sopBtn) {
+      ui.sopBtn.addEventListener('click', () => {
+        activateContentTab('settings');
+        if (ui.promptEditorContainer && ui.promptDisplay) {
+          ui.promptEditorContainer.style.display = 'block';
+          ui.promptDisplay.style.display = 'none';
+        }
+        if (ui.promptEditor) ui.promptEditor.focus();
+      });
+    }
+
+    if (ui.logBtn) {
+      ui.logBtn.addEventListener('click', () => {
+        activateContentTab('memory');
+      });
+    }
+
+    if (ui.quickSettingsBtn) {
+      ui.quickSettingsBtn.addEventListener('click', () => {
+        activateContentTab('settings');
+      });
+    }
+  }
+
   function wireInput() {
     ui.input.addEventListener('compositionstart', () => {
       state.isComposing = true;
@@ -459,6 +496,7 @@
     wireLogout();
     wireGroupCards();
     wireSettingsActions();
+    wireTopActions();
 
     for (const scene of Object.keys(sceneConfig)) {
       const firstBot = state.botsByScene[scene]?.[0];

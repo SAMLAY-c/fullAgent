@@ -8,6 +8,10 @@ const ROOT = path.resolve(__dirname, '../..');
 const TARGET_DIRS = ['backend/src', 'frontend/public', 'tests'];
 const EXT_WHITELIST = new Set(['.js', '.ts', '.tsx', '.json', '.html', '.css', '.md']);
 const IGNORE_SEGMENTS = new Set(['node_modules', '.git', 'dist', 'coverage', 'test-results', 'results']);
+const IGNORE_FILES = new Set([
+  path.normalize('backend/src/utils/encoding.ts'),
+  path.normalize('backend/scripts/encoding-preprocess.js')
+]);
 
 const MOJIBAKE_HINT = /[馃锛銆鈥]|浣犵殑|鑾峰彇|澶辫触|鐧诲綍|宸茶繛鎺ュ悗绔|鍙戦€侀/;
 
@@ -52,6 +56,9 @@ function main() {
   let changedCount = 0;
 
   for (const file of files) {
+    const relativePath = path.normalize(path.relative(ROOT, file));
+    if (IGNORE_FILES.has(relativePath)) continue;
+
     const buffer = fs.readFileSync(file);
     const original = buffer.toString('utf8');
     const repaired = repairFileContent(original);
@@ -59,9 +66,9 @@ function main() {
       changedCount += 1;
       if (SHOULD_WRITE) {
         fs.writeFileSync(file, repaired, 'utf8');
-        console.log(`[fixed] ${path.relative(ROOT, file)}`);
+        console.log(`[fixed] ${relativePath}`);
       } else {
-        console.log(`[needs-fix] ${path.relative(ROOT, file)}`);
+        console.log(`[needs-fix] ${relativePath}`);
       }
     }
   }

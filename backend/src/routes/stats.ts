@@ -1,17 +1,33 @@
-import { Router, Response } from 'express';
+﻿import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-// 所有统计路由都需要认证
 router.use(authMiddleware);
 
-// GET /stats/dashboard - 获取仪表盘统计数据
-router.get('/dashboard', async (req: any, res: Response) => {
+function percentTrend(current: number, previous: number): number {
+  if (previous === 0 && current === 0) return 0;
+  if (previous === 0) return 100;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+router.get('/dashboard', async (_req: any, res: Response) => {
   try {
-    // 并行查询所有统计数据
+    const now = new Date();
+    const startToday = new Date(now);
+    startToday.setHours(0, 0, 0, 0);
+
+    const startYesterday = new Date(startToday);
+    startYesterday.setDate(startYesterday.getDate() - 1);
+
+    const startThisWeek = new Date(startToday);
+    startThisWeek.setDate(startThisWeek.getDate() - 7);
+
+    const startLastWeek = new Date(startThisWeek);
+    startLastWeek.setDate(startLastWeek.getDate() - 7);
+
     const [
       totalBots,
       onlineBots,
@@ -20,38 +36,61 @@ router.get('/dashboard', async (req: any, res: Response) => {
       totalGroups,
       activeGroups,
       todayMessageCount,
-      totalConversations
+      totalConversations,
+      botsCreatedThisWeek,
+      botsCreatedLastWeek,
+      workflowsCreatedThisWeek,
+      workflowsCreatedLastWeek,
+      groupsCreatedThisWeek,
+      groupsCreatedLastWeek,
+      yesterdayMessageCount
     ] = await Promise.all([
-      // Bot 统计
       prisma.bot.count(),
       prisma.bot.count({ where: { status: 'online' } }),
-
-      // Workflow 统计
       prisma.workflow.count(),
       prisma.workflow.count({ where: { enabled: true } }),
-
-      // Group 统计
       prisma.group.count(),
       prisma.group.count({ where: { type: 'personal' } }),
-
-      // 今日对话次数
       prisma.message.count({
         where: {
           timestamp: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0))
+            gte: startToday
           }
         }
       }),
-
-      // 总对话数
-      prisma.conversation.count()
+      prisma.conversation.count(),
+      prisma.bot.count({
+        where: { created_at: { gte: startThisWeek, lt: now } }
+      }),
+      prisma.bot.count({
+        where: { created_at: { gte: startLastWeek, lt: startThisWeek } }
+      }),
+      prisma.workflow.count({
+        where: { created_at: { gte: startThisWeek, lt: now } }
+      }),
+      prisma.workflow.count({
+        where: { created_at: { gte: startLastWeek, lt: startThisWeek } }
+      }),
+      prisma.group.count({
+        where: { created_at: { gte: startThisWeek, lt: now } }
+      }),
+      prisma.group.count({
+        where: { created_at: { gte: startLastWeek, lt: startThisWeek } }
+      }),
+      prisma.message.count({
+        where: {
+          timestamp: {
+            gte: startYesterday,
+            lt: startToday
+          }
+        }
+      })
     ]);
 
-    // 计算趋势百分比（模拟数据，实际应该对比历史数据）
-    const botTrend = 12;
-    const workflowTrend = 8;
-    const groupTrend = 5;
-    const messageTrend = 28;
+    const botTrend = percentTrend(botsCreatedThisWeek, botsCreatedLastWeek);
+    const workflowTrend = percentTrend(workflowsCreatedThisWeek, workflowsCreatedLastWeek);
+    const groupTrend = percentTrend(groupsCreatedThisWeek, groupsCreatedLastWeek);
+    const messageTrend = percentTrend(todayMessageCount, yesterdayMessageCount);
 
     res.json({
       bots: {
@@ -87,10 +126,8 @@ router.get('/dashboard', async (req: any, res: Response) => {
   }
 });
 
-// GET /stats/recent-activities - 获取最近活动记录
-router.get('/recent-activities', async (req: any, res: Response) => {
+router.get('/recent-activities', async (_req: any, res: Response) => {
   try {
-    // 获取最近的工作流执行记录
     const recentExecutions = await prisma.workflowExecution.findMany({
       take: 5,
       orderBy: { trigger_time: 'desc' },
@@ -108,7 +145,6 @@ router.get('/recent-activities', async (req: any, res: Response) => {
       }
     });
 
-    // 获取最近的消息
     const recentMessages = await prisma.message.findMany({
       take: 3,
       orderBy: { timestamp: 'desc' },
@@ -125,10 +161,15 @@ router.get('/recent-activities', async (req: any, res: Response) => {
       }
     });
 
-    // 组装活动记录
-    const activities = [];
+    const activities: Array<{
+      type: string;
+      icon: string;
+      title: string;
+      description: string;
+      time: string;
+      status: string;
+    }> = [];
 
-    // 添加工作流执行记录
     for (const execution of recentExecutions) {
       activities.push({
         type: 'workflow',
@@ -140,7 +181,6 @@ router.get('/recent-activities', async (req: any, res: Response) => {
       });
     }
 
-    // 添加消息记录
     for (const message of recentMessages) {
       activities.push({
         type: 'message',
@@ -152,7 +192,6 @@ router.get('/recent-activities', async (req: any, res: Response) => {
       });
     }
 
-    // 按时间排序
     activities.sort((a, b) => b.time.localeCompare(a.time));
 
     res.json({
@@ -170,7 +209,6 @@ router.get('/recent-activities', async (req: any, res: Response) => {
   }
 });
 
-// 辅助函数：格式化相对时间
 function formatRelativeTime(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();

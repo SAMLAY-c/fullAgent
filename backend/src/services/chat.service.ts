@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import aiService, { type ChatMessage, type BotConfig, type AIResult } from './ai.service';
 import toolsService from './tools.service';
 import { normalizeUtf8Value } from '../utils/encoding';
+import botMemoryArchiveService from './bot-memory-archive.service';
 
 const prisma = new PrismaClient();
 
@@ -240,6 +241,18 @@ class ChatService {
 
       return [uMsg, bMsg];
     });
+
+    try {
+      await botMemoryArchiveService.appendRecord({
+        bot_id: conversation.bot_id,
+        conversation_id: conversationId,
+        user_id: userId,
+        user_message: cleaned,
+        bot_message: finalReply
+      });
+    } catch (archiveError) {
+      console.error('Failed to sync bot memory archive:', archiveError);
+    }
 
     return { user_message: userMessage, bot_message: botMessage };
   }

@@ -46,20 +46,39 @@ class ApiClient {
           response = await fetch(url, { ...options, headers });
         } else {
           this.clearTokens();
-          window.location.href = 'login.html';
-          throw new Error('登录已过期，请重新登录');
+          this.redirectToLoginWithReturnTo();
+          throw new Error('Session expired, please log in again');
         }
       }
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error?.message || payload.message || '请求失败');
+        const errorMessage =
+          (typeof payload?.error === 'string' && payload.error) ||
+          payload?.error?.message ||
+          payload?.message ||
+          'Request failed';
+        throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('API 请求错误:', error);
+      console.error('API request error:', error);
       throw error;
+    }
+  }
+
+  redirectToLoginWithReturnTo() {
+    try {
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      sessionStorage.setItem('auth_return_to', currentPath);
+      if (currentPath.includes('login.html')) {
+        window.location.href = 'login.html';
+        return;
+      }
+      window.location.href = `login.html?returnTo=${encodeURIComponent(currentPath)}`;
+    } catch {
+      window.location.href = 'login.html';
     }
   }
 
@@ -73,7 +92,7 @@ class ApiClient {
 
       if (!response.ok) {
         this.clearTokens();
-        window.location.href = 'login.html';
+        this.redirectToLoginWithReturnTo();
         return false;
       }
 
@@ -84,9 +103,9 @@ class ApiClient {
       }
       return true;
     } catch (error) {
-      console.error('刷新 Token 失败:', error);
+      console.error('Refresh token failed:', error);
       this.clearTokens();
-      window.location.href = 'login.html';
+      this.redirectToLoginWithReturnTo();
       return false;
     }
   }
@@ -107,6 +126,14 @@ class ApiClient {
     return this.request(endpoint, {
       ...options,
       method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async patch(endpoint, data, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
       body: JSON.stringify(data)
     });
   }

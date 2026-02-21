@@ -25,12 +25,15 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@types/node-schedule": "^2.1.8",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
+    "cron-parser": "^5.5.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "iconv-lite": "^0.7.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "node-schedule": "^2.1.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

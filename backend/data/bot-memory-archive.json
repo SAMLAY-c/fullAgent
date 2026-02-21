@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "updated_at": "2026-02-21T05:01:31.352Z",
+  "by_bot": {
+    "bot_work_1771591432351_8d519eec": [
+      {
+        "id": "mem_1771649501101_zh9ho4oi",
+        "timestamp": "2026-02-21T04:51:41.102Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_6d9073aa",
+        "user_id": "user_admin_001",
+        "user_message": "请回复一句：记忆同步测试 1771649482966",
+        "bot_message": "记忆同步测试 1771649482966"
+      },
+      {
+        "id": "mem_1771650054533_7zd2eu4a",
+        "timestamp": "2026-02-21T05:00:54.533Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_90122371",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771650091352_k50nhczy",
+        "timestamp": "2026-02-21T05:01:31.352Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_0906c449",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      }
+    ]
+  }
+}
