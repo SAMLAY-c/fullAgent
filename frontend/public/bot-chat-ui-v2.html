@@ -31,99 +31,34 @@
                 <button class="tab-btn" data-tab="groups">群聊</button>
             </div>
 
-            <!-- 场景列表 -->
-            <div class="list-container" id="scenesList">
-                <!-- 工作伙伴Bot分组 -->
-                <div class="bot-group" id="workBotGroup">
-                    <div class="bot-group-header" onclick="toggleBotGroup('workBotGroup')">
-                        <div class="bot-group-avatar" style="background: var(--work-bg);">💼</div>
-                        <div class="bot-group-info">
-                            <div class="bot-group-name">你的工作伙伴</div>
-                            <div class="bot-group-meta">工作场景 · 3个对话</div>
-                        </div>
-                        <div class="bot-group-collapse">▼</div>
-                    </div>
-                    <div class="bot-group-content">
-                        <div class="conversation-list">
-                            <div class="conversation-item active" data-bot="work" data-topic="project">
-                                <span class="conversation-icon">💬</span>
-                                <div class="conversation-info">
-                                    <div class="conversation-title">项目管理</div>
-                                    <div class="conversation-meta">24条消息 · 2小时前</div>
-                                </div>
-                            </div>
-                            <div class="conversation-item" data-bot="work" data-topic="meeting">
-                                <span class="conversation-icon">💬</span>
-                                <div class="conversation-info">
-                                    <div class="conversation-title">会议纪要</div>
-                                    <div class="conversation-meta">15条消息 · 昨天</div>
-                                </div>
-                            </div>
-                            <div class="conversation-item" data-bot="work" data-topic="fitness">
-                                <span class="conversation-icon">💬</span>
-                                <div class="conversation-info">
-                                    <div class="conversation-title">健身计划</div>
-                                    <div class="conversation-meta">32条消息 · 3小时前</div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="new-topic-btn" onclick="addNewTopic('work')">➕ 新建话题</button>
+            <!-- 单Bot：Folder + 话题列表 -->
+            <div class="list-container single-bot-list-container" id="scenesList">
+                <div class="folder-chip-section">
+                    <div class="folder-chip-divider"></div>
+                    <div class="folder-chip-row" id="folderChipRow">
+                        <button class="folder-chip active" data-chip-id="all" type="button">全部12</button>
+                        <button class="folder-chip" data-chip-id="work" type="button">工作5</button>
+                        <button class="folder-chip" data-chip-id="mentor" type="button">职场导师3</button>
+                        <button class="folder-chip" data-chip-id="life" type="button">生活1</button>
+                        <button class="folder-chip add" id="folderChipAddBtn" type="button">+</button>
                     </div>
                 </div>
 
-                <!-- 生活小助手Bot分组 -->
-                <div class="bot-group" id="lifeBotGroup">
-                    <div class="bot-group-header" onclick="toggleBotGroup('lifeBotGroup')">
-                        <div class="bot-group-avatar" style="background: var(--life-bg);">🌿</div>
-                        <div class="bot-group-info">
-                            <div class="bot-group-name">生活小助手</div>
-                            <div class="bot-group-meta">生活场景 · 2个对话</div>
-                        </div>
-                        <div class="bot-group-collapse">▼</div>
+                <div class="topic-list-section">
+                    <div class="topic-list-header">
+                        <div class="topic-list-title" id="topicListTitle">职场导师 的话题</div>
                     </div>
-                    <div class="bot-group-content">
-                        <div class="conversation-list">
-                            <div class="conversation-item" data-bot="life" data-topic="diet">
-                                <span class="conversation-icon">💬</span>
-                                <div class="conversation-info">
-                                    <div class="conversation-title">饮食建议</div>
-                                    <div class="conversation-meta">18条消息 · 1小时前</div>
-                                </div>
-                            </div>
-                            <div class="conversation-item" data-bot="life" data-topic="health">
-                                <span class="conversation-icon">💬</span>
-                                <div class="conversation-info">
-                                    <div class="conversation-title">健康检查</div>
-                                    <div class="conversation-meta">8条消息 · 2天前</div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="new-topic-btn" onclick="addNewTopic('life')">➕ 新建话题</button>
+                    <div class="topic-list-divider"></div>
+                    <div class="topic-conversation-list" id="topicConversationList">
+                        <div class="folder-topic-empty">加载话题中...</div>
                     </div>
                 </div>
 
-                <!-- 心灵朋友Bot分组 -->
-                <div class="bot-group" id="loveBotGroup">
-                    <div class="bot-group-header" onclick="toggleBotGroup('loveBotGroup')">
-                        <div class="bot-group-avatar" style="background: var(--love-bg);">💜</div>
-                        <div class="bot-group-info">
-                            <div class="bot-group-name">心灵朋友</div>
-                            <div class="bot-group-meta">情感场景 · 1个对话</div>
-                        </div>
-                        <div class="bot-group-collapse">▼</div>
-                    </div>
-                    <div class="bot-group-content">
-                        <div class="conversation-list">
-                            <div class="conversation-item" data-bot="love" data-topic="relationship">
-                                <span class="conversation-icon">💬</span>
-                                <div class="conversation-info">
-                                    <div class="conversation-title">关系建议</div>
-                                    <div class="conversation-meta">42条消息 · 30分钟前</div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="new-topic-btn" onclick="addNewTopic('love')">➕ 新建话题</button>
-                    </div>
+                <!-- 旧分组结构保留为隐藏挂载点，避免影响现有群聊/脚本流程 -->
+                <div class="legacy-scene-groups" aria-hidden="true">
+                    <div class="bot-group" id="workBotGroup"><div class="bot-group-header"><div class="bot-group-avatar">💼</div><div class="bot-group-info"><div class="bot-group-name">工作</div><div class="bot-group-meta">工作场景</div></div><div class="bot-group-collapse">▼</div></div><div class="bot-group-content"><div class="conversation-list"></div></div></div>
+                    <div class="bot-group" id="lifeBotGroup"><div class="bot-group-header"><div class="bot-group-avatar">🌿</div><div class="bot-group-info"><div class="bot-group-name">生活</div><div class="bot-group-meta">生活场景</div></div><div class="bot-group-collapse">▼</div></div><div class="bot-group-content"><div class="conversation-list"></div></div></div>
+                    <div class="bot-group" id="loveBotGroup"><div class="bot-group-header"><div class="bot-group-avatar">💜</div><div class="bot-group-info"><div class="bot-group-name">情感</div><div class="bot-group-meta">情感场景</div></div><div class="bot-group-collapse">▼</div></div><div class="bot-group-content"><div class="conversation-list"></div></div></div>
                 </div>
             </div>
 
@@ -166,6 +101,14 @@
                     <span>邀请更多朋友一起聊聊</span>
                 </button>
             </div>
+
+            <div class="sidebar-footer" id="sidebarFooter">
+                <div class="sidebar-footer-divider"></div>
+                <div class="sidebar-footer-actions">
+                    <button class="sidebar-footer-primary" id="topicCreateBtn" type="button">+ 新建话题</button>
+                    <button class="sidebar-footer-icon" id="trashToggleBtn" type="button" title="回收站">🗑️</button>
+                </div>
+            </div>
         </div>
 
         <!-- 聊天区域 -->
@@ -206,12 +149,19 @@
             </div>
 
             <div class="chat-input">
+                <div class="chat-input-toolbar">
+                    <button class="composer-tool-btn" id="uploadToolBtn" type="button">📎 上传</button>
+                    <button class="composer-tool-btn" id="recordToolBtn" type="button">🎙️ 录音</button>
+                    <button class="composer-tool-btn" id="injectMemoryBtn" type="button">🧠 注入记忆</button>
+                    <button class="composer-tool-btn muted" id="composerMoreBtn" type="button">···</button>
+                    <button class="composer-tool-btn archive" id="archiveConversationBtn" type="button">🗂️ 归档此次对话</button>
+                    <input type="file" id="chatUploadInput" hidden />
+                </div>
                 <button class="mention-btn" id="mentionBtn" title="@提及Bot" style="display: none;">@</button>
                 <div class="input-wrapper">
                     <textarea id="input" placeholder="今天想聊点什么呢？我随时都在 💜"></textarea>
                 </div>
                 <button class="send-btn" id="sendBtn">发送 ✨</button>
-            </div>
             </div>
 
             <!-- 记忆内容面板 -->
@@ -308,6 +258,128 @@
                         <button class="save-config-btn" id="saveConfigBtn">💾 保存配置</button>
                     </div>
                 </div>
+            </div>
+
+            <aside class="right-side-panel" id="rightSidePanel" aria-hidden="true">
+                <div class="right-panel-header">
+                    <div class="right-panel-title" id="rightPanelTitle">归档预览</div>
+                    <button class="right-panel-close" id="rightPanelCloseBtn" type="button" aria-label="关闭">✕</button>
+                </div>
+                <div class="right-panel-divider"></div>
+
+                <div class="right-panel-body active" id="archivePreviewPanel">
+                    <div class="panel-form-row">
+                        <label for="archiveTopicTitleInput">话题标题</label>
+                        <input id="archiveTopicTitleInput" type="text" />
+                    </div>
+                    <div class="panel-form-row">
+                        <label for="archiveSummaryInput">AI摘要</label>
+                        <textarea id="archiveSummaryInput" rows="4"></textarea>
+                    </div>
+                    <div class="panel-form-row">
+                        <label for="archiveInsightInput">关键洞察</label>
+                        <textarea id="archiveInsightInput" rows="5"></textarea>
+                    </div>
+                    <div class="panel-form-row">
+                        <label>归档时间</label>
+                        <div class="panel-static-text" id="archiveMetaText">第2次 · 2026/2/22</div>
+                    </div>
+                    <div class="panel-form-row">
+                        <label>标签</label>
+                        <div class="tag-chip-list" id="archiveTagList">
+                            <button class="tag-chip active" type="button">薪资谈判</button>
+                            <button class="tag-chip" type="button">职场策略</button>
+                            <button class="tag-chip" type="button">沟通复盘</button>
+                        </div>
+                    </div>
+                    <div class="right-panel-footer">
+                        <button class="panel-btn secondary" id="archiveCancelBtn" type="button">取消</button>
+                        <button class="panel-btn primary" id="archiveConfirmBtn" type="button">✓ 确认存入记忆</button>
+                    </div>
+                </div>
+
+                <div class="right-panel-body" id="memoryPickerPanel">
+                    <div class="memory-picker-list" id="memoryPickerList">
+                        <label class="memory-picker-item">
+                            <input type="checkbox" value="m1" />
+                            <div class="memory-picker-content">
+                                <div class="memory-picker-title">薪资谈判·第1次 <span>2026/1/10</span></div>
+                                <div class="memory-picker-quote">"用贡献-市场-期望三段式..."</div>
+                            </div>
+                        </label>
+                        <label class="memory-picker-item">
+                            <input type="checkbox" value="m2" />
+                            <div class="memory-picker-content">
+                                <div class="memory-picker-title">薪资谈判·第2次 <span>2026/2/1</span></div>
+                                <div class="memory-picker-quote">"实战后复盘，老板反应..."</div>
+                            </div>
+                        </label>
+                        <label class="memory-picker-item">
+                            <input type="checkbox" value="m3" />
+                            <div class="memory-picker-content">
+                                <div class="memory-picker-title">跨部门协作·复盘 <span>2026/1/20</span></div>
+                                <div class="memory-picker-quote">"推动协作需要提前..."</div>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="right-panel-footer compact">
+                        <div class="memory-picked-count" id="memoryPickedCount">已选0条</div>
+                        <button class="panel-btn primary" id="memoryInjectConfirmBtn" type="button">注入本次对话</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div id="topicFolderModal" class="topic-folder-modal-mask" aria-hidden="true">
+        <div class="topic-folder-modal-card" role="dialog" aria-modal="true" aria-labelledby="topicFolderModalTitle">
+            <div class="topic-folder-modal-header">
+                <div>
+                    <div class="topic-folder-modal-title" id="topicFolderModalTitle">新建话题</div>
+                    <div class="topic-folder-modal-subtitle" id="topicFolderModalSceneSubtitle">在「职场导师」场景下创建</div>
+                </div>
+                <button type="button" class="topic-folder-close-btn" id="topicFolderCloseBtn" aria-label="关闭">×</button>
+            </div>
+            <div class="topic-folder-modal-body topic-create-upgraded-body">
+                <div class="panel-form-row">
+                    <label class="topic-folder-label" for="topicFolderNameInput">话题名称</label>
+                    <input id="topicFolderNameInput" class="topic-folder-input" type="text" maxlength="50" placeholder="可留空（将自动生成）" />
+                </div>
+
+                <div class="panel-form-row">
+                    <label class="topic-folder-label" for="topicSystemPromptPreview">已加载系统提示词</label>
+                    <textarea id="topicSystemPromptPreview" class="topic-folder-textarea" rows="5"></textarea>
+                </div>
+
+                <div class="panel-form-row">
+                    <label class="topic-folder-label">预选记忆（可选）</label>
+                    <div class="topic-memory-preset-list" id="topicMemoryPresetList">
+                        <label class="topic-memory-preset-item"><input type="checkbox" value="m2" /> <span>薪资谈判·第2次</span></label>
+                        <label class="topic-memory-preset-item"><input type="checkbox" value="m3" /> <span>跨部门协作·复盘</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="topic-folder-modal-footer">
+                <button type="button" class="topic-folder-secondary-btn" id="topicFolderCancelBtn">取消</button>
+                <button type="button" class="topic-folder-primary-btn" id="topicFolderCreateBtn">开始对话 →</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="trashModal" class="trash-modal-mask" aria-hidden="true">
+        <div class="trash-modal-card" role="dialog" aria-modal="true" aria-labelledby="trashModalTitle">
+            <div class="trash-modal-header">
+                <div>
+                    <div class="trash-modal-title" id="trashModalTitle">会话回收站</div>
+                    <div class="trash-modal-subtitle">可恢复已删除的话题，也可彻底删除</div>
+                </div>
+                <div class="trash-modal-actions">
+                    <button type="button" class="trash-header-btn" id="trashRefreshBtn">刷新</button>
+                    <button type="button" class="trash-header-btn" id="trashCloseBtn">关闭</button>
+                </div>
+            </div>
+            <div class="trash-modal-list" id="trashList">
+                <div class="trash-empty">加载中...</div>
             </div>
         </div>
     </div>
