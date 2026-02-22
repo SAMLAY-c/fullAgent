@@ -2439,11 +2439,47 @@
 
         .result-item {
             display: grid;
-            gap: 8px;
+            grid-template-columns: 18px 1fr;
+            align-items: start;
+            gap: 10px;
             padding: 10px;
             border-radius: 12px;
             border: 1px solid rgba(15, 23, 42, 0.06);
             background: #fff;
+        }
+
+        .result-item-checkbox {
+            width: 16px;
+            height: 16px;
+            margin-top: 4px;
+            cursor: pointer;
+        }
+
+        .result-item-main {
+            display: grid;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .result-item-meta {
+            display: grid;
+            grid-template-columns: auto minmax(90px, 140px) 1fr;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .result-item-index {
+            font-size: 12px;
+            color: #9ca3af;
+            font-weight: 700;
+        }
+
+        .result-item-time {
+            justify-self: end;
+            font-size: 11px;
+            color: #c0c4cc;
+            white-space: nowrap;
         }
 
         .result-category-input,
@@ -2460,10 +2496,15 @@
         .result-text-input {
             resize: vertical;
             min-height: 72px;
+            background: #f8fafc;
+        }
+
+        .result-item-actions {
+            display: flex;
+            justify-content: flex-end;
         }
 
         .result-remove-btn {
-            justify-self: end;
             border: none;
             background: #fee2e2;
             color: #b91c1c;

@@ -1479,18 +1479,47 @@
     if (field === 'text') item.text = String(value || '').trim().slice(0, 500);
   }
 
+  function toggleResultItem(index, checked) {
+    const item = state.memoryExtractDraft.items[index];
+    if (!item) return;
+    item._selected = !!checked;
+    renderExtractPanel();
+  }
+
   function removeResultItem(index) {
     state.memoryExtractDraft.items.splice(index, 1);
     renderExtractPanel();
   }
 
   function addResultItem() {
-    state.memoryExtractDraft.items.push({ category: 'other', text: '' });
+    state.memoryExtractDraft.items.push({
+      category: 'other',
+      text: '',
+      _selected: true,
+      _time: new Date().toLocaleString('zh-CN')
+    });
     renderExtractPanel();
+  }
+
+  function normalizePreviewItemsClient(items) {
+    if (!Array.isArray(items)) return [];
+    return items
+      .map((item) => ({
+        category: String(item?.category || 'other').trim() || 'other',
+        text: String(item?.text || '').trim()
+      }))
+      .filter((item) => item.text)
+      .filter((item) => !/^[\[\]\{\}",:]+$/.test(item.text))
+      .map((item) => ({
+        ...item,
+        _selected: true,
+        _time: new Date().toLocaleString('zh-CN')
+      }));
   }
 
   function renderExtractPanel() {
     const draft = state.memoryExtractDraft;
+    const now = new Date().toLocaleString('zh-CN');
 
     if (ui.extractFocusNote && ui.extractFocusNote.value !== (draft.focusNote || '')) {
       ui.extractFocusNote.value = draft.focusNote || '';
@@ -1543,15 +1572,31 @@
 
     if (ui.extractResultSection && ui.extractResultList && ui.extractCommitBtn) {
       const hasResults = Array.isArray(draft.items) && draft.items.length > 0;
+      const selectedResultCount = (draft.items || []).filter((item) => item && item._selected !== false).length;
       ui.extractResultSection.style.display = hasResults ? 'block' : 'none';
       ui.extractCommitBtn.style.display = hasResults ? 'inline-block' : 'none';
 
       if (hasResults) {
         ui.extractResultList.innerHTML = draft.items.map((item, i) => `
           <div class="result-item">
-            <input class="result-category-input" data-result-index="${i}" value="${escapeAttr(item.category || 'other')}" />
-            <textarea class="result-text-input" data-result-index="${i}" rows="3">${escapeHtml(item.text || '')}</textarea>
-            <button class="result-remove-btn" type="button" data-result-index="${i}">删除</button>
+            <input
+              class="result-item-checkbox"
+              type="checkbox"
+              data-result-index="${i}"
+              ${item._selected === false ? '' : 'checked'}
+              aria-label="选择是否保存该条目"
+            />
+            <div class="result-item-main">
+              <div class="result-item-meta">
+                <span class="result-item-index">${i + 1}.</span>
+                <input class="result-category-input" data-result-index="${i}" value="${escapeAttr(item.category || 'other')}" />
+                <span class="result-item-time">${escapeHtml(item._time || now)}</span>
+              </div>
+              <textarea class="result-text-input" data-result-index="${i}" rows="3">${escapeHtml(item.text || '')}</textarea>
+              <div class="result-item-actions">
+                <button class="result-remove-btn" type="button" data-result-index="${i}">删除</button>
+              </div>
+            </div>
           </div>
         `).join('');
       } else {
@@ -1564,9 +1609,10 @@
       ui.extractPreviewBtn.textContent = draft.loadingPreview ? '提炼中...' : '预览提炼';
     }
     if (ui.extractCommitBtn) {
-      ui.extractCommitBtn.disabled = !!draft.loadingPreview || !!draft.saving || draft.items.length === 0;
+      const selectedResultCount = (draft.items || []).filter((item) => item && item._selected !== false).length;
+      ui.extractCommitBtn.disabled = !!draft.loadingPreview || !!draft.saving || selectedResultCount === 0;
       if (draft.saving) ui.extractCommitBtn.textContent = '保存中...';
-      else ui.extractCommitBtn.textContent = '保存记忆';
+      else ui.extractCommitBtn.textContent = selectedResultCount > 0 ? `保存记忆（${selectedResultCount}）` : '保存记忆';
     }
   }
 
@@ -1624,10 +1670,7 @@
         selected_archive_memory_ids: Array.from(draft.selectedMemoryIds),
         focus_note: draft.focusNote
       });
-      draft.items = Array.isArray(data?.items) ? data.items.map((item) => ({
-        category: String(item?.category || 'other'),
-        text: String(item?.text || '')
-      })) : [];
+      draft.items = normalizePreviewItemsClient(data?.items);
       renderExtractPanel();
     } catch (err) {
       alert(err.message || '提炼预览失败');
@@ -1650,6 +1693,13 @@
       alert('请先生成提炼结果');
       return;
     }
+    const selectedItems = draft.items
+      .filter((item) => item && item._selected !== false)
+      .map((item) => ({ category: item.category, text: item.text }));
+    if (selectedItems.length === 0) {
+      alert('请至少勾选一条要保存的提炼结果');
+      return;
+    }
 
     const conversation = getCurrentConversation();
     const folderId = conversation?.folder_id || draft.meta?.folder_id;
@@ -1665,7 +1715,7 @@
       await authManager.post('/memories/extract/commit', {
         conversation_id: state.selectedConversationId,
         folder_id: folderId,
-        items: draft.items,
+        items: selectedItems,
         focus_note: draft.focusNote,
         selected_message_ids: Array.from(draft.selectedMessageIds),
         selected_archive_memory_ids: Array.from(draft.selectedMemoryIds)
@@ -1682,7 +1732,7 @@
       patchConversationInState(state.selectedConversationId, { archived_count: (conversation?.archived_count || 0) + 1 });
       renderSingleBotTopicList();
       renderMemoryArchivePanel();
-      showLightToast(`已保存 ${draft.items.length} 条记忆`, 'success');
+      showLightToast(`已保存 ${selectedItems.length} 条记忆`, 'success');
       closeRightPanel();
     } catch (err) {
       alert(err.message || '保存记忆失败');
@@ -1812,6 +1862,10 @@
       const index = Number(indexAttr);
       if (!Number.isInteger(index) || index < 0) return;
 
+      if (target.classList.contains('result-item-checkbox') && target instanceof HTMLInputElement) {
+        toggleResultItem(index, target.checked);
+        return;
+      }
       if (target.classList.contains('result-category-input') && target instanceof HTMLInputElement) {
         updateResultItem(index, 'category', target.value);
         return;

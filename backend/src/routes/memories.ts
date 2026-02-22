@@ -53,6 +53,20 @@ function extractFirstJsonObject(text: string): string | null {
   return null;
 }
 
+function extractFirstJsonValue(text: string): string | null {
+  const fenced = text.match(/```json\s*([\s\S]*?)```/i) || text.match(/```\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+
+  const objectMatch = text.match(/\{[\s\S]*\}/);
+  const arrayMatch = text.match(/\[[\s\S]*\]/);
+  if (objectMatch && arrayMatch) {
+    return objectMatch.index! <= arrayMatch.index! ? objectMatch[0].trim() : arrayMatch[0].trim();
+  }
+  if (objectMatch) return objectMatch[0].trim();
+  if (arrayMatch) return arrayMatch[0].trim();
+  return null;
+}
+
 function normalizeDraft(raw: any, fallbackTitle: string) {
   const title =
     typeof raw?.title === 'string' && raw.title.trim()
@@ -72,12 +86,34 @@ function normalizeDraft(raw: any, fallbackTitle: string) {
 }
 
 function normalizeExtractItems(raw: any): Array<{ text: string; category: string }> {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      return normalizeExtractItems(JSON.parse(trimmed));
+    } catch {
+      return [{ text: trimmed.slice(0, 500), category: 'other' }];
+    }
+  }
+
+  if (typeof raw?.items === 'string') {
+    try {
+      return normalizeExtractItems(JSON.parse(raw.items));
+    } catch {
+      // continue to normal flow
+    }
+  }
+
   const candidates = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : [];
   const seen = new Set<string>();
   const result: Array<{ text: string; category: string }> = [];
 
   for (const item of candidates) {
-    const text = typeof item?.text === 'string' ? item.text.trim() : '';
+    const text = typeof item === 'string'
+      ? item.trim()
+      : typeof item?.text === 'string'
+        ? item.text.trim()
+        : '';
     if (!text) continue;
 
     const dedupeKey = text.toLowerCase();
@@ -100,11 +136,16 @@ function fallbackExtractItemsFromText(text: string): Array<{ text: string; categ
     .split(/\r?\n/)
     .map((line) => line.replace(/^\s*[-*]\s*/, '').trim())
     .filter(Boolean)
+    .filter((line) => !/^[\[\]\{\}",:]+$/.test(line))
+    .filter((line) => !/^```/.test(line))
     .slice(0, 20)
     .map((line) => ({ text: line.slice(0, 500), category: 'other' }));
 
   if (bulletLines.length > 0) return bulletLines;
-  return [{ text: text.trim().slice(0, 500), category: 'other' }];
+
+  const compact = text.trim();
+  if (/^[\s\[\]\{\}",:]+$/.test(compact)) return [];
+  return [{ text: compact.slice(0, 500), category: 'other' }];
 }
 
 async function generateArchiveDraft(params: {
@@ -197,7 +238,9 @@ async function generateExtractItemsDraft(params: {
     '2) 参考已选归档记忆，避免重复提取已知内容',
     '3) 若用户提供“补充重点”，优先围绕该重点提炼',
     '4) items 控制在 1-10 条',
-    '5) category 使用简短英文分类，如 goal/preference/career/emotion/fact/constraint/plan/other'
+    '5) category 使用简短英文分类，如 goal/preference/career/emotion/fact/constraint/plan/other',
+    '6) 每条 text 只写一条要点，不要编号，不要加前缀符号（如 1. / -）',
+    '7) 不要把 JSON 再包成字符串，不要输出代码块'
   ].join('\n');
 
   const selectedTranscript = buildTranscript(params.selectedMessages);
@@ -226,7 +269,7 @@ async function generateExtractItemsDraft(params: {
     '',
     `用户补充重点（优先考虑）：${params.focusNote?.trim() || '（未填写）'}`,
     '',
-    '请输出 JSON。'
+    '请直接输出 JSON 对象，格式必须为 {"items":[...]}。'
   ].join('\n');
 
   const messages: ChatMessage[] = [{ role: 'user', content: userPrompt }];
@@ -239,7 +282,7 @@ async function generateExtractItemsDraft(params: {
   };
 
   const responseText = await aiService.generateSimpleResponse(messages, botConfig);
-  const maybeJson = extractFirstJsonObject(responseText || '');
+  const maybeJson = extractFirstJsonValue(responseText || '');
   if (!maybeJson) {
     return {
       items: fallbackExtractItemsFromText(responseText || ''),
@@ -254,11 +297,12 @@ async function generateExtractItemsDraft(params: {
     return {
       items: items.length ? items : fallbackExtractItemsFromText(responseText || ''),
       raw: responseText,
-      parsed: true
+      parsed: items.length > 0
     };
   } catch {
+    const fallback = fallbackExtractItemsFromText(responseText || '');
     return {
-      items: fallbackExtractItemsFromText(responseText || ''),
+      items: fallback,
       raw: responseText,
       parsed: false
     };
