@@ -51,6 +51,9 @@
     input: document.getElementById('input'),
     sendBtn: document.getElementById('sendBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
+    chatHeader: document.querySelector('.chat-header'),
+    chatActions: document.querySelector('.chat-header .chat-actions'),
+    contentTabs: document.querySelector('.content-tabs'),
     contentTabBtns: Array.from(document.querySelectorAll('.content-tab-btn')),
     contentPanels: Array.from(document.querySelectorAll('.content-panel')),
     tabBtns: Array.from(document.querySelectorAll('.tab-btn')),
@@ -151,6 +154,57 @@
       .replace(/'/g, '&#39;');
   }
 
+  if (window.marked && typeof window.marked.parse === 'function') {
+    window.marked.setOptions({ gfm: true, breaks: true });
+  }
+
+  function renderBotMarkdownHtml(text) {
+    const source = String(text || '');
+    if (window.marked && typeof window.marked.parse === 'function') {
+      return `<div class="markdown-body">${window.marked.parse(source)}</div>`;
+    }
+    return escapeHtml(source).replace(/\n/g, '<br>');
+  }
+
+  function renderMarkdownInMessages(root = ui.messages) {
+    if (!root) return;
+    root.querySelectorAll('.message.bot .message-content:not([data-md-rendered])').forEach((el) => {
+      if (!(el instanceof HTMLElement)) return;
+      const source = el.textContent || '';
+      el.innerHTML = renderBotMarkdownHtml(source);
+      el.dataset.mdRendered = '1';
+    });
+  }
+
+  function compactChatHeaderTools() {
+    if (!ui.chatHeader || !ui.chatActions || !ui.contentTabs) return;
+    if (!ui.chatActions.contains(ui.contentTabs)) {
+      ui.chatActions.appendChild(ui.contentTabs);
+    }
+
+    if (ui.logBtn) {
+      ui.logBtn.title = '归档';
+      ui.logBtn.setAttribute('aria-label', '归档');
+    }
+
+    if (ui.quickSettingsBtn) {
+      ui.quickSettingsBtn.style.display = 'none';
+    }
+
+    if (ui.sopBtn) {
+      ui.sopBtn.title = '提醒';
+      ui.sopBtn.setAttribute('aria-label', '提醒');
+    }
+
+    ui.contentTabBtns.forEach((btn) => {
+      const tab = btn.dataset.tab || '';
+      const labels = { chat: '对话', memory: '记忆', knowledge: '知识库', settings: '设置' };
+      const title = labels[tab] || tab;
+      btn.title = title;
+      btn.setAttribute('aria-label', title);
+    });
+  }
+
   function sceneLabel(scene) {
     return ({ work: '工作', life: '生活', love: '情感' }[scene] || scene);
   }
@@ -184,6 +238,7 @@
         </div>
       </div>
     `;
+    renderMarkdownInMessages(ui.messages);
   }
 
   function escapeAttr(text) {
@@ -990,6 +1045,7 @@
       })
       .join('');
 
+    renderMarkdownInMessages(ui.messages);
     ui.messages.scrollTop = ui.messages.scrollHeight;
   }
 
@@ -1048,6 +1104,9 @@
       `
     );
 
+    if (klass === 'bot' && !isStreaming) {
+      renderMarkdownInMessages(ui.messages);
+    }
     ui.messages.scrollTop = ui.messages.scrollHeight;
     return messageDomId;
   }
@@ -1079,7 +1138,8 @@
     if (!(msgEl instanceof HTMLElement)) return;
     const contentEl = msgEl.querySelector('.message-content');
     if (!(contentEl instanceof HTMLElement)) return;
-    contentEl.textContent = finalText || '';
+    contentEl.innerHTML = renderBotMarkdownHtml(finalText || '');
+    contentEl.dataset.mdRendered = '1';
     ui.messages.scrollTop = ui.messages.scrollHeight;
   }
 
@@ -1319,6 +1379,7 @@
           </div>
         </div>
       `;
+      renderMarkdownInMessages(ui.messages);
     });
   }
 
@@ -1941,7 +2002,13 @@
 
     if (ui.logBtn) {
       ui.logBtn.addEventListener('click', () => {
-        activateContentTab('memory');
+        if (!state.selectedConversationId) {
+          alert('请先选择一个话题。');
+          return;
+        }
+        openMemoryExtractPanel(state.selectedConversationId).catch((err) => {
+          alert(err.message || '加载提炼面板失败');
+        });
       });
     }
 
@@ -1987,7 +2054,7 @@
 
     ui.input.addEventListener('input', function () {
       this.style.height = 'auto';
-      this.style.height = `${Math.min(this.scrollHeight, 140)}px`;
+      this.style.height = `${Math.min(this.scrollHeight, 96)}px`;
     });
 
     ui.input.addEventListener('keydown', (e) => {
@@ -2123,6 +2190,7 @@
     state.botsByScene.love = grouped.love || [];
 
     ensureTrashUI();
+    compactChatHeaderTools();
     await refreshFolderList();
     await refreshGroupsList();
     wireTabs();
@@ -2164,6 +2232,7 @@
           </div>
         </div>
       `;
+      renderMarkdownInMessages(ui.messages);
     }
   }
 
