@@ -73,6 +73,7 @@ model Conversation {
   title          String?
   extra_context  String?    @db.Text
   archived_count Int       @default(0)
+  last_memory_archived_at DateTime?
   is_deleted     Boolean   @default(false)
   deleted_at     DateTime?
   delete_reason  String?

@@ -359,6 +359,138 @@ class ChatService {
     return { user_message: userMessage, bot_message: botMessage };
   }
 
+  async sendMessageStream(
+    userId: string,
+    conversationId: string,
+    content: string,
+    memoryIds: string[] = [],
+    hooks: {
+      onStart: (messageId: string) => void;
+      onDelta: (text: string) => void;
+      onToolStart?: (tool: string) => void;
+      onToolDone?: (tool: string) => void;
+      onDone: (result: { user_message: any; bot_message: any }) => void;
+      onError: (error: Error) => void;
+    }
+  ): Promise<void> {
+    try {
+      const conversation = await this.assertConversationOwner(userId, conversationId);
+      const cleaned = String(normalizeUtf8Value(content)).trim();
+      if (!cleaned) {
+        throw new Error('EMPTY_MESSAGE');
+      }
+
+      const messageHistory = await prisma.message.findMany({
+        where: { conversation_id: conversationId },
+        orderBy: { timestamp: 'asc' },
+        take: 20
+      });
+
+      let messages: ChatMessage[] = messageHistory
+        .filter(msg => msg.sender_type !== 'system')
+        .map(msg => ({
+          role: msg.sender_type === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
+      messages.push({ role: 'user', content: cleaned });
+
+      const botConfig = conversation.bot.config as BotConfig | null;
+      let nextBotConfig: BotConfig | undefined = botConfig ? { ...botConfig } : undefined;
+
+      const shouldInjectConversationContext = messageHistory.filter((msg) => msg.sender_type !== 'system').length === 0;
+      if (shouldInjectConversationContext) {
+        const extraContext = String(normalizeUtf8Value((conversation as any).extra_context || '')).trim();
+        if (extraContext) {
+          nextBotConfig = {
+            ...(nextBotConfig || {}),
+            system_prompt: `${nextBotConfig?.system_prompt || ''}\n\n[Conversation Extra Context]\n${extraContext}`.trim()
+          } as BotConfig;
+        }
+      }
+
+      if (memoryIds.length > 0) {
+        hooks.onToolStart?.('memory_recall');
+        const memories = await prisma.conversationArchiveMemory.findMany({
+          where: { memory_id: { in: memoryIds } },
+          select: { title: true, summary: true, insight: true, archive_index: true }
+        });
+
+        const memoryContext = '\n\n===参考记忆===\n' + memories.map(m =>
+          `【${m.title || '未命名'}·第${m.archive_index}次】\n摘要：${m.summary || ''}\n洞察：${m.insight || ''}`
+        ).join('\n\n');
+
+        nextBotConfig = {
+          ...(nextBotConfig || {}),
+          system_prompt: ((nextBotConfig?.system_prompt || '') + memoryContext)
+        } as BotConfig;
+        hooks.onToolDone?.('memory_recall');
+      }
+
+      const userMessage = await prisma.message.create({
+        data: {
+          message_id: `msg_${randomUUID()}`,
+          conversation_id: conversationId,
+          sender_type: 'user',
+          sender_id: userId,
+          content: String(normalizeUtf8Value(cleaned))
+        }
+      });
+
+      const botMessageId = `msg_${randomUUID()}`;
+      hooks.onStart(botMessageId);
+
+      let finalReply = await aiService.generateSimpleResponseStream(
+        messages,
+        nextBotConfig,
+        (delta) => hooks.onDelta(delta)
+      );
+
+      if (!finalReply) {
+        finalReply = await aiService.generateSimpleResponse(messages, nextBotConfig);
+        if (finalReply) {
+          hooks.onDelta(finalReply);
+        }
+      }
+
+      const botMessage = await prisma.message.create({
+        data: {
+          message_id: botMessageId,
+          conversation_id: conversationId,
+          sender_type: 'bot',
+          sender_id: userId,
+          content: String(normalizeUtf8Value(finalReply)),
+          metadata: {
+            model: botConfig?.model || 'deepseek-ai/DeepSeek-V3.2',
+            generated_at: new Date().toISOString(),
+            stream: true
+          }
+        }
+      });
+
+      await prisma.conversation.update({
+        where: { conversation_id: conversationId },
+        data: { updated_at: new Date() }
+      });
+
+      try {
+        await botMemoryArchiveService.appendRecord({
+          bot_id: conversation.bot_id,
+          conversation_id: conversationId,
+          user_id: userId,
+          user_message: cleaned,
+          bot_message: finalReply
+        });
+      } catch (archiveError) {
+        console.error('Failed to sync bot memory archive (stream):', archiveError);
+      }
+
+      hooks.onDone({ user_message: userMessage, bot_message: botMessage });
+    } catch (error) {
+      hooks.onError(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
   private async assertConversationOwner(userId: string, conversationId: string) {
     const conversation = await prisma.conversation.findFirst({
       where: {

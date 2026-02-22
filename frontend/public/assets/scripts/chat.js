@@ -28,7 +28,19 @@
     conversationsByScene: { work: [], life: [], love: [] },
     archivedConversationIds: new Set(),
     archivesByConversationId: {},
-    injectedMemoryIds: new Set()
+    injectedMemoryIds: new Set(),
+    memoryExtractDraft: {
+      messages: [],
+      historyMemories: [],
+      selectedMessageIds: new Set(),
+      selectedMemoryIds: new Set(),
+      focusNote: '',
+      items: [],
+      loadingContext: false,
+      loadingPreview: false,
+      saving: false,
+      meta: null
+    }
   };
 
   const ui = {
@@ -103,6 +115,14 @@
     archiveTagList: document.getElementById('archiveTagList'),
     archiveCancelBtn: document.getElementById('archiveCancelBtn'),
     archiveConfirmBtn: document.getElementById('archiveConfirmBtn'),
+    extractMessageList: document.getElementById('extractMessageList'),
+    extractMemoryList: document.getElementById('extractMemoryList'),
+    extractFocusNote: document.getElementById('extractFocusNote'),
+    extractResultSection: document.getElementById('extractResultSection'),
+    extractResultList: document.getElementById('extractResultList'),
+    extractAddResultBtn: document.getElementById('extractAddResultBtn'),
+    extractPreviewBtn: document.getElementById('extractPreviewBtn'),
+    extractCommitBtn: document.getElementById('extractCommitBtn'),
     memoryPickerList: document.getElementById('memoryPickerList'),
     memoryPickedCount: document.getElementById('memoryPickedCount'),
     memoryInjectConfirmBtn: document.getElementById('memoryInjectConfirmBtn')
@@ -983,17 +1003,22 @@
     await loadMessages(state.selectedConversationId);
   }
 
-  function appendMessage(senderType, content) {
+  function appendMessage(senderType, content, opts = {}) {
     const klass = senderType === 'user' ? 'user' : 'bot';
     const avatar = senderType === 'user' ? '\uD83D\uDC64' : (ui.chatAvatar.textContent || '\uD83E\uDD16');
+    const messageDomId = opts.id || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const isStreaming = !!opts.isStreaming;
+    const initialContent = isStreaming
+      ? `${escapeHtml(content || '思考中...')}<span class="streaming-cursor"></span>`
+      : escapeHtml(content);
 
     ui.messages.insertAdjacentHTML(
       'beforeend',
       `
-      <div class="message ${klass}">
+      <div class="message ${klass}" data-local-message-id="${escapeAttr(messageDomId)}">
         <div class="message-avatar">${avatar}</div>
         <div class="message-wrapper">
-          <div class="message-content">${escapeHtml(content)}</div>
+          <div class="message-content">${initialContent}</div>
           <div class="message-time">${formatTime(new Date())}</div>
         </div>
       </div>
@@ -1001,6 +1026,164 @@
     );
 
     ui.messages.scrollTop = ui.messages.scrollHeight;
+    return messageDomId;
+  }
+
+  function findLocalMessageElement(messageDomId) {
+    return ui.messages?.querySelector(`[data-local-message-id="${CSS.escape(String(messageDomId))}"]`) || null;
+  }
+
+  function updateStreamingMessageText(messageDomId, text) {
+    const msgEl = findLocalMessageElement(messageDomId);
+    if (!(msgEl instanceof HTMLElement)) return;
+    const contentEl = msgEl.querySelector('.message-content');
+    if (!(contentEl instanceof HTMLElement)) return;
+    contentEl.innerHTML = `${escapeHtml(text)}<span class="streaming-cursor"></span>`;
+    ui.messages.scrollTop = ui.messages.scrollHeight;
+  }
+
+  function updateStreamingMessageStatus(messageDomId, status) {
+    const msgEl = findLocalMessageElement(messageDomId);
+    if (!(msgEl instanceof HTMLElement)) return;
+    const contentEl = msgEl.querySelector('.message-content');
+    if (!(contentEl instanceof HTMLElement)) return;
+    contentEl.innerHTML = `<span class="status-text">${escapeHtml(status)}</span><span class="streaming-cursor"></span>`;
+    ui.messages.scrollTop = ui.messages.scrollHeight;
+  }
+
+  function finalizeStreamingMessage(messageDomId, finalText) {
+    const msgEl = findLocalMessageElement(messageDomId);
+    if (!(msgEl instanceof HTMLElement)) return;
+    const contentEl = msgEl.querySelector('.message-content');
+    if (!(contentEl instanceof HTMLElement)) return;
+    contentEl.textContent = finalText || '';
+    ui.messages.scrollTop = ui.messages.scrollHeight;
+  }
+
+  function removeLocalMessage(messageDomId) {
+    const msgEl = findLocalMessageElement(messageDomId);
+    if (msgEl && msgEl.parentNode) {
+      msgEl.parentNode.removeChild(msgEl);
+    }
+  }
+
+  function getAuthFetchHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authManager?.accessToken) {
+      headers.Authorization = `Bearer ${authManager.accessToken}`;
+    }
+    return headers;
+  }
+
+  function getApiBaseURL() {
+    return authManager?.baseURL || '/api';
+  }
+
+  function parseSseEventBlocks(buffer) {
+    const blocks = buffer.split('\n\n');
+    return {
+      blocks: blocks.slice(0, -1),
+      rest: blocks[blocks.length - 1] || ''
+    };
+  }
+
+  function parseSseEventBlock(block) {
+    const lines = block.split(/\r?\n/);
+    let event = 'message';
+    const dataLines = [];
+    for (const rawLine of lines) {
+      const line = rawLine.trimEnd();
+      if (line.startsWith('event:')) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trim());
+      }
+    }
+    const dataText = dataLines.join('\n').trim();
+    return { event, dataText };
+  }
+
+  async function sendMessageStream(conversationId, content, memoryIds, botMessageDomId) {
+    const response = await fetch(`${getApiBaseURL()}/chat/conversations/${encodeURIComponent(conversationId)}/messages/stream`, {
+      method: 'POST',
+      headers: getAuthFetchHeaders(),
+      body: JSON.stringify({ content, memory_ids: memoryIds })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(errorText || `HTTP ${response.status}`);
+    }
+    if (!response.body) {
+      throw new Error('No response body');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const { blocks, rest } = parseSseEventBlocks(buffer);
+      buffer = rest;
+
+      for (const block of blocks) {
+        const { event, dataText } = parseSseEventBlock(block);
+        if (!dataText) continue;
+
+        let data;
+        try {
+          data = JSON.parse(dataText);
+        } catch {
+          continue;
+        }
+
+        if (event === 'start') {
+          continue;
+        }
+        if (event === 'delta') {
+          const chunk = typeof data?.text === 'string' ? data.text : '';
+          if (!chunk) continue;
+          fullText += chunk;
+          updateStreamingMessageText(botMessageDomId, fullText);
+          continue;
+        }
+        if (event === 'tool_start') {
+          updateStreamingMessageStatus(botMessageDomId, `正在使用工具：${data?.tool || '处理中'}...`);
+          continue;
+        }
+        if (event === 'tool_done') {
+          updateStreamingMessageStatus(botMessageDomId, '继续生成中...');
+          continue;
+        }
+        if (event === 'done') {
+          const finalText = typeof data?.full_text === 'string' ? data.full_text : fullText;
+          finalizeStreamingMessage(botMessageDomId, finalText);
+          return finalText;
+        }
+        if (event === 'error') {
+          throw new Error(data?.error || 'Stream error');
+        }
+      }
+    }
+
+    finalizeStreamingMessage(botMessageDomId, fullText);
+    return fullText;
+  }
+
+  async function sendMessageNormal(conversationId, content, memoryIds) {
+    const result = await authManager.post(
+      `/chat/conversations/${conversationId}/messages`,
+      { content, memory_ids: memoryIds }
+    );
+    if (result?.bot_message?.content) {
+      appendMessage('bot', result.bot_message.content);
+    }
+    return result;
   }
 
   async function sendMessage() {
@@ -1016,16 +1199,11 @@
     ui.input.style.height = 'auto';
     appendMessage('user', content);
 
-    try {
-      const memoryIds = Array.from(state.injectedMemoryIds || []);
-      const result = await authManager.post(
-        `/chat/conversations/${state.selectedConversationId}/messages`,
-        { content, memory_ids: memoryIds }
-      );
+    const memoryIds = Array.from(state.injectedMemoryIds || []);
+    const botPlaceholderId = appendMessage('bot', '思考中...', { isStreaming: true });
 
-      if (result?.bot_message?.content) {
-        appendMessage('bot', result.bot_message.content);
-      }
+    try {
+      await sendMessageStream(state.selectedConversationId, content, memoryIds, botPlaceholderId);
 
       if (memoryIds.length > 0) {
         showLightToast(`本次消息已携带 ${memoryIds.length} 条记忆`, 'info');
@@ -1033,8 +1211,18 @@
 
       await refreshAllConversationLists();
     } catch (err) {
-      appendMessage('bot', '发送失败，请检查后端服务和模型配置后重试。');
-      throw err;
+      console.warn('Stream send failed, fallback to normal API:', err);
+      removeLocalMessage(botPlaceholderId);
+      try {
+        await sendMessageNormal(state.selectedConversationId, content, memoryIds);
+        if (memoryIds.length > 0) {
+          showLightToast(`本次消息已携带 ${memoryIds.length} 条记忆`, 'info');
+        }
+        await refreshAllConversationLists();
+      } catch (fallbackErr) {
+        appendMessage('bot', '发送失败，请检查后端服务和模型配置后重试。');
+        throw fallbackErr;
+      }
     }
   }
 
@@ -1250,32 +1438,267 @@
     updateMemoryPickedCount();
   }
 
+  function resetMemoryExtractDraft() {
+    state.memoryExtractDraft = {
+      messages: [],
+      historyMemories: [],
+      selectedMessageIds: new Set(),
+      selectedMemoryIds: new Set(),
+      focusNote: '',
+      items: [],
+      loadingContext: false,
+      loadingPreview: false,
+      saving: false,
+      meta: null
+    };
+  }
+
+  function setExtractFocusNoteFromInput() {
+    if (!ui.extractFocusNote) return;
+    state.memoryExtractDraft.focusNote = ui.extractFocusNote.value || '';
+  }
+
+  function toggleMessageSelect(id, checked) {
+    const selected = state.memoryExtractDraft.selectedMessageIds;
+    if (checked) selected.add(String(id));
+    else selected.delete(String(id));
+    renderExtractPanel();
+  }
+
+  function toggleMemorySelect(id, checked) {
+    const selected = state.memoryExtractDraft.selectedMemoryIds;
+    if (checked) selected.add(String(id));
+    else selected.delete(String(id));
+    renderExtractPanel();
+  }
+
+  function updateResultItem(index, field, value) {
+    const item = state.memoryExtractDraft.items[index];
+    if (!item) return;
+    if (field === 'category') item.category = String(value || '').trim().slice(0, 50);
+    if (field === 'text') item.text = String(value || '').trim().slice(0, 500);
+  }
+
+  function removeResultItem(index) {
+    state.memoryExtractDraft.items.splice(index, 1);
+    renderExtractPanel();
+  }
+
+  function addResultItem() {
+    state.memoryExtractDraft.items.push({ category: 'other', text: '' });
+    renderExtractPanel();
+  }
+
+  function renderExtractPanel() {
+    const draft = state.memoryExtractDraft;
+
+    if (ui.extractFocusNote && ui.extractFocusNote.value !== (draft.focusNote || '')) {
+      ui.extractFocusNote.value = draft.focusNote || '';
+    }
+
+    if (ui.extractMessageList) {
+      if (draft.loadingContext) {
+        ui.extractMessageList.innerHTML = '<div class="folder-topic-empty">正在加载消息...</div>';
+      } else if (!draft.messages.length) {
+        ui.extractMessageList.innerHTML = '<div class="folder-topic-empty">暂无可选消息</div>';
+      } else {
+        ui.extractMessageList.innerHTML = draft.messages.map((m) => {
+          const id = String(m.id);
+          const checked = draft.selectedMessageIds.has(id);
+          const roleText = m.role === 'user' ? '用户' : 'AI';
+          const content = String(m.content || '').trim();
+          const preview = content.length > 80 ? `${content.slice(0, 80)}...` : content;
+          return `
+            <label class="extract-item ${checked ? 'selected' : ''}">
+              <input class="extract-message-checkbox" type="checkbox" data-message-id="${escapeAttr(id)}" ${checked ? 'checked' : ''} />
+              <span class="item-role">${escapeHtml(roleText)}</span>
+              <span class="item-content">${escapeHtml(preview || '（空消息）')}</span>
+            </label>
+          `;
+        }).join('');
+      }
+    }
+
+    if (ui.extractMemoryList) {
+      if (draft.loadingContext) {
+        ui.extractMemoryList.innerHTML = '<div class="folder-topic-empty">正在加载归档记忆...</div>';
+      } else if (!draft.historyMemories.length) {
+        ui.extractMemoryList.innerHTML = '<div class="folder-topic-empty">暂无可选归档记忆</div>';
+      } else {
+        ui.extractMemoryList.innerHTML = draft.historyMemories.map((m) => {
+          const id = String(m.id);
+          const checked = draft.selectedMemoryIds.has(id);
+          const title = m.title || '未命名记忆';
+          const summary = m.summary || m.insight || '暂无摘要';
+          return `
+            <label class="extract-item ${checked ? 'selected' : ''}">
+              <input class="extract-memory-checkbox" type="checkbox" data-memory-id="${escapeAttr(id)}" ${checked ? 'checked' : ''} />
+              <span class="item-title">${escapeHtml(title)}</span>
+              <span class="item-summary">${escapeHtml(summary)}</span>
+            </label>
+          `;
+        }).join('');
+      }
+    }
+
+    if (ui.extractResultSection && ui.extractResultList && ui.extractCommitBtn) {
+      const hasResults = Array.isArray(draft.items) && draft.items.length > 0;
+      ui.extractResultSection.style.display = hasResults ? 'block' : 'none';
+      ui.extractCommitBtn.style.display = hasResults ? 'inline-block' : 'none';
+
+      if (hasResults) {
+        ui.extractResultList.innerHTML = draft.items.map((item, i) => `
+          <div class="result-item">
+            <input class="result-category-input" data-result-index="${i}" value="${escapeAttr(item.category || 'other')}" />
+            <textarea class="result-text-input" data-result-index="${i}" rows="3">${escapeHtml(item.text || '')}</textarea>
+            <button class="result-remove-btn" type="button" data-result-index="${i}">删除</button>
+          </div>
+        `).join('');
+      } else {
+        ui.extractResultList.innerHTML = '';
+      }
+    }
+
+    if (ui.extractPreviewBtn) {
+      ui.extractPreviewBtn.disabled = !!draft.loadingContext || !!draft.loadingPreview || !!draft.saving;
+      ui.extractPreviewBtn.textContent = draft.loadingPreview ? '提炼中...' : '预览提炼';
+    }
+    if (ui.extractCommitBtn) {
+      ui.extractCommitBtn.disabled = !!draft.loadingPreview || !!draft.saving || draft.items.length === 0;
+      if (draft.saving) ui.extractCommitBtn.textContent = '保存中...';
+      else ui.extractCommitBtn.textContent = '保存记忆';
+    }
+  }
+
+  async function openMemoryExtractPanel(conversationId) {
+    if (!conversationId) throw new Error('conversation_id is required');
+
+    if (ui.rightPanelTitle) ui.rightPanelTitle.textContent = '记忆提炼';
+    ui.archivePreviewPanel?.classList.add('active');
+    ui.memoryPickerPanel?.classList.remove('active');
+    ui.rightSidePanel?.classList.add('open');
+    ui.rightSidePanel?.setAttribute('aria-hidden', 'false');
+
+    resetMemoryExtractDraft();
+    const draft = state.memoryExtractDraft;
+    draft.loadingContext = true;
+    renderExtractPanel();
+
+    const res = await authManager.get(`/memories/extract/context?conversation_id=${encodeURIComponent(conversationId)}`);
+    const messages = Array.isArray(res?.messages) ? res.messages : [];
+    const archiveMemories = Array.isArray(res?.archive_memories) ? res.archive_memories : [];
+
+    draft.messages = messages;
+    draft.historyMemories = archiveMemories;
+    draft.selectedMessageIds = new Set(messages.map((m) => String(m.id)));
+    draft.selectedMemoryIds = new Set();
+    draft.items = [];
+    draft.focusNote = '';
+    draft.meta = res?.meta || null;
+    draft.loadingContext = false;
+
+    renderExtractPanel();
+  }
+
+  async function previewMemoryExtract() {
+    const draft = state.memoryExtractDraft;
+    if (draft.loadingPreview || draft.saving) return;
+    setExtractFocusNoteFromInput();
+
+    if (draft.selectedMessageIds.size === 0) {
+      alert('请至少选择一条消息');
+      return;
+    }
+    if (!state.selectedConversationId) {
+      alert('请先选择一个话题。');
+      return;
+    }
+
+    draft.loadingPreview = true;
+    renderExtractPanel();
+
+    try {
+      const data = await authManager.post('/memories/extract/preview', {
+        conversation_id: state.selectedConversationId,
+        selected_message_ids: Array.from(draft.selectedMessageIds),
+        selected_archive_memory_ids: Array.from(draft.selectedMemoryIds),
+        focus_note: draft.focusNote
+      });
+      draft.items = Array.isArray(data?.items) ? data.items.map((item) => ({
+        category: String(item?.category || 'other'),
+        text: String(item?.text || '')
+      })) : [];
+      renderExtractPanel();
+    } catch (err) {
+      alert(err.message || '提炼预览失败');
+    } finally {
+      draft.loadingPreview = false;
+      renderExtractPanel();
+    }
+  }
+
+  async function commitMemoryExtract() {
+    const draft = state.memoryExtractDraft;
+    if (draft.saving) return;
+    setExtractFocusNoteFromInput();
+
+    if (!state.selectedConversationId) {
+      alert('请先选择一个话题。');
+      return;
+    }
+    if (!draft.items.length) {
+      alert('请先生成提炼结果');
+      return;
+    }
+
+    const conversation = getCurrentConversation();
+    const folderId = conversation?.folder_id || draft.meta?.folder_id;
+    if (!folderId) {
+      alert('当前话题未绑定主题，无法保存归档记忆');
+      return;
+    }
+
+    draft.saving = true;
+    renderExtractPanel();
+
+    try {
+      await authManager.post('/memories/extract/commit', {
+        conversation_id: state.selectedConversationId,
+        folder_id: folderId,
+        items: draft.items,
+        focus_note: draft.focusNote,
+        selected_message_ids: Array.from(draft.selectedMessageIds),
+        selected_archive_memory_ids: Array.from(draft.selectedMemoryIds)
+      });
+
+      state.archivedConversationIds.add(state.selectedConversationId);
+      const existing = state.archivesByConversationId[state.selectedConversationId];
+      state.archivesByConversationId[state.selectedConversationId] = {
+        count: (existing?.count || 0) + 1,
+        title: conversation?.title || existing?.title || '未命名话题',
+        summary: draft.items[0]?.text || existing?.summary || '',
+        insights: draft.items.map((x) => x.text).slice(0, 2).join('；')
+      };
+      patchConversationInState(state.selectedConversationId, { archived_count: (conversation?.archived_count || 0) + 1 });
+      renderSingleBotTopicList();
+      renderMemoryArchivePanel();
+      showLightToast(`已保存 ${draft.items.length} 条记忆`, 'success');
+      closeRightPanel();
+    } catch (err) {
+      alert(err.message || '保存记忆失败');
+    } finally {
+      draft.saving = false;
+      renderExtractPanel();
+    }
+  }
+
   function openRightPanel(mode) {
     if (!ui.rightSidePanel) return;
-    const conversation = getCurrentConversation();
     if (mode === 'archive') {
-      const archive = state.archivesByConversationId[state.selectedConversationId] || {
-        count: 1,
-        title: conversation?.title || '未命名话题',
-        summary: '请补充本次对话的摘要与关键信息。',
-        insights: '请补充关键洞察。',
-        tags: ['待整理']
-      };
-      if (ui.rightPanelTitle) ui.rightPanelTitle.textContent = '归档预览';
-      if (ui.archiveTopicTitleInput) ui.archiveTopicTitleInput.value = archive.title || '';
-      if (ui.archiveSummaryInput) ui.archiveSummaryInput.value = archive.summary || '';
-      if (ui.archiveInsightInput) ui.archiveInsightInput.value = archive.insights || '';
-      if (ui.archiveMetaText) {
-        const today = new Date().toLocaleDateString('zh-CN');
-        ui.archiveMetaText.textContent = `第${archive.count}次 · ${today}`;
-      }
-      if (ui.archiveTagList) {
-        ui.archiveTagList.querySelectorAll('.tag-chip').forEach((el) => {
-          el.classList.toggle('active', archive.tags?.includes(el.textContent?.trim() || ''));
-        });
-      }
+      if (ui.rightPanelTitle) ui.rightPanelTitle.textContent = '记忆提炼';
       ui.archivePreviewPanel?.classList.add('active');
       ui.memoryPickerPanel?.classList.remove('active');
+      renderExtractPanel();
     }
 
     if (mode === 'memory') {
@@ -1347,12 +1770,16 @@
     ui.recordToolBtn?.addEventListener('click', () => showLightToast('录音功能已预留，待接入语音服务', 'info'));
     ui.composerMoreBtn?.addEventListener('click', () => showLightToast('更多操作入口已预留', 'info'));
     ui.injectMemoryBtn?.addEventListener('click', () => openRightPanel('memory'));
-    ui.archiveConversationBtn?.addEventListener('click', () => {
+    ui.archiveConversationBtn?.addEventListener('click', async () => {
       if (!state.selectedConversationId) {
         alert('请先选择一个话题。');
         return;
       }
-      openRightPanel('archive');
+      try {
+        await openMemoryExtractPanel(state.selectedConversationId);
+      } catch (err) {
+        alert(err.message || '加载提炼面板失败');
+      }
     });
     ui.rightPanelCloseBtn?.addEventListener('click', closeRightPanel);
     ui.archiveCancelBtn?.addEventListener('click', closeRightPanel);
@@ -1365,30 +1792,48 @@
       showLightToast(`已注入 ${ids.length} 条记忆到本次对话`, 'success');
       closeRightPanel();
     });
-    ui.archiveTagList?.addEventListener('click', (e) => {
+    ui.extractFocusNote?.addEventListener('input', setExtractFocusNoteFromInput);
+    ui.extractMessageList?.addEventListener('change', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.classList.contains('extract-message-checkbox')) return;
+      toggleMessageSelect(target.dataset.messageId || '', target.checked);
+    });
+    ui.extractMemoryList?.addEventListener('change', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (!target.classList.contains('extract-memory-checkbox')) return;
+      toggleMemorySelect(target.dataset.memoryId || '', target.checked);
+    });
+    ui.extractResultList?.addEventListener('change', (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
-      const chip = target.closest('.tag-chip');
-      if (!(chip instanceof HTMLElement)) return;
-      chip.classList.toggle('active');
+      const indexAttr = target.getAttribute('data-result-index');
+      const index = Number(indexAttr);
+      if (!Number.isInteger(index) || index < 0) return;
+
+      if (target.classList.contains('result-category-input') && target instanceof HTMLInputElement) {
+        updateResultItem(index, 'category', target.value);
+        return;
+      }
+      if (target.classList.contains('result-text-input') && target instanceof HTMLTextAreaElement) {
+        updateResultItem(index, 'text', target.value);
+      }
     });
-    ui.archiveConfirmBtn?.addEventListener('click', () => {
-      if (!state.selectedConversationId) return;
-      const existing = state.archivesByConversationId[state.selectedConversationId];
-      const nextCount = (existing?.count || 0) + 1;
-      const tags = Array.from(ui.archiveTagList?.querySelectorAll('.tag-chip.active') || []).map((x) => x.textContent?.trim()).filter(Boolean);
-      state.archivesByConversationId[state.selectedConversationId] = {
-        count: nextCount,
-        title: ui.archiveTopicTitleInput?.value?.trim() || existing?.title || '未命名话题',
-        summary: ui.archiveSummaryInput?.value?.trim() || '',
-        insights: ui.archiveInsightInput?.value?.trim() || '',
-        tags
-      };
-      state.archivedConversationIds.add(state.selectedConversationId);
-      renderSingleBotTopicList();
-      renderMemoryArchivePanel();
-      showLightToast('已确认存入记忆', 'success');
-      closeRightPanel();
+    ui.extractResultList?.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.classList.contains('result-remove-btn')) return;
+      const index = Number(target.getAttribute('data-result-index'));
+      if (!Number.isInteger(index) || index < 0) return;
+      removeResultItem(index);
+    });
+    ui.extractAddResultBtn?.addEventListener('click', addResultItem);
+    ui.extractPreviewBtn?.addEventListener('click', () => {
+      previewMemoryExtract().catch((err) => alert(err.message || '提炼预览失败'));
+    });
+    ui.extractCommitBtn?.addEventListener('click', () => {
+      commitMemoryExtract().catch((err) => alert(err.message || '保存记忆失败'));
     });
     ui.rightSidePanel?.addEventListener('click', (e) => {
       if (e.target === ui.rightSidePanel) closeRightPanel();

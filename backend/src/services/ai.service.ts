@@ -218,6 +218,112 @@ class AIService {
   }
 
   /**
+   * Stream a simple text response (no tool-calling loop).
+   * Parses OpenAI-compatible SSE chunks returned by SiliconFlow.
+   */
+  async generateSimpleResponseStream(
+    messages: ChatMessage[],
+    botConfig: BotConfig | undefined,
+    onDelta: (text: string) => void
+  ): Promise<string> {
+    if (!this.apiKey) {
+      const fallback = this.getFallbackResponse(messages);
+      if (fallback) onDelta(fallback);
+      return fallback;
+    }
+
+    const config = { ...this.defaultConfig, ...(botConfig || {}) };
+    const model = config.model || this.defaultModel;
+
+    const requestMessages: ChatMessage[] = [];
+    if (botConfig?.system_prompt) {
+      requestMessages.push({
+        role: 'system',
+        content: botConfig.system_prompt
+      });
+    }
+    requestMessages.push(...messages);
+
+    const requestBody: ChatCompletionRequest = {
+      model,
+      messages: requestMessages,
+      stream: true,
+      max_tokens: config.max_tokens,
+      temperature: config.temperature,
+      top_p: config.top_p
+    };
+
+    if (config.enable_thinking) {
+      requestBody.enable_thinking = true;
+      if (config.thinking_budget) {
+        requestBody.thinking_budget = config.thinking_budget;
+      }
+    }
+
+    const response = await fetch(`${this.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`Stream API request failed: ${response.status} ${response.statusText} ${errorText}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body from AI stream');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+
+      for (const eventBlock of events) {
+        const lines = eventBlock.split(/\r?\n/);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const dataText = trimmed.slice(5).trim();
+          if (!dataText || dataText === '[DONE]') continue;
+
+          try {
+            const payload = JSON.parse(dataText);
+            const delta = payload?.choices?.[0]?.delta?.content ?? payload?.choices?.[0]?.message?.content;
+            if (typeof delta === 'string' && delta) {
+              fullText += delta;
+              onDelta(delta);
+            }
+          } catch {
+            // Ignore malformed partial chunks from upstream
+          }
+        }
+      }
+    }
+
+    if (!fullText) {
+      // Some providers may send final content in a non-stream-compatible shape
+      // and our parser ignores it; return empty string to let caller decide fallback.
+      return '';
+    }
+
+    return fullText;
+  }
+
+  /**
    * Generate a simple response without AI (fallback)
    */
   private getFallbackResponse(messages: ChatMessage[]): string {

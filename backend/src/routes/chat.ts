@@ -277,4 +277,78 @@ router.post('/conversations/:conversation_id/messages', async (req: Request, res
   }
 });
 
+// Streaming SSE endpoint (keeps existing non-stream endpoint intact)
+router.post('/conversations/:conversation_id/messages/stream', async (req: Request, res: Response) => {
+  const userId = req.user?.user_id;
+  if (!userId) {
+    return res.status(401).json({
+      error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+    });
+  }
+
+  const conversationId = firstString(req.params.conversation_id) || '';
+  const content = (req.body.content || '').toString();
+  const memoryIds = Array.isArray(req.body?.memory_ids)
+    ? req.body.memory_ids.filter((id: unknown): id is string => typeof id === 'string')
+    : [];
+
+  if (!content.trim()) {
+    return res.status(400).json({
+      error: { code: 'BAD_REQUEST', message: 'content is required', numeric_code: 400 }
+    });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  (res as any).flushHeaders?.();
+
+  const writeEvent = (event: string, data: Record<string, unknown>) => {
+    if (res.writableEnded) return;
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  let streamClosed = false;
+  req.on('close', () => {
+    streamClosed = true;
+  });
+
+  try {
+    await chatService.sendMessageStream(userId, conversationId, content, memoryIds, {
+      onStart: (msgId) => {
+        writeEvent('start', { message_id: msgId });
+      },
+      onDelta: (text) => {
+        writeEvent('delta', { text });
+      },
+      onToolStart: (tool) => {
+        writeEvent('tool_start', { tool });
+      },
+      onToolDone: (tool) => {
+        writeEvent('tool_done', { tool });
+      },
+      onDone: (result) => {
+        const botMsg: any = result?.bot_message || {};
+        writeEvent('done', {
+          message_id: botMsg.message_id || botMsg.id || null,
+          full_text: botMsg.content || ''
+        });
+        if (!res.writableEnded) res.end();
+      },
+      onError: (error) => {
+        writeEvent('error', { error: error.message || 'Stream failed' });
+        if (!res.writableEnded) res.end();
+      }
+    });
+  } catch (error) {
+    console.error('Stream route error:', error);
+    if (!streamClosed) {
+      writeEvent('error', { error: '内部错误' });
+      if (!res.writableEnded) res.end();
+    }
+  }
+});
+
 export default router;

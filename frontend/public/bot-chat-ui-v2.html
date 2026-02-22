@@ -268,33 +268,37 @@
                 <div class="right-panel-divider"></div>
 
                 <div class="right-panel-body active" id="archivePreviewPanel">
-                    <div class="panel-form-row">
-                        <label for="archiveTopicTitleInput">话题标题</label>
-                        <input id="archiveTopicTitleInput" type="text" />
-                    </div>
-                    <div class="panel-form-row">
-                        <label for="archiveSummaryInput">AI摘要</label>
-                        <textarea id="archiveSummaryInput" rows="4"></textarea>
-                    </div>
-                    <div class="panel-form-row">
-                        <label for="archiveInsightInput">关键洞察</label>
-                        <textarea id="archiveInsightInput" rows="5"></textarea>
-                    </div>
-                    <div class="panel-form-row">
-                        <label>归档时间</label>
-                        <div class="panel-static-text" id="archiveMetaText">第2次 · 2026/2/22</div>
-                    </div>
-                    <div class="panel-form-row">
-                        <label>标签</label>
-                        <div class="tag-chip-list" id="archiveTagList">
-                            <button class="tag-chip active" type="button">薪资谈判</button>
-                            <button class="tag-chip" type="button">职场策略</button>
-                            <button class="tag-chip" type="button">沟通复盘</button>
+                    <div class="extract-section">
+                        <div class="section-title">
+                            本次消息
+                            <span class="select-hint">默认全选，可反选不需要的</span>
                         </div>
+                        <div id="extractMessageList" class="item-list"></div>
                     </div>
+
+                    <div class="extract-section">
+                        <div class="section-title">
+                            归档记忆
+                            <span class="select-hint">默认不选，可勾选纳入背景</span>
+                        </div>
+                        <div id="extractMemoryList" class="item-list"></div>
+                    </div>
+
+                    <div class="extract-section">
+                        <div class="section-title">补充重点（选填）</div>
+                        <textarea id="extractFocusNote" rows="3" placeholder="例如：重点关注用户的情绪变化"></textarea>
+                    </div>
+
+                    <div class="extract-section" id="extractResultSection" style="display:none;">
+                        <div class="section-title">提炼结果</div>
+                        <div id="extractResultList"></div>
+                        <button class="panel-btn secondary" id="extractAddResultBtn" type="button">+ 新增一条</button>
+                    </div>
+
                     <div class="right-panel-footer">
                         <button class="panel-btn secondary" id="archiveCancelBtn" type="button">取消</button>
-                        <button class="panel-btn primary" id="archiveConfirmBtn" type="button">✓ 确认存入记忆</button>
+                        <button class="panel-btn primary" id="extractPreviewBtn" type="button">预览提炼</button>
+                        <button class="panel-btn primary" id="extractCommitBtn" type="button" style="display:none;">保存记忆</button>
                     </div>
                 </div>
 
