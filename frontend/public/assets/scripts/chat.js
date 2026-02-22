@@ -1700,11 +1700,6 @@
     }
 
     const conversation = getCurrentConversation();
-    const folderId = conversation?.folder_id || draft.meta?.folder_id;
-    if (!folderId) {
-      alert('当前话题未绑定主题，无法保存归档记忆');
-      return;
-    }
 
     draft.saving = true;
     renderExtractPanel();
@@ -1712,7 +1707,6 @@
     try {
       await authManager.post('/memories/extract/commit', {
         conversation_id: state.selectedConversationId,
-        folder_id: folderId,
         items: selectedItems,
         focus_note: draft.focusNote,
         selected_message_ids: Array.from(draft.selectedMessageIds),

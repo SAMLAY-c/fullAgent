@@ -511,18 +511,32 @@ router.post('/extract/commit', async (req: Request, res: Response) => {
     }
 
     const conversationId = trimOrNull(req.body?.conversation_id);
-    const folderId = trimOrNull(req.body?.folder_id);
+    const requestedFolderId = trimOrNull(req.body?.folder_id);
     const focusNote = trimOrNull(req.body?.focus_note);
     const selectedMessageIds = uniqueStringArray(req.body?.selected_message_ids);
     const selectedArchiveMemoryIds = uniqueStringArray(req.body?.selected_archive_memory_ids ?? req.body?.selected_memory_ids);
     const rawItems = Array.isArray(req.body?.items) ? req.body.items : [];
     const items = normalizeExtractItems({ items: rawItems });
 
-    if (!conversationId || !folderId) {
-      return res.status(400).json({ error: 'conversation_id and folder_id are required' });
+    if (!conversationId) {
+      return res.status(400).json({ error: 'conversation_id is required' });
     }
     if (items.length === 0) {
       return res.status(400).json({ error: 'items must contain at least one valid item' });
+    }
+
+    const conversation = await getOwnedConversationForExtraction(userId, conversationId);
+    if (!conversation) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const folderId = requestedFolderId || conversation.folder_id;
+    if (!folderId) {
+      return res.status(400).json({ error: '该话题未绑定主题，无法保存归档记忆' });
+    }
+
+    if (conversation.folder_id && requestedFolderId && conversation.folder_id !== requestedFolderId) {
+      return res.status(400).json({ error: 'conversation_id does not belong to folder_id' });
     }
 
     const folder = await prisma.folder.findFirst({
@@ -535,15 +549,6 @@ router.post('/extract/commit', async (req: Request, res: Response) => {
     });
     if (!folder) {
       return res.status(404).json({ error: 'Folder not found' });
-    }
-
-    const conversation = await getOwnedConversationForExtraction(userId, conversationId);
-    if (!conversation) {
-      return res.status(404).json({ error: 'Conversation not found' });
-    }
-
-    if (conversation.folder_id && conversation.folder_id !== folderId) {
-      return res.status(400).json({ error: 'conversation_id does not belong to folder_id' });
     }
 
     if (selectedMessageIds.length > 0) {
