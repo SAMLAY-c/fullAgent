@@ -243,13 +243,7 @@ const Groups = (() => {
     await openEditGroup(groupId);
   }
 
-  function escapeHtml(str) {
-    return String(str || '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;');
-  }
+  // 注意: escapeHtml 函数已移至 utils.js，通过全局对象使用
 
   return {
     openEditGroup,

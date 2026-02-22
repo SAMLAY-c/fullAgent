@@ -32,6 +32,4 @@ echo All services started successfully!
 echo Backend: http://localhost:8915
 echo Login: http://localhost:8915/login.html
 echo ========================================
-echo.
-echo Press any key to close this window...
-pause >nul
+REM Auto-start script - closes silently

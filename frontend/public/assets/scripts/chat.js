@@ -145,14 +145,7 @@
     { id: 'm3', title: '跨部门协作·复盘', date: '2026/1/20', quote: '推动协作需要提前...' }
   ];
 
-  function escapeHtml(text) {
-    return String(text || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
+  // 注意: escapeHtml 函数已移至 utils.js，通过全局对象使用
 
   if (window.marked && typeof window.marked.parse === 'function') {
     window.marked.setOptions({ gfm: true, breaks: true });
@@ -218,6 +211,7 @@
     return ({ work: '工作', life: '生活', love: '情感' }[scene] || scene);
   }
 
+  // 时间格式化函数（chat 专用，返回 HH:MM 格式）
   function formatTime(isoOrDate) {
     const date = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate || Date.now());
     if (Number.isNaN(date.getTime())) {
@@ -226,6 +220,7 @@
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
   }
 
+  // 日期时间格式化函数（chat 专用）
   function formatDateTime(isoOrDate) {
     const date = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate || Date.now());
     if (Number.isNaN(date.getTime())) return '--';

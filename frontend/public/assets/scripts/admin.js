@@ -75,14 +75,7 @@ const Bots = (() => {
     return Date.now();
   }
 
-  function escapeHtml(str) {
-    return String(str || '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
+  // 注意: escapeHtml 函数已移至 utils.js，通过全局对象使用
 
   function toast(title, desc = '', ms = 2600) {
     const stack = el('toast-stack');
@@ -124,24 +117,7 @@ const Bots = (() => {
     el('modal-footer').innerHTML = '';
   }
 
-  function formatTime(ts) {
-    if (!ts) return '-';
-    const d = new Date(ts);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
-
-  function humanAgo(ts) {
-    if (!ts) return '-';
-    const diff = Math.max(0, now() - ts);
-    const m = Math.floor(diff / 60000);
-    if (m < 1) return '刚刚';
-    if (m < 60) return `${m} 分钟前`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `${h} 小时前`;
-    const d = Math.floor(h / 24);
-    return `${d} 天前`;
-  }
+  // 注意: formatTime 和 humanAgo 函数已移至 utils.js，通过全局对象使用
 
   function promptStatusView(bot) {
     const systemPrompt = String(bot?.config?.system_prompt || '').trim();
@@ -1269,14 +1245,7 @@ const Schedule = (() => {
     '*/15 * * * *': '每 15 分钟'
   };
 
-  function escapeHtml(str) {
-    return String(str || '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
+  // 注意: escapeHtml 函数已移至 utils.js，通过全局对象使用
 
   function getCronLabel(cron) {
     return CRON_LABELS[cron] || cron;

@@ -10,19 +10,7 @@
     return headers;
   }
 
-  function escapeHtml(value) {
-    return String(value || '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
-
-  function formatTime(ts) {
-    if (!ts) return '-';
-    try { return new Date(ts).toLocaleString(); } catch { return String(ts); }
-  }
+  // 注意: escapeHtml 和 formatTime 函数已移至 utils.js，通过全局对象使用
 
   async function requestJson(url, options) {
     const res = await fetch(url, options);
