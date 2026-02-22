@@ -153,6 +153,7 @@ const Bots = (() => {
       type: bot.type || '',
       status: bot.status || 'offline',
       description: bot.description || '',
+      config: bot.config || null,
       lastUpdated: updated,
       updatedAt: updated,
       workflowTotal: workflowStats.total,
@@ -190,7 +191,7 @@ const Bots = (() => {
       scene: formData.scene,
       type: formData.type,
       description: formData.description,
-      config: null
+      config: formData.config
     };
   }
 
@@ -199,7 +200,8 @@ const Bots = (() => {
       name: formData.name,
       scene: formData.scene,
       type: formData.type,
-      description: formData.description
+      description: formData.description,
+      config: formData.config
     };
   }
 
@@ -299,6 +301,11 @@ const Bots = (() => {
     const status = bot.status || 'offline';
     const scene = bot.scene || 'work';
     const type = bot.type || 'work';
+    const config = bot.config || {};
+    const systemPrompt = config.system_prompt || '';
+    const model = config.model || 'deepseek-ai/DeepSeek-V3.2';
+    const temperature = config.temperature ?? 0.7;
+    const maxTokens = config.max_tokens ?? 2000;
 
     return `
       <div class="form-grid">
@@ -343,17 +350,58 @@ const Bots = (() => {
           <textarea class="textarea" id="bot-form-description" placeholder="简要描述该机器人的职责和目标">${escapeHtml(bot.description || '')}</textarea>
         </div>
       </div>
+
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e8e4de;">
+        <h3 style="margin-bottom: 12px; font-size: 14px; font-weight: 600;">AI 模型配置</h3>
+
+        <div class="form-grid">
+          <div class="full">
+            <div class="label">系统提示词</div>
+            <textarea class="textarea" id="bot-form-system-prompt" rows="4" placeholder="定义机器人的角色和行为方式，例如：你是一个专业的工作助手，擅长任务管理和日程安排...">${escapeHtml(systemPrompt)}</textarea>
+          </div>
+
+          <div class="full">
+            <div class="label">模型</div>
+            <select class="select" id="bot-form-model">
+              <option value="deepseek-ai/DeepSeek-V3.2" ${model === 'deepseek-ai/DeepSeek-V3.2' ? 'selected' : ''}>DeepSeek V3.2（推荐）</option>
+              <option value="deepseek-ai/DeepSeek-R1" ${model === 'deepseek-ai/DeepSeek-R1' ? 'selected' : ''}>DeepSeek R1（推理）</option>
+              <option value="Qwen/Qwen2.5-72B-Instruct" ${model === 'Qwen/Qwen2.5-72B-Instruct' ? 'selected' : ''}>Qwen2.5-72B</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="label">温度</div>
+            <input class="input" id="bot-form-temperature" type="number" min="0" max="2" step="0.1" value="${temperature}" placeholder="0.7" />
+            <div class="muted" style="font-size: 11px; margin-top: 4px;">0-2，越高越随机</div>
+          </div>
+
+          <div>
+            <div class="label">最大 Token 数</div>
+            <input class="input" id="bot-form-max-tokens" type="number" min="100" max="8000" step="100" value="${maxTokens}" placeholder="2000" />
+          </div>
+        </div>
+      </div>
+
       <div class="muted" style="margin-top: 10px; font-size: 12px;">当前页面已改为真实 API 调用，数据将直接写入后端数据库。</div>
     `;
   }
 
   function readFormData() {
+    const temperature = parseFloat(el('bot-form-temperature')?.value || '0.7');
+    const maxTokens = parseInt(el('bot-form-max-tokens')?.value || '2000');
+
     return {
       name: (el('bot-form-name')?.value || '').trim(),
       scene: (el('bot-form-scene')?.value || '').trim(),
       type: (el('bot-form-type')?.value || '').trim(),
       status: (el('bot-form-status')?.value || '').trim(),
-      description: (el('bot-form-description')?.value || '').trim()
+      description: (el('bot-form-description')?.value || '').trim(),
+      config: {
+        system_prompt: (el('bot-form-system-prompt')?.value || '').trim(),
+        model: (el('bot-form-model')?.value || '').trim(),
+        temperature: isNaN(temperature) ? 0.7 : temperature,
+        max_tokens: isNaN(maxTokens) ? 2000 : maxTokens
+      }
     };
   }
 
@@ -368,18 +416,31 @@ const Bots = (() => {
     });
   }
 
-  function openEdit(id) {
-    const bot = bots.find((x) => x.id === id);
-    if (!bot) return;
+  async function openEdit(id) {
+    try {
+      // 获取完整的Bot详情，包括config
+      const botDetail = await botClient.getBot(id);
+      const bot = {
+        id: botDetail.bot_id,
+        name: botDetail.name,
+        scene: botDetail.scene,
+        type: botDetail.type,
+        status: botDetail.status,
+        description: botDetail.description,
+        config: botDetail.config
+      };
 
-    openModal({
-      title: '编辑机器人',
-      bodyHtml: formHtml(bot),
-      footerButtons: [
-        { text: '取消', className: 'btn btn-secondary', onClick: closeModal },
-        { text: '保存', className: 'btn btn-primary', onClick: () => submitForm('edit', id) }
-      ]
-    });
+      openModal({
+        title: '编辑机器人',
+        bodyHtml: formHtml(bot),
+        footerButtons: [
+          { text: '取消', className: 'btn btn-secondary', onClick: closeModal },
+          { text: '保存', className: 'btn btn-primary', onClick: () => submitForm('edit', id) }
+        ]
+      });
+    } catch (error) {
+      toast('加载机器人详情失败', error?.message || '请稍后重试');
+    }
   }
 
   async function submitForm(mode, id) {
@@ -782,6 +843,11 @@ async function loadGroupsPage() {
             <div class="item-stat-value">${formatRelativeTimeLabel(group.updated_at)}</div>
             <div class="item-stat-label">最近更新</div>
           </div>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn btn-secondary btn-small" onclick="Groups.openEditMembers('${String(group.group_id)}')">管理成员</button>
+          <button class="btn btn-ghost btn-small" onclick="Groups.openEditGroup('${String(group.group_id)}')">编辑</button>
+          <button class="btn btn-danger btn-small" onclick="Groups.confirmDeleteGroup('${String(group.group_id)}', '${String(group.name || '')}')">删除</button>
         </div>
       </div>
     `;
@@ -1420,6 +1486,7 @@ const Schedule = (() => {
 
   return { init, toggleTask, deleteTask };
 })();
+
 
 
 
