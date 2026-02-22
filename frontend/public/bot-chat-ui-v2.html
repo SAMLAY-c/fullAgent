@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Agent - 你的AI伙伴</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/styles/chat.css?v=20260222e">
+    <link rel="stylesheet" href="assets/styles/chat.css?v=20260222g">
 
     <!-- API 客户端脚本 -->
     <script src="assets/lib/api-client.js"></script>
@@ -50,7 +50,29 @@
                     </div>
                     <div class="topic-list-divider"></div>
                     <div class="topic-conversation-list" id="topicConversationList">
-                        <div class="folder-topic-empty">加载话题中...</div>
+                        <div class="topic-skeleton-list" aria-hidden="true">
+                            <div class="topic-skeleton-row">
+                                <div class="topic-skeleton-main">
+                                    <div class="topic-skeleton-dot skeleton-shimmer"></div>
+                                    <div class="topic-skeleton-line title skeleton-shimmer"></div>
+                                </div>
+                                <div class="topic-skeleton-line meta skeleton-shimmer"></div>
+                            </div>
+                            <div class="topic-skeleton-row">
+                                <div class="topic-skeleton-main">
+                                    <div class="topic-skeleton-dot skeleton-shimmer"></div>
+                                    <div class="topic-skeleton-line title skeleton-shimmer" style="width:54%;"></div>
+                                </div>
+                                <div class="topic-skeleton-line meta skeleton-shimmer"></div>
+                            </div>
+                            <div class="topic-skeleton-row">
+                                <div class="topic-skeleton-main">
+                                    <div class="topic-skeleton-dot skeleton-shimmer"></div>
+                                    <div class="topic-skeleton-line title skeleton-shimmer" style="width:70%;"></div>
+                                </div>
+                                <div class="topic-skeleton-line meta skeleton-shimmer"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -136,8 +158,29 @@
                     <!-- 对话内容面板 -->
                     <div class="content-panel active" id="chatPanel">
                         <div class="chat-messages" id="messages">
-                            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                                加载对话中...
+                            <div class="message bot" aria-hidden="true">
+                                <div class="message-avatar skeleton-shimmer"></div>
+                                <div class="message-wrapper">
+                                    <div class="message-skeleton-card">
+                                        <div class="message-skeleton-lines">
+                                            <div class="message-skeleton-line w1 skeleton-shimmer"></div>
+                                            <div class="message-skeleton-line w2 skeleton-shimmer"></div>
+                                            <div class="message-skeleton-line w3 skeleton-shimmer"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="message bot" aria-hidden="true">
+                                <div class="message-avatar skeleton-shimmer"></div>
+                                <div class="message-wrapper">
+                                    <div class="message-skeleton-card">
+                                        <div class="message-skeleton-lines">
+                                            <div class="message-skeleton-line w2 skeleton-shimmer"></div>
+                                            <div class="message-skeleton-line w1 skeleton-shimmer" style="width:88%;"></div>
+                                            <div class="message-skeleton-line w3 skeleton-shimmer" style="width:58%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -446,6 +489,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="assets/scripts/chat.js?v=20260222c"></script>
+    <script src="assets/scripts/chat.js?v=20260222e"></script>
 </body>
 </html>

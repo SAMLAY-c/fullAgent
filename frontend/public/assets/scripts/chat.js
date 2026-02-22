@@ -183,8 +183,9 @@
     }
 
     if (ui.logBtn) {
-      ui.logBtn.title = '归档';
-      ui.logBtn.setAttribute('aria-label', '归档');
+      ui.logBtn.dataset.label = '会话归档';
+      ui.logBtn.title = '会话归档';
+      ui.logBtn.setAttribute('aria-label', '会话归档');
     }
 
     if (ui.quickSettingsBtn) {
@@ -192,16 +193,24 @@
     }
 
     if (ui.sopBtn) {
-      ui.sopBtn.title = '提醒';
-      ui.sopBtn.setAttribute('aria-label', '提醒');
+      ui.sopBtn.dataset.label = '定时提醒';
+      ui.sopBtn.title = '定时提醒';
+      ui.sopBtn.setAttribute('aria-label', '定时提醒');
     }
 
     ui.contentTabBtns.forEach((btn) => {
       const tab = btn.dataset.tab || '';
-      const labels = { chat: '对话', memory: '记忆', knowledge: '知识库', settings: '设置' };
+      const labels = {
+        chat: '聊天对话',
+        memory: '长期记忆',
+        knowledge: '知识管理',
+        settings: '系统设置'
+      };
       const title = labels[tab] || tab;
       btn.title = title;
       btn.setAttribute('aria-label', title);
+      const labelEl = btn.querySelector('.content-tab-label');
+      if (labelEl) labelEl.textContent = title;
     });
   }
 
@@ -239,6 +248,50 @@
       </div>
     `;
     renderMarkdownInMessages(ui.messages);
+  }
+
+  function renderTopicListSkeleton(count = 5) {
+    if (!ui.topicConversationList) return;
+    const rows = Array.from({ length: count }, (_, idx) => {
+      const width = [62, 54, 70, 58, 66][idx % 5];
+      return `
+        <div class="topic-skeleton-row" aria-hidden="true">
+          <div class="topic-skeleton-main">
+            <div class="topic-skeleton-dot skeleton-shimmer"></div>
+            <div class="topic-skeleton-line title skeleton-shimmer" style="width:${width}%;"></div>
+          </div>
+          <div class="topic-skeleton-line meta skeleton-shimmer"></div>
+        </div>
+      `;
+    }).join('');
+    ui.topicConversationList.innerHTML = `<div class="topic-skeleton-list" aria-hidden="true">${rows}</div>`;
+  }
+
+  function renderMessagesSkeleton(count = 3) {
+    if (!ui.messages) return;
+    const cards = Array.from({ length: count }, (_, idx) => {
+      const sets = [
+        [92, 86, 68],
+        [88, 82, 56],
+        [90, 74, 62]
+      ];
+      const widths = sets[idx % sets.length];
+      return `
+        <div class="message bot" aria-hidden="true">
+          <div class="message-avatar skeleton-shimmer"></div>
+          <div class="message-wrapper">
+            <div class="message-skeleton-card">
+              <div class="message-skeleton-lines">
+                <div class="message-skeleton-line skeleton-shimmer" style="width:${widths[0]}%;"></div>
+                <div class="message-skeleton-line skeleton-shimmer" style="width:${widths[1]}%;"></div>
+                <div class="message-skeleton-line skeleton-shimmer" style="width:${widths[2]}%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    ui.messages.innerHTML = cards;
   }
 
   function escapeAttr(text) {
@@ -1025,6 +1078,7 @@
   }
 
   async function loadMessages(conversationId) {
+    renderMessagesSkeleton(3);
     const res = await authManager.get(`/chat/conversations/${conversationId}/messages`);
     const messages = res.messages || [];
 
@@ -2183,6 +2237,9 @@
   async function bootstrap() {
     const authed = await ensureAuth();
     if (!authed) return;
+
+    renderTopicListSkeleton(5);
+    renderMessagesSkeleton(2);
 
     const grouped = await ensureDefaultBotsIfEmpty();
     state.botsByScene.work = grouped.work || [];
