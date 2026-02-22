@@ -342,8 +342,13 @@
             </div>
             <div class="topic-folder-modal-body topic-create-upgraded-body">
                 <div class="panel-form-row">
-                    <label class="topic-folder-label" for="topicFolderNameInput">话题名称</label>
+                    <label class="topic-folder-label" for="topicFolderNameInput">对话名称</label>
                     <input id="topicFolderNameInput" class="topic-folder-input" type="text" maxlength="50" placeholder="可留空（将自动生成）" />
+                </div>
+
+                <div class="panel-form-row">
+                    <label class="topic-folder-label" for="topicExtraContextInput">补充背景</label>
+                    <textarea id="topicExtraContextInput" class="topic-folder-textarea" rows="4" placeholder="可选。补充这次对话的背景、目标、约束、对象信息。仅在首条消息时注入提示词，例如：这次要帮我准备周一和老板的绩效沟通，目标是争取更多资源。"></textarea>
                 </div>
 
                 <div class="panel-form-row">
@@ -362,6 +367,42 @@
             <div class="topic-folder-modal-footer">
                 <button type="button" class="topic-folder-secondary-btn" id="topicFolderCancelBtn">取消</button>
                 <button type="button" class="topic-folder-primary-btn" id="topicFolderCreateBtn">开始对话 →</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="themeCreateModal" class="topic-folder-modal-mask" aria-hidden="true">
+        <div class="topic-folder-modal-card" role="dialog" aria-modal="true" aria-labelledby="themeCreateModalTitle">
+            <div class="topic-folder-modal-header">
+                <div>
+                    <div class="topic-folder-modal-title" id="themeCreateModalTitle">新建主题</div>
+                    <div class="topic-folder-modal-subtitle" id="themeCreateModalSceneSubtitle">将在当前场景下创建助手主题</div>
+                </div>
+                <button type="button" class="topic-folder-close-btn" id="themeCreateCloseBtn" aria-label="关闭">×</button>
+            </div>
+            <div class="topic-folder-modal-body topic-create-upgraded-body">
+                <div class="panel-form-row">
+                    <label class="topic-folder-label" for="themeCreateNameInput">主题名称</label>
+                    <input id="themeCreateNameInput" class="topic-folder-input" type="text" maxlength="50" placeholder="例如：职场导师" />
+                </div>
+
+                <div class="panel-form-row">
+                    <label class="topic-folder-label" for="themeCreatePromptInput">系统提示词</label>
+                    <textarea id="themeCreatePromptInput" class="topic-folder-textarea" rows="5" placeholder="例如：你是一位经验丰富的职场导师，擅长职业规划、晋升策略、沟通谈判。请用中文回答，结论先行，并给出可执行步骤。"></textarea>
+                </div>
+
+                <div class="panel-form-row">
+                    <label class="topic-folder-label" for="themeCreateModelSelect">模型选择</label>
+                    <select id="themeCreateModelSelect" class="topic-folder-input">
+                        <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek V3.2（推荐）</option>
+                        <option value="deepseek-ai/DeepSeek-R1">DeepSeek R1（推理）</option>
+                        <option value="Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B</option>
+                    </select>
+                </div>
+            </div>
+            <div class="topic-folder-modal-footer">
+                <button type="button" class="topic-folder-secondary-btn" id="themeCreateCancelBtn">取消</button>
+                <button type="button" class="topic-folder-primary-btn" id="themeCreateConfirmBtn">创建主题</button>
             </div>
         </div>
     </div>

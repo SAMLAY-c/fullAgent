@@ -23,6 +23,7 @@
     selectedBotId: null,
     selectedConversationId: null,
     selectedGroupId: null,
+    groups: [],
     isComposing: false,
     conversationsByScene: { work: [], life: [], love: [] },
     archivedConversationIds: new Set(),
@@ -62,8 +63,17 @@
     topicListTitle: document.getElementById('topicListTitle'),
     topicConversationList: document.getElementById('topicConversationList'),
     topicCreateBtn: document.getElementById('topicCreateBtn'),
+    themeCreateModal: document.getElementById('themeCreateModal'),
+    themeCreateNameInput: document.getElementById('themeCreateNameInput'),
+    themeCreatePromptInput: document.getElementById('themeCreatePromptInput'),
+    themeCreateModelSelect: document.getElementById('themeCreateModelSelect'),
+    themeCreateSceneSubtitle: document.getElementById('themeCreateModalSceneSubtitle'),
+    themeCreateCloseBtn: document.getElementById('themeCreateCloseBtn'),
+    themeCreateCancelBtn: document.getElementById('themeCreateCancelBtn'),
+    themeCreateConfirmBtn: document.getElementById('themeCreateConfirmBtn'),
     topicModal: document.getElementById('topicFolderModal'),
     topicNameInput: document.getElementById('topicFolderNameInput'),
+    topicExtraContextInput: document.getElementById('topicExtraContextInput'),
     topicCreateConfirmBtn: document.getElementById('topicFolderCreateBtn'),
     topicCloseBtn: document.getElementById('topicFolderCloseBtn'),
     topicCancelBtn: document.getElementById('topicFolderCancelBtn'),
@@ -147,7 +157,7 @@
   function renderChatPlaceholder(text) {
     ui.messages.innerHTML = `
       <div class="message bot">
-        <div class="message-avatar">${ui.chatAvatar.textContent || '馃'}</div>
+        <div class="message-avatar">${ui.chatAvatar.textContent || '\uD83E\uDD16'}</div>
         <div class="message-wrapper">
           <div class="message-content">${escapeHtml(text)}</div>
           <div class="message-time">${formatTime(new Date())}</div>
@@ -156,8 +166,13 @@
     `;
   }
 
+  function escapeAttr(text) {
+    return String(text || '').replace(/"/g, '&quot;');
+  }
+
   function ensureTrashUI() {
     if (ui.topicModal) ui.topicModal.setAttribute('aria-hidden', ui.topicModal.classList.contains('open') ? 'false' : 'true');
+    if (ui.themeCreateModal) ui.themeCreateModal.setAttribute('aria-hidden', ui.themeCreateModal.classList.contains('open') ? 'false' : 'true');
     if (ui.trashModal) ui.trashModal.setAttribute('aria-hidden', ui.trashModal.classList.contains('open') ? 'false' : 'true');
   }
 
@@ -171,15 +186,24 @@
   }
 
   function conversationBucketKey(conversation) {
-    if (!state.folders.length) return 'all';
-    const source = `${conversation?.conversation_id || ''}${conversation?.bot_id || ''}`;
-    const hash = source.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    const index = Math.abs(hash) % state.folders.length;
-    return state.folders[index]?.folder_id || 'all';
+    return conversation?.bot_id || 'all';
   }
 
   function getAllConversationsFlat() {
     return ['work', 'life', 'love'].flatMap((scene) => state.conversationsByScene[scene] || []);
+  }
+
+  function findConversationById(conversationId) {
+    return getAllConversationsFlat().find((c) => c.conversation_id === conversationId) || null;
+  }
+
+  function patchConversationInState(conversationId, patch) {
+    if (!conversationId) return;
+    Object.keys(state.conversationsByScene).forEach((scene) => {
+      const list = state.conversationsByScene[scene] || [];
+      const target = list.find((c) => c.conversation_id === conversationId);
+      if (target) Object.assign(target, patch);
+    });
   }
 
   function getConversationsForSelectedFolder() {
@@ -202,7 +226,7 @@
       const count = allConversations.filter((c) => conversationBucketKey(c) === folder.folder_id).length;
       const active = state.selectedFolderChipId === folder.folder_id ? ' active' : '';
       chips.push(
-        `<button class="folder-chip${active}" data-chip-id="${folder.folder_id}" type="button" title="${escapeHtml(folder.name || '未命名主题')}">${escapeHtml(getFolderChipLabel(folder))}${count}</button>`
+        `<button class="folder-chip${active}" data-chip-id="${folder.folder_id}" data-bot-id="${folder.bot_id || folder.folder_id}" data-scene="${escapeHtml(folder.scene || '')}" type="button" title="${escapeHtml(folder.name || '未命名主题')}">${escapeHtml(getFolderChipLabel(folder))}${count}</button>`
       );
     });
 
@@ -213,11 +237,18 @@
       chip.addEventListener('click', () => {
         const chipId = chip.dataset.chipId || '';
         if (chipId === '__add__') {
-          createFolderChip().catch((err) => alert(err.message || '创建 Folder 失败'));
+          openThemeCreateModal();
           return;
         }
         state.selectedFolderChipId = chipId;
         state.selectedFolderId = chipId === 'all' ? null : chipId;
+        if (chipId !== 'all') {
+          const botId = chip.dataset.botId || chipId;
+          const scene = chip.dataset.scene || state.selectedScene;
+          state.selectedBotId = botId;
+          state.selectedScene = scene;
+          state.selectedConversationId = null;
+        }
         renderFolderList();
         renderSingleBotTopicList();
         refreshCurrentHeader().catch(() => {});
@@ -234,25 +265,34 @@
   }
 
   async function refreshFolderList() {
-    try {
-      const result = await authManager.get('/folders');
-      state.folders = Array.isArray(result.folders) ? result.folders : [];
-      if (state.selectedFolderId && !state.folders.some((f) => f.folder_id === state.selectedFolderId)) {
-        state.selectedFolderId = null;
-        state.selectedFolderChipId = 'all';
-      }
-      if (!state.selectedFolderId && state.folders[0]) {
-        state.selectedFolderId = state.folders[0].folder_id;
-        state.selectedFolderChipId = state.folders[0].folder_id;
-      }
-      renderFolderList();
-    } catch (err) {
-      state.folders = [];
-      renderFolderList();
-      if (ui.topicConversationList) {
-        ui.topicConversationList.innerHTML = `<div class="folder-topic-empty">${escapeHtml(err.message || 'Folder 加载失败')}</div>`;
-      }
+    const allThemeBots = ['work', 'life', 'love']
+      .flatMap((scene) => (state.botsByScene[scene] || []).map((bot) => ({
+        folder_id: bot.bot_id,
+        bot_id: bot.bot_id,
+        name: bot.name,
+        scene: bot.scene,
+        description: bot.description
+      })));
+
+    state.folders = allThemeBots;
+    if (state.selectedFolderId && !state.folders.some((f) => f.folder_id === state.selectedFolderId)) {
+      state.selectedFolderId = null;
+      state.selectedFolderChipId = 'all';
     }
+
+    if (!state.selectedFolderId && state.selectedBotId && state.folders.some((f) => f.folder_id === state.selectedBotId)) {
+      state.selectedFolderId = state.selectedBotId;
+      state.selectedFolderChipId = state.selectedBotId;
+    }
+
+    if (!state.selectedFolderId && state.folders[0]) {
+      state.selectedFolderId = state.folders[0].folder_id;
+      state.selectedFolderChipId = state.folders[0].folder_id;
+      state.selectedBotId = state.folders[0].bot_id;
+      state.selectedScene = state.folders[0].scene || state.selectedScene;
+    }
+
+    renderFolderList();
   }
 
   async function ensureAuth() {
@@ -267,6 +307,15 @@
     const grouped = await botClient.getBotsByScene();
     const total = (grouped.work || []).length + (grouped.life || []).length + (grouped.love || []).length;
     if (total > 0) return grouped;
+
+    const shouldSeedDemoBots =
+      new URLSearchParams(window.location.search).get('seed_demo') === '1' ||
+      localStorage.getItem('seed_demo_bots') === '1';
+
+    if (!shouldSeedDemoBots) {
+      console.info('[chat] No bots found. Skip auto-seeding demo bots. Set ?seed_demo=1 or localStorage.seed_demo_bots=1 to enable.');
+      return grouped;
+    }
 
     const defaults = [
       {
@@ -305,6 +354,72 @@
   async function loadDeletedConversations() {
     const result = await authManager.get('/chat/conversations/deleted');
     return result.conversations || [];
+  }
+
+  async function refreshGroupsList() {
+    if (!ui.groupsList) return;
+
+    try {
+      const result = await authManager.get('/groups?page=1&page_size=50');
+      state.groups = Array.isArray(result?.items) ? result.items : [];
+    } catch (err) {
+      state.groups = [];
+      ui.groupsList.innerHTML = `
+        <div class="folder-topic-empty" style="margin: 12px;">${escapeHtml(err.message || '群聊列表加载失败')}</div>
+        <button class="create-btn" type="button">
+          <span>✨</span>
+          <span>邀请更多朋友一起聊聊</span>
+        </button>
+      `;
+      return;
+    }
+
+    if (!state.groups.length) {
+      ui.groupsList.innerHTML = `
+        <div class="folder-topic-empty" style="margin: 12px;">暂无群聊，去管理后台创建后这里会同步显示</div>
+        <button class="create-btn" type="button">
+          <span>✨</span>
+          <span>邀请更多朋友一起聊聊</span>
+        </button>
+      `;
+      return;
+    }
+
+    const cards = state.groups.map((group) => {
+      const members = Array.isArray(group.members) ? group.members.slice(0, 4) : [];
+      const memberCount = group?._count?.members ?? members.length ?? 0;
+      const memberAvatars = members.map((m) => {
+        const avatar = escapeHtml(m?.bot?.avatar || '🤖');
+        return `<div class="member-avatar" style="background: linear-gradient(135deg, #E8E4FF 0%, #F0ECFF 100%);">${avatar}</div>`;
+      }).join('');
+      const desc = escapeHtml(group.description || `${group.routing_strategy || 'ai_judge'} · ${group.conversation_mode || 'multi_turn'}`);
+      const title = escapeHtml(group.name || '未命名群聊');
+      const groupId = escapeAttr(group.group_id || '');
+
+      return `
+        <div class="group-card" data-type="group" data-id="${groupId}">
+          <div class="card-header">
+            <span class="card-icon">👥</span>
+            <div class="card-info">
+              <div class="card-name">${title}</div>
+              <div class="card-desc">${desc}</div>
+            </div>
+          </div>
+          <div class="group-members">
+            ${memberAvatars}
+            <span class="member-count">${memberCount}个成员</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    ui.groupsList.innerHTML = `
+      ${cards}
+      <button class="create-btn" type="button">
+        <span>✨</span>
+        <span>邀请更多朋友一起聊聊</span>
+      </button>
+    `;
   }
 
   function renderTrashList(conversations) {
@@ -401,21 +516,88 @@
     }, 2200);
   }
 
-  async function createFolderChip() {
-    const raw = prompt('请输入 Folder 名称（例如：职场导师）');
-    const name = String(raw || '').trim();
-    if (!name) return;
-    await authManager.post('/folders', { name });
-    await refreshFolderList();
-    const created = state.folders.find((f) => f.name === name);
-    if (created) {
-      state.selectedFolderId = created.folder_id;
-      state.selectedFolderChipId = created.folder_id;
-      renderFolderList();
-      renderSingleBotTopicList();
-      await refreshCurrentHeader();
+  function openThemeCreateModal() {
+    if (!ui.themeCreateModal) return;
+    const scene = state.selectedScene || 'work';
+    const sceneMeta = sceneDisplay[scene] || sceneDisplay.work;
+    if (ui.themeCreateNameInput) ui.themeCreateNameInput.value = '';
+    if (ui.themeCreatePromptInput) ui.themeCreatePromptInput.value = '';
+    if (ui.themeCreateModelSelect) ui.themeCreateModelSelect.value = 'deepseek-ai/DeepSeek-V3.2';
+    if (ui.themeCreateSceneSubtitle) {
+      ui.themeCreateSceneSubtitle.textContent = `将在「${sceneMeta.label}」创建主题（Bot）`;
     }
-    showLightToast('Folder 已创建', 'success');
+    ui.themeCreateModal.classList.add('open');
+    ui.themeCreateModal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => ui.themeCreateNameInput?.focus(), 0);
+  }
+
+  function closeThemeCreateModal() {
+    if (!ui.themeCreateModal) return;
+    ui.themeCreateModal.classList.remove('open');
+    ui.themeCreateModal.setAttribute('aria-hidden', 'true');
+  }
+
+  async function createThemeFromModal() {
+    if (!ui.themeCreateConfirmBtn) return;
+    const name = (ui.themeCreateNameInput?.value || '').trim();
+    const systemPrompt = (ui.themeCreatePromptInput?.value || '').trim();
+    const model = (ui.themeCreateModelSelect?.value || 'deepseek-ai/DeepSeek-V3.2').trim();
+    const scene = (state.selectedScene || 'work');
+
+    if (!name) {
+      alert('请填写主题名称');
+      ui.themeCreateNameInput?.focus();
+      return;
+    }
+    if (!systemPrompt) {
+      alert('请填写系统提示词');
+      ui.themeCreatePromptInput?.focus();
+      return;
+    }
+
+    ui.themeCreateConfirmBtn.disabled = true;
+    ui.themeCreateConfirmBtn.textContent = '创建中...';
+    try {
+      const created = await botClient.createBot({
+        name,
+        type: scene,
+        scene,
+        status: 'online',
+        description: `${sceneLabel(scene)}主题`,
+        config: {
+          model,
+          temperature: 0.7,
+          max_tokens: 2000,
+          system_prompt: systemPrompt
+        }
+      });
+
+      const grouped = await botClient.getBotsByScene();
+      state.botsByScene.work = grouped.work || [];
+      state.botsByScene.life = grouped.life || [];
+      state.botsByScene.love = grouped.love || [];
+
+      state.selectedScene = created.scene || scene;
+      state.selectedBotId = created.bot_id;
+      state.selectedFolderId = created.bot_id;
+      state.selectedFolderChipId = created.bot_id;
+      state.selectedConversationId = null;
+      state.selectedGroupId = null;
+
+      await refreshFolderList();
+      closeThemeCreateModal();
+      showLightToast('主题已创建，正在为你打开默认对话...', 'success');
+
+      await createConversation(state.selectedScene || scene, {
+        bot_id: created.bot_id,
+        title: `${name} · 初次对话`
+      });
+
+      showLightToast('已自动创建默认对话，直接开始聊吧', 'info');
+    } finally {
+      ui.themeCreateConfirmBtn.disabled = false;
+      ui.themeCreateConfirmBtn.textContent = '创建主题';
+    }
   }
 
   function openTopicCreateModal() {
@@ -423,6 +605,7 @@
     const bot = getCurrentBot();
     const folder = getSelectedFolder();
     if (ui.topicNameInput) ui.topicNameInput.value = '';
+    if (ui.topicExtraContextInput) ui.topicExtraContextInput.value = '';
     if (ui.topicSystemPromptPreview) {
       ui.topicSystemPromptPreview.value = bot?.config?.system_prompt || '你是一个专业、可靠、可执行的 AI 助手。';
     }
@@ -479,6 +662,45 @@
 
     await refreshAllConversationLists();
     await refreshSelectionAfterListChange();
+  }
+
+  async function renameConversation(conversationId) {
+    if (!conversationId) return;
+    const conversation = findConversationById(conversationId);
+    const currentTitle = String(conversation?.title || '').trim();
+    const nextTitle = prompt('请输入新的对话名称（留空将恢复为未命名）', currentTitle);
+    if (nextTitle === null) return;
+
+    const normalizedTitle = String(nextTitle || '').trim();
+    await authManager.patch(`/conversations/${encodeURIComponent(conversationId)}`, {
+      title: normalizedTitle
+    });
+
+    patchConversationInState(conversationId, { title: normalizedTitle || null, updated_at: new Date().toISOString() });
+    renderConversations(state.selectedScene, state.conversationsByScene[state.selectedScene] || []);
+    renderFolderList();
+    renderSingleBotTopicList();
+    await refreshCurrentHeader();
+    showLightToast('对话名称已更新', 'success');
+  }
+
+  function wireConversationRenameGesture(item, titleSelector) {
+    if (!(item instanceof HTMLElement)) return;
+    const titleNode = item.querySelector(titleSelector);
+    const conversationId = item.dataset.conversationId || '';
+    if (!conversationId || !(titleNode instanceof HTMLElement)) return;
+
+    titleNode.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      renameConversation(conversationId).catch((err) => alert(err.message || '改名失败'));
+    });
+
+    item.addEventListener('contextmenu', (e) => {
+      if (!(e.target instanceof HTMLElement)) return;
+      if (e.target.closest('[data-action="delete-conversation"]')) return;
+      e.preventDefault();
+      renameConversation(conversationId).catch((err) => alert(err.message || '改名失败'));
+    });
   }
 
   function formatRelativeTopicTime(isoOrDate) {
@@ -538,7 +760,7 @@
             <div class="topic-row-main">
               <div class="topic-row-title-line">
                 ${archived ? '<span class="topic-row-archived" title="已归档">🗃️</span>' : ''}
-                <span class="topic-row-title">${title}</span>
+                <span class="topic-row-title" title="双击或右键可改名">${title}</span>
               </div>
               <div class="topic-row-meta">${timeText}</div>
             </div>
@@ -576,6 +798,8 @@
         await loadMessages(state.selectedConversationId);
         renderSingleBotTopicList();
       });
+
+      wireConversationRenameGesture(item, '.topic-row-title');
     });
   }
 
@@ -600,7 +824,7 @@
           <div class="conversation-item${active}" data-scene="${scene}" data-conversation-id="${c.conversation_id}" data-bot-id="${c.bot_id}">
             <span class="conversation-icon">💬</span>
             <div class="conversation-info">
-              <div class="conversation-title">${title}</div>
+              <div class="conversation-title" title="双击或右键可改名">${title}</div>
               <div class="conversation-meta">${count} 条消息 · ${updated}</div>
             </div>
             <div class="conversation-actions">
@@ -640,6 +864,8 @@
         await loadMessages(state.selectedConversationId);
         await refreshAllConversationLists();
       });
+
+      wireConversationRenameGesture(item, '.conversation-title');
     });
   }
 
@@ -711,7 +937,7 @@
     ui.messages.innerHTML = messages
       .map((m) => {
         const klass = m.sender_type === 'user' ? 'user' : 'bot';
-        const avatar = m.sender_type === 'user' ? '馃懁' : (ui.chatAvatar.textContent || '馃');
+        const avatar = m.sender_type === 'user' ? '\uD83D\uDC64' : (ui.chatAvatar.textContent || '\uD83E\uDD16');
 
         return `
           <div class="message ${klass}">
@@ -729,18 +955,22 @@
   }
 
   async function createConversation(scene, opts = {}) {
-    const bot = state.botsByScene[scene]?.[0];
+    const sceneBots = state.botsByScene[scene] || [];
+    const preferredBotId = typeof opts.bot_id === 'string' ? opts.bot_id : state.selectedBotId;
+    const bot = sceneBots.find((x) => x.bot_id === preferredBotId) || sceneBots[0];
     if (!bot) {
       alert('该场景暂时没有 Bot，请先在后台创建。');
       return;
     }
 
     const providedTitle = typeof opts.title === 'string' ? opts.title.trim() : '';
+    const providedExtraContext = typeof opts.extra_context === 'string' ? opts.extra_context.trim() : '';
     const title = providedTitle || `新话题 ${new Date().toLocaleString('zh-CN')}`;
 
     const conversation = await authManager.post('/chat/conversations', {
       bot_id: bot.bot_id,
-      title
+      title,
+      extra_context: providedExtraContext || undefined
     });
 
     state.selectedScene = scene;
@@ -755,7 +985,7 @@
 
   function appendMessage(senderType, content) {
     const klass = senderType === 'user' ? 'user' : 'bot';
-    const avatar = senderType === 'user' ? '馃懁' : (ui.chatAvatar.textContent || '馃');
+    const avatar = senderType === 'user' ? '\uD83D\uDC64' : (ui.chatAvatar.textContent || '\uD83E\uDD16');
 
     ui.messages.insertAdjacentHTML(
       'beforeend',
@@ -787,13 +1017,18 @@
     appendMessage('user', content);
 
     try {
+      const memoryIds = Array.from(state.injectedMemoryIds || []);
       const result = await authManager.post(
         `/chat/conversations/${state.selectedConversationId}/messages`,
-        { content }
+        { content, memory_ids: memoryIds }
       );
 
       if (result?.bot_message?.content) {
         appendMessage('bot', result.bot_message.content);
+      }
+
+      if (memoryIds.length > 0) {
+        showLightToast(`本次消息已携带 ${memoryIds.length} 条记忆`, 'info');
       }
 
       await refreshAllConversationLists();
@@ -828,45 +1063,52 @@
         ui.groupsList.style.display = tab === 'groups' ? 'flex' : 'none';
         const sidebarFooter = document.getElementById('sidebarFooter');
         if (sidebarFooter) sidebarFooter.style.display = tab === 'scenes' ? 'block' : 'none';
-        if (tab === 'groups') closeRightPanel();
+        if (tab === 'groups') {
+          closeRightPanel();
+          refreshGroupsList().catch(() => {});
+        }
       });
     });
   }
 
   function wireGroupCards() {
-    ui.groupCards.forEach((card) => {
-      card.addEventListener('click', () => {
-        ui.groupCards.forEach((x) => x.classList.remove('active'));
-        card.classList.add('active');
+    ui.groupsList?.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
 
-        state.selectedGroupId = card.dataset.id || null;
-        state.selectedConversationId = null;
-
-        const title = card.querySelector('.card-name')?.textContent?.trim() || '群聊';
-        const desc = card.querySelector('.card-desc')?.textContent?.trim() || '多人协作讨论';
-
-        ui.chatAvatar.textContent = '👥';
-        ui.chatAvatar.className = 'chat-avatar';
-        ui.chatName.textContent = title;
-        ui.chatStatus.textContent = `${desc} · 群聊模式`;
-
-        ui.messages.innerHTML = `
-          <div class="message bot">
-            <div class="message-avatar">👥</div>
-            <div class="message-wrapper">
-              <div class="message-content">当前群聊为 UI 演示模式，后端群聊接口可在下一步接入。</div>
-              <div class="message-time">${formatTime(new Date())}</div>
-            </div>
-          </div>
-        `;
-      });
-    });
-
-    if (ui.createGroupBtn) {
-      ui.createGroupBtn.addEventListener('click', () => {
+      const createBtn = target.closest('.create-btn');
+      if (createBtn) {
         alert('邀请入口已就绪，群聊创建流程可按你的后端接口继续接入。');
-      });
-    }
+        return;
+      }
+
+      const card = target.closest('.group-card');
+      if (!(card instanceof HTMLElement)) return;
+
+      ui.groupsList.querySelectorAll('.group-card').forEach((x) => x.classList.remove('active'));
+      card.classList.add('active');
+
+      state.selectedGroupId = card.dataset.id || null;
+      state.selectedConversationId = null;
+
+      const title = card.querySelector('.card-name')?.textContent?.trim() || '群聊';
+      const desc = card.querySelector('.card-desc')?.textContent?.trim() || '多人协作讨论';
+
+      ui.chatAvatar.textContent = '👥';
+      ui.chatAvatar.className = 'chat-avatar';
+      ui.chatName.textContent = title;
+      ui.chatStatus.textContent = `${desc} · 群聊模式`;
+
+      ui.messages.innerHTML = `
+        <div class="message bot">
+          <div class="message-avatar">👥</div>
+          <div class="message-wrapper">
+            <div class="message-content">当前群聊已读取真实群组列表；群聊消息收发接口仍待接入。</div>
+            <div class="message-time">${formatTime(new Date())}</div>
+          </div>
+        </div>
+      `;
+    });
   }
 
   function wireSettingsActions() {
@@ -958,9 +1200,59 @@
     if (ui.memoryPickerPanel) ui.memoryPickerPanel.classList.remove('active');
   }
 
+  function getCurrentConversation() {
+    return getAllConversationsFlat().find((c) => c.conversation_id === state.selectedConversationId) || null;
+  }
+
+  function getMemoryFolderIdForPicker() {
+    const currentConversation = getCurrentConversation();
+    if (currentConversation?.folder_id) return currentConversation.folder_id;
+    return null;
+  }
+
+  async function loadMemoryPickerOptions() {
+    if (!ui.memoryPickerList) return;
+
+    const folderId = getMemoryFolderIdForPicker();
+    if (!folderId) {
+      ui.memoryPickerList.innerHTML = '<div class="folder-topic-empty">请先选择一个具体主题（Folder）后再注入记忆</div>';
+      updateMemoryPickedCount();
+      return;
+    }
+
+    const res = await authManager.get(`/memories?folder_id=${encodeURIComponent(folderId)}`);
+    const memories = Array.isArray(res?.memories) ? res.memories : [];
+
+    if (!memories.length) {
+      ui.memoryPickerList.innerHTML = '<div class="folder-topic-empty">当前主题下暂无可注入记忆</div>';
+      updateMemoryPickedCount();
+      return;
+    }
+
+    ui.memoryPickerList.innerHTML = memories.map((m) => {
+      const checked = state.injectedMemoryIds.has(String(m.id)) ? 'checked' : '';
+      const title = escapeHtml(m.title || '未命名记忆');
+      const dateText = escapeHtml(formatDateTime(m.archived_at));
+      const quote = escapeHtml(m.summaryPreview || m.summary || m.insight || '暂无摘要');
+      const memoryId = escapeHtml(m.id);
+      const archiveIndex = m.archiveIndex ? ` · 第${escapeHtml(String(m.archiveIndex))}次` : '';
+      return `
+        <label class="memory-picker-item">
+          <input type="checkbox" value="${memoryId}" ${checked} />
+          <div class="memory-picker-content">
+            <div class="memory-picker-title">${title}${archiveIndex} <span>${dateText}</span></div>
+            <div class="memory-picker-quote">${quote}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    updateMemoryPickedCount();
+  }
+
   function openRightPanel(mode) {
     if (!ui.rightSidePanel) return;
-    const conversation = getAllConversationsFlat().find((c) => c.conversation_id === state.selectedConversationId);
+    const conversation = getCurrentConversation();
     if (mode === 'archive') {
       const archive = state.archivesByConversationId[state.selectedConversationId] || {
         count: 1,
@@ -990,7 +1282,12 @@
       if (ui.rightPanelTitle) ui.rightPanelTitle.textContent = '选择注入记忆';
       ui.archivePreviewPanel?.classList.remove('active');
       ui.memoryPickerPanel?.classList.add('active');
-      updateMemoryPickedCount();
+      loadMemoryPickerOptions().catch((err) => {
+        if (ui.memoryPickerList) {
+          ui.memoryPickerList.innerHTML = `<div class="folder-topic-empty">${escapeHtml(err.message || '加载记忆失败')}</div>`;
+        }
+        updateMemoryPickedCount();
+      });
     }
 
     ui.rightSidePanel.classList.add('open');
@@ -1189,7 +1486,36 @@
     }
     if (ui.folderChipAddBtn) {
       ui.folderChipAddBtn.addEventListener('click', () => {
-        createFolderChip().catch((err) => alert(err.message || '创建 Folder 失败'));
+        openThemeCreateModal();
+      });
+    }
+    if (ui.themeCreateCloseBtn) {
+      ui.themeCreateCloseBtn.addEventListener('click', closeThemeCreateModal);
+    }
+    if (ui.themeCreateCancelBtn) {
+      ui.themeCreateCancelBtn.addEventListener('click', closeThemeCreateModal);
+    }
+    if (ui.themeCreateConfirmBtn) {
+      ui.themeCreateConfirmBtn.addEventListener('click', () => {
+        createThemeFromModal().catch((err) => alert(err.message || '创建主题失败'));
+      });
+    }
+    if (ui.themeCreateNameInput) {
+      ui.themeCreateNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          ui.themeCreatePromptInput?.focus();
+        }
+        if (e.key === 'Escape') closeThemeCreateModal();
+      });
+    }
+    if (ui.themeCreatePromptInput) {
+      ui.themeCreatePromptInput.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          createThemeFromModal().catch((err) => alert(err.message || '创建主题失败'));
+        }
+        if (e.key === 'Escape') closeThemeCreateModal();
       });
     }
     if (ui.topicCloseBtn) {
@@ -1219,15 +1545,25 @@
         if (e.target === ui.topicModal) closeTopicCreateModal();
       });
     }
+    if (ui.themeCreateModal) {
+      ui.themeCreateModal.addEventListener('click', (e) => {
+        if (e.target === ui.themeCreateModal) closeThemeCreateModal();
+      });
+    }
   }
 
   async function createConversationFromModal() {
     if (!ui.topicCreateConfirmBtn) return;
     const title = (ui.topicNameInput?.value || '').trim();
+    const extraContext = (ui.topicExtraContextInput?.value || '').trim();
     ui.topicCreateConfirmBtn.disabled = true;
     ui.topicCreateConfirmBtn.textContent = '创建中...';
     try {
-      await createConversation(state.selectedScene || 'work', { title });
+      await createConversation(state.selectedScene || 'work', {
+        title,
+        extra_context: extraContext,
+        bot_id: state.selectedBotId || undefined
+      });
       closeTopicCreateModal();
       showLightToast('话题已创建', 'success');
     } finally {
@@ -1256,6 +1592,7 @@
 
     ensureTrashUI();
     await refreshFolderList();
+    await refreshGroupsList();
     wireTabs();
     wireInput();
     wireLogout();

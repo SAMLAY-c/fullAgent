@@ -8,12 +8,13 @@ import botMemoryArchiveService from './bot-memory-archive.service';
 const prisma = new PrismaClient();
 
 class ChatService {
-  async listConversations(userId: string, botId?: string) {
-    const where: { user_id: string; bot_id?: string; is_deleted: boolean } = {
+  async listConversations(userId: string, botId?: string, folderId?: string) {
+    const where: { user_id: string; bot_id?: string; folder_id?: string; is_deleted: boolean } = {
       user_id: userId,
       is_deleted: false
     };
     if (botId) where.bot_id = botId;
+    if (folderId) where.folder_id = folderId;
 
     const conversations = await prisma.conversation.findMany({
       where,
@@ -37,19 +38,89 @@ class ChatService {
     return conversations.map((conversation) => normalizeUtf8Value(conversation));
   }
 
-  async createConversation(userId: string, botId: string, title: string) {
+  async createConversation(
+    userId: string,
+    botId: string,
+    title?: string | null,
+    folderId?: string | null,
+    extraContext?: string | null
+  ) {
     const bot = await prisma.bot.findUnique({ where: { bot_id: botId } });
     if (!bot) {
       throw new Error('BOT_NOT_FOUND');
     }
+
+    let normalizedFolderId: string | null = null;
+    if (folderId && String(folderId).trim()) {
+      const folder = await prisma.folder.findFirst({
+        where: {
+          folder_id: String(folderId).trim(),
+          user_id: userId,
+          is_deleted: false
+        },
+        select: { folder_id: true }
+      });
+      if (!folder) {
+        throw new Error('FOLDER_NOT_FOUND');
+      }
+      normalizedFolderId = folder.folder_id;
+    }
+
+    const normalizedTitle = String(normalizeUtf8Value(title || '')).trim();
+    const normalizedExtraContext = String(normalizeUtf8Value(extraContext || '')).trim();
 
     const conversation = await prisma.conversation.create({
       data: {
         conversation_id: `conv_${randomUUID()}`,
         bot_id: botId,
         user_id: userId,
-        title: String(normalizeUtf8Value(title)).trim()
+        folder_id: normalizedFolderId,
+        title: normalizedTitle || null,
+        extra_context: normalizedExtraContext || null
       },
+      include: {
+        bot: {
+          select: {
+            bot_id: true,
+            name: true,
+            avatar: true,
+            scene: true,
+            type: true
+          }
+        },
+        _count: {
+          select: { messages: true }
+        }
+      }
+    });
+
+    return normalizeUtf8Value(conversation);
+  }
+
+  async updateConversation(
+    userId: string,
+    conversationId: string,
+    payload: { title?: string | null; extra_context?: string | null }
+  ) {
+    await this.assertConversationOwner(userId, conversationId);
+
+    const data: Record<string, unknown> = {};
+    if (Object.prototype.hasOwnProperty.call(payload, 'title')) {
+      const normalizedTitle = String(normalizeUtf8Value(payload.title || '')).trim();
+      data.title = normalizedTitle || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, 'extra_context')) {
+      const normalizedExtraContext = String(normalizeUtf8Value(payload.extra_context || '')).trim();
+      data.extra_context = normalizedExtraContext || null;
+    }
+
+    if (!Object.keys(data).length) {
+      throw new Error('NO_UPDATABLE_FIELDS');
+    }
+
+    const conversation = await prisma.conversation.update({
+      where: { conversation_id: conversationId },
+      data,
       include: {
         bot: {
           select: {
@@ -85,7 +156,7 @@ class ChatService {
    * Send message with ReAct Agent support (Tool Calling)
    * Implements the ReAct loop: Thought → Action → Observation → Thought → ... → Answer
    */
-  async sendMessage(userId: string, conversationId: string, content: string) {
+  async sendMessage(userId: string, conversationId: string, content: string, memoryIds: string[] = []) {
     const conversation = await this.assertConversationOwner(userId, conversationId);
     const cleaned = String(normalizeUtf8Value(content)).trim();
     if (!cleaned) {
@@ -115,10 +186,38 @@ class ChatService {
 
     // Get bot config and tools
     const botConfig = conversation.bot.config as BotConfig | null;
+    let nextBotConfig: BotConfig | undefined = botConfig ? { ...botConfig } : undefined;
     const bot = await prisma.bot.findUnique({
       where: { bot_id: conversation.bot_id },
       select: { type: true, scene: true }
     });
+
+    const shouldInjectConversationContext = messageHistory.filter((msg) => msg.sender_type !== 'system').length === 0;
+    if (shouldInjectConversationContext) {
+      const extraContext = String(normalizeUtf8Value((conversation as any).extra_context || '')).trim();
+      if (extraContext) {
+        nextBotConfig = {
+          ...(nextBotConfig || {}),
+          system_prompt: `${nextBotConfig?.system_prompt || ''}\n\n[Conversation Extra Context]\n${extraContext}`.trim()
+        } as BotConfig;
+      }
+    }
+
+    if (memoryIds.length > 0) {
+      const memories = await prisma.conversationArchiveMemory.findMany({
+        where: { memory_id: { in: memoryIds } },
+        select: { title: true, summary: true, insight: true, archive_index: true }
+      });
+
+      const memoryContext = '\n\n===参考记忆===\n' + memories.map(m =>
+        `【${m.title}·第${m.archive_index}次】\n摘要：${m.summary}\n洞察：${m.insight}`
+      ).join('\n\n');
+
+      nextBotConfig = {
+        ...(nextBotConfig || {}),
+        system_prompt: ((nextBotConfig?.system_prompt || '') + memoryContext)
+      } as BotConfig;
+    }
 
     // Get available tools for this bot type
     const tools = bot ? toolsService.getToolsForBot(bot.type, bot.scene) : [];
@@ -136,7 +235,7 @@ class ChatService {
       // Call AI with current message history and available tools
       const result: AIResult = await aiService.generateResponse(
         messages,
-        botConfig || undefined,
+        nextBotConfig,
         tools
       );
 

@@ -143,6 +143,20 @@ const Bots = (() => {
     return `${d} 天前`;
   }
 
+  function promptStatusView(bot) {
+    const systemPrompt = String(bot?.config?.system_prompt || '').trim();
+    if (!systemPrompt) {
+      return {
+        label: '未配置',
+        tone: 'color: #b45309; background: #fef3c7; border-radius: 999px; padding: 2px 8px; display: inline-block;'
+      };
+    }
+    return {
+      label: `已配置 (${systemPrompt.length})`,
+      tone: 'color: #065f46; background: #d1fae5; border-radius: 999px; padding: 2px 8px; display: inline-block;'
+    };
+  }
+
   function mapApiBot(bot) {
     const updated = bot.updated_at ? new Date(bot.updated_at).getTime() : 0;
     const workflowStats = workflowStatsByBot[bot.bot_id] || { total: 0, enabled: 0 };
@@ -256,6 +270,7 @@ const Bots = (() => {
       const statusLabel = STATUS_LABEL[b.status] || b.status;
       const sceneLabel = SCENE_LABEL[b.scene] || b.scene || '-';
       const typeLabel = TYPE_LABEL[b.type] || b.type || '-';
+      const promptStatus = promptStatusView(b);
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
@@ -274,6 +289,9 @@ const Bots = (() => {
           <div class="muted" style="font-size: 12px; margin-top: 4px;">${escapeHtml(formatTime(b.lastUpdated))}</div>
         </td>
         <td>${escapeHtml(typeLabel)}</td>
+        <td>
+          <span style="${promptStatus.tone}">${escapeHtml(promptStatus.label)}</span>
+        </td>
         <td><span class="chip">${b.workflowEnabled}/${b.workflowTotal}</span></td>
         <td>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -308,6 +326,20 @@ const Bots = (() => {
     const maxTokens = config.max_tokens ?? 2000;
 
     return `
+      <div style="margin-bottom: 16px; padding: 14px; border: 1px solid #e8e4de; border-radius: 12px; background: linear-gradient(180deg, #fffaf3 0%, #fff 100%);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
+          <div class="label" style="margin:0; font-size:13px;">系统提示词（优先配置）</div>
+          <div class="muted" id="bot-form-system-prompt-count" style="font-size:12px;">${String(systemPrompt || '').length} 字符</div>
+        </div>
+        <textarea
+          class="textarea"
+          id="bot-form-system-prompt"
+          rows="6"
+          placeholder="建议写法：1）角色身份 2）目标与输出格式 3）边界/禁忌 4）语气风格。示例：你是企业运营分析助手，请用中文输出【结论/依据/风险/建议】，结论先行，不编造未提供的数据。"
+        >${escapeHtml(systemPrompt)}</textarea>
+        <div class="muted" style="font-size: 11px; margin-top: 6px;">提示：把“输出结构”和“禁止项”写清楚，效果通常比堆砌背景更稳定。</div>
+      </div>
+
       <div class="form-grid">
         <div class="full">
           <div class="label">机器人名称</div>
@@ -356,11 +388,6 @@ const Bots = (() => {
 
         <div class="form-grid">
           <div class="full">
-            <div class="label">系统提示词</div>
-            <textarea class="textarea" id="bot-form-system-prompt" rows="4" placeholder="定义机器人的角色和行为方式，例如：你是一个专业的工作助手，擅长任务管理和日程安排...">${escapeHtml(systemPrompt)}</textarea>
-          </div>
-
-          <div class="full">
             <div class="label">模型</div>
             <select class="select" id="bot-form-model">
               <option value="deepseek-ai/DeepSeek-V3.2" ${model === 'deepseek-ai/DeepSeek-V3.2' ? 'selected' : ''}>DeepSeek V3.2（推荐）</option>
@@ -384,6 +411,20 @@ const Bots = (() => {
 
       <div class="muted" style="margin-top: 10px; font-size: 12px;">当前页面已改为真实 API 调用，数据将直接写入后端数据库。</div>
     `;
+  }
+
+  function updateSystemPromptCounter() {
+    const input = el('bot-form-system-prompt');
+    const counter = el('bot-form-system-prompt-count');
+    if (!input || !counter) return;
+    counter.textContent = `${String(input.value || '').length} 字符`;
+  }
+
+  function bindBotFormEnhancements() {
+    const input = el('bot-form-system-prompt');
+    if (!input) return;
+    updateSystemPromptCounter();
+    input.addEventListener('input', updateSystemPromptCounter);
   }
 
   function readFormData() {
@@ -414,6 +455,7 @@ const Bots = (() => {
         { text: '创建', className: 'btn btn-primary', onClick: () => submitForm('create') }
       ]
     });
+    bindBotFormEnhancements();
   }
 
   async function openEdit(id) {
@@ -438,6 +480,7 @@ const Bots = (() => {
           { text: '保存', className: 'btn btn-primary', onClick: () => submitForm('edit', id) }
         ]
       });
+      bindBotFormEnhancements();
     } catch (error) {
       toast('加载机器人详情失败', error?.message || '请稍后重试');
     }
@@ -1486,7 +1529,5 @@ const Schedule = (() => {
 
   return { init, toggleTask, deleteTask };
 })();
-
-
 
 

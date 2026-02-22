@@ -13,6 +13,9 @@ import templatesRoutes from './routes/templates';
 import knowledgeRoutes from './routes/knowledge';
 import systemRoutes from './routes/system';
 import scheduleRoutes from './routes/schedule';
+import foldersRoutes from './routes/folders';
+import conversationsRoutes from './routes/conversations';
+import memoriesRouter from './routes/memories';
 import schedulerService from './services/scheduler.service';
 import { normalizeUtf8Value } from './utils/encoding';
 
@@ -59,6 +62,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 app.use(express.static(FRONTEND_DIR));
 
 app.get('/health', (_req, res) => {
@@ -68,6 +72,8 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/bots', botRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/conversations', conversationsRoutes);
+app.use('/api/memories', memoriesRouter);
 app.use('/api/stats', statsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/logs', logsRoutes);
@@ -76,6 +82,7 @@ app.use('/api/templates', templatesRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/schedule', scheduleRoutes);
+app.use('/api/folders', foldersRoutes);
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {

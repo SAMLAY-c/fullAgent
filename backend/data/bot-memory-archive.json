@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-02-22T06:08:43.865Z",
+  "updated_at": "2026-02-22T10:28:52.917Z",
   "by_bot": {
     "bot_work_1771591432351_8d519eec": [
       {
@@ -523,7 +523,10 @@
         "conversation_id": "conv_scheduled_219a2561",
         "user_id": "user_admin_001",
         "user_message": "check bot workflow count",
-        "bot_message": "我目前无法直接检查机器人工作流的数量，原因如下：\n\n1. **权限限制**：我没有访问系统工作流计数功能的权限\n2. **知识库限制**：我的知识库中没有关于机器人工作流计数的相关文档信息\n3. **功能限制**：这可能是一个需要特定系统权限或专用工具才能执行的操作\n\n建议您可以：\n\n1. **联系系统管理员**：他们通常有权限查看系统的工作流统计信息\n2. **查看管理界面**：如果您有相关系统的管理权限，可以登录管理后台查看工作流统计\n3. **提供更多上下文**：如果您能告诉我您使用的是哪个系统或平台，我可以尝试提供更具体的帮助建议\n\n您能告诉我更多关于您想检查工作流数量的具体场景吗？比如：\n- 您使用的是哪个系统或平台？\n- 您想检查的是哪种类型的工作流？\n- 您是否有相关的管理权限？"
+        "bot_message": "我目前无法直接检查机器人工作流的数量，原因如下：\n\n1. **权限限制**：我没有访问系统工作流计数功能的权限\n2. **知识库限制**：我的知识库中没有关于机器人工作流计数的相关文档信息\n3. **功能限制**：这可能是一个需要特定系统权限或专用工具才能执行的操作\n\n建议您可以：\n\n1. **联系系统管理员**：他们通常有权限查看系统的工作流统计信息\n2. **查看管理界面**：如果您有相关系统的管理权限，可以登录管理后台查看工作流统计\n3. **提供更多上下文**：如果您能告诉我您使用的是哪个系统或平台，我可以尝试提供更具体的帮助建议\n\n您能告诉我更多关于您想检查工作流数量的具体场景吗？比如：\n- 您使用的是哪个系统或平台？\n- 您想检查的是哪种类型的工作流？\n- 您是否有相关的管理权限？",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T07:25:50.991Z",
+        "delete_trigger": "user_deleted"
       },
       {
         "id": "mem_1771740090029_hc2sz7ey",
@@ -541,7 +544,10 @@
         "conversation_id": "conv_scheduled_58c8a499",
         "user_id": "user_admin_001",
         "user_message": "playwright schedule test",
-        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T09:36:48.957Z",
+        "delete_trigger": "user_deleted"
       },
       {
         "id": "mem_1771740361310_5j7n143w",
@@ -550,7 +556,10 @@
         "conversation_id": "conv_scheduled_219a2561",
         "user_id": "user_admin_001",
         "user_message": "你好",
-        "bot_message": "你好！很高兴见到您。我是您的智能助手，随时准备为您提供帮助。\n\n关于您之前询问的工作流计数问题，如果您有更多相关信息或需要其他方面的帮助，请随时告诉我。\n\n今天有什么我可以为您做的吗？"
+        "bot_message": "你好！很高兴见到您。我是您的智能助手，随时准备为您提供帮助。\n\n关于您之前询问的工作流计数问题，如果您有更多相关信息或需要其他方面的帮助，请随时告诉我。\n\n今天有什么我可以为您做的吗？",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T07:25:50.991Z",
+        "delete_trigger": "user_deleted"
       },
       {
         "id": "mem_1771740523864_wc7irgeg",
@@ -559,7 +568,176 @@
         "conversation_id": "conv_scheduled_219a2561",
         "user_id": "user_admin_001",
         "user_message": "你的底层模型是哪个",
-        "bot_message": "我收到了你的消息：\"你的底层模型是哪个\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+        "bot_message": "我收到了你的消息：\"你的底层模型是哪个\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T07:25:50.991Z",
+        "delete_trigger": "user_deleted"
+      },
+      {
+        "id": "mem_1771741393618_9524tnoo",
+        "timestamp": "2026-02-22T06:23:13.618Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_58c8a499",
+        "user_id": "user_admin_001",
+        "user_message": "NI好",
+        "bot_message": "你好！关于Playwright测试的调度执行，我可以为你提供几种常见的解决方案：\n\n## 1. **CI/CD工具集成（推荐）**\n\n### GitHub Actions 示例：\n```yaml\nname: Scheduled Playwright Tests\non:\n  schedule:\n    - cron: '0 8 * * *'  # 每天上午8点运行\n  workflow_dispatch:  # 支持手动触发\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n      - run: npm ci\n      - run: npx playwright install\n      - run: npx playwright test\n      - uses: actions/upload-artifact@v3\n        if: always()\n        with:\n          name: playwright-report\n          path: playwright-report/\n```\n\n### GitLab CI 示例：\n```yaml\nscheduled_tests:\n  script:\n    - npm ci\n    - npx playwright install\n    - npx playwright test\n  only:\n    - schedules  # 仅定时任务触发\n```\n\n## 2. **操作系统定时任务**\n\n### Linux/Mac (cron):\n```bash\n# 编辑crontab\ncrontab -e\n\n# 添加定时任务（每天凌晨2点运行）\n0 2 * * * cd /path/to/project && npm test\n```\n\n### Windows (任务计划程序):\n1. 创建基本任务\n2. 设置触发器为\"每天\"\n3. 操作为\"启动程序\"：`cmd.exe`\n4. 参数：`/c \"cd C:\\path\\to\\project && npm test\"`\n\n## 3. **Node.js调度库**\n\n### 使用 node-cron:\n```javascript\nconst cron = require('node-cron');\nconst { exec } = require('child_process');\n\n// 每小时运行一次测试\ncron.schedule('0 * * * *', () => {\n  console.log('Running Playwright tests...');\n  exec('npx playwright test', (error, stdout, stderr) => {\n    if (error) {\n      console.error(`Error: ${error.message}`);\n      return;\n    }\n    console.log(stdout);\n    if (stderr) console.error(stderr);\n  });\n});\n```\n\n### 使用 node-schedule:\n```javascript\nconst schedule = require('node-schedule');\nconst { exec } = require('child_process');\n\n// 每天上午9点运行\nschedule.scheduleJob('0 9 * * *', () => {\n  console.log('Running daily Playwright tests...');\n  exec('npx playwright test --reporter=html', (error) => {\n    if (error) console.error('Tests failed:', error);\n  });\n});\n```\n\n## 4. **云服务方案**\n\n### AWS Lambda + CloudWatch Events:\n```javascript\n// lambda函数代码\nexports.handler = async (event) => {\n  const { execSync } = require('child_process');\n  \n  try {\n    // 安装依赖并运行测试\n    execSync('npm ci && npx playwright install && npx playwright test');\n    return { statusCode: 200, body: 'Tests completed successfully' };\n  } catch (error) {\n    console.error('Test execution failed:', error);\n    return { statusCode: 500, body: 'Tests failed' };\n  }\n};\n```\n\n## 5. **最佳实践建议**\n\n### 配置package.json:\n```json\n{\n  \"scripts\": {\n    \"test\": \"playwright test\",\n    \"test:schedule\": \"node schedule-tests.js\",\n    \"test:daily\": \"playwright test --grep @daily\"\n  }\n}\n```\n\n### 测试分组管理:\n```javascript\n// tests/daily-checks.spec.js\ntest.describe('@daily Daily Health Checks', () => {\n  test('Homepage loads correctly', async ({ page }) => {\n    await page.goto('/');\n    // 验证关键元素\n  });\n  \n  test('Login functionality works', async ({ page }) => {\n    // 登录测试\n  });\n});\n```\n\n## 6. **监控和报告**\n\n### 邮件通知集成:\n```javascript\nconst nodemailer = require('nodemailer');\n\nasync function sendTestReport(results) {\n  const transporter = nodemailer.createTransport({\n    service: 'gmail',\n    auth: { user: 'your-email@gmail.com', pass: 'your-password' }\n  });\n  \n  await transporter.sendMail({\n    from: 'test-bot@example.com',\n    to: 'team@example.com',\n    subject: `Playwright Test Results - ${new Date().toLocaleDateString()}`,\n    html: `<h2>Test Summary</h2><pre>${JSON.stringify(results, null, 2)}</pre>`\n  });\n}\n```\n\n## 选择建议：\n\n1. **团队项目** → 使用CI/CD工具（GitHub Actions/GitLab CI）\n2. **本地开发** → 使用cron或Node.js调度库\n3. **云原生应用** → 使用云函数服务\n4. **复杂调度需求** → 考虑Airflow、Jenkins等专业调度工具\n\n你需要哪种场景的调度方案？我可以为你提供更具体的配置示例。",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T09:36:48.957Z",
+        "delete_trigger": "user_deleted"
+      },
+      {
+        "id": "mem_1771743638278_g7aqzdpw",
+        "timestamp": "2026-02-22T07:00:38.278Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_6e0fdd6b",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "目前我无法直接检查bot workflow count，因为相关的工具暂时不可用。\n\n为了帮助您，我需要了解更多信息：\n1. 您指的是什么系统或平台中的bot workflow count？\n2. 您想要检查的是工作流的数量、运行状态还是其他相关信息？\n3. 是否有特定的bot或工作流系统需要查询？\n\n如果您能提供更多细节，我可以尝试通过其他方式来协助您解决问题。",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T07:23:54.219Z",
+        "delete_trigger": "user_deleted"
+      },
+      {
+        "id": "mem_1771743707326_mjoish9h",
+        "timestamp": "2026-02-22T07:01:47.326Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_333d572d",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T07:23:51.845Z",
+        "delete_trigger": "user_deleted"
+      },
+      {
+        "id": "mem_1771743732309_b5wcw4ag",
+        "timestamp": "2026-02-22T07:02:12.309Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_14f9ee86",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "关于Playwright测试调度，有几种常见的方法可以实现定时执行测试：\n\n## 1. **使用CI/CD工具（推荐）**\n\n### GitHub Actions 示例：\n```yaml\n# .github/workflows/playwright.yml\nname: Playwright Tests\non:\n  schedule:\n    - cron: '0 9 * * *'  # 每天上午9点运行\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: '18'\n      - name: Install dependencies\n        run: npm ci\n      - name: Install Playwright Browsers\n        run: npx playwright install --with-deps\n      - name: Run Playwright tests\n        run: npx playwright test\n      - uses: actions/upload-artifact@v3\n        if: always()\n        with:\n          name: playwright-report\n          path: playwright-report/\n```\n\n### Jenkins Pipeline 示例：\n```groovy\npipeline {\n    agent any\n    triggers {\n        cron('H 9 * * *')  // 每天上午9点\n    }\n    stages {\n        stage('Setup') {\n            steps {\n                sh 'npm ci'\n                sh 'npx playwright install --with-deps'\n            }\n        }\n        stage('Test') {\n            steps {\n                sh 'npx playwright test'\n            }\n        }\n        stage('Report') {\n            steps {\n                archiveArtifacts artifacts: 'playwright-report/**'\n            }\n        }\n    }\n}\n```\n\n## 2. **使用操作系统调度器**\n\n### Linux/Mac (cron)：\n```bash\n# 编辑crontab\ncrontab -e\n\n# 添加以下行（每天上午9点运行）\n0 9 * * * cd /path/to/your/project && npm test\n```\n\n### Windows (Task Scheduler)：\n1. 创建批处理文件 `run_tests.bat`：\n```batch\ncd C:\\path\\to\\your\\project\nnpm test\n```\n2. 使用Task Scheduler设置定时任务\n\n## 3. **使用Node.js调度库**\n\n### 使用node-cron：\n```javascript\n// schedule-tests.js\nconst cron = require('node-cron');\nconst { exec } = require('child_process');\n\n// 每天上午9点运行\ncron.schedule('0 9 * * *', () => {\n    console.log('Running Playwright tests...');\n    \n    exec('npx playwright test', (error, stdout, stderr) => {\n        if (error) {\n            console.error(`Error: ${error}`);\n            return;\n        }\n        console.log(`Output: ${stdout}`);\n        if (stderr) console.error(`Stderr: ${stderr}`);\n    });\n});\n\nconsole.log('Test scheduler started...');\n```\n\n## 4. **最佳实践建议**\n\n### 配置选项：\n```json\n// package.json\n{\n  \"scripts\": {\n    \"test\": \"playwright test\",\n    \"test:schedule\": \"node schedule-tests.js\",\n    \"test:headless\": \"playwright test --headed=false\",\n    \"test:parallel\": \"playwright test --workers=4\"\n  }\n}\n```\n\n### 环境变量配置：\n```bash\n# .env文件\nPLAYWRIGHT_TEST_TIMEOUT=60000\nPLAYWRIGHT_BASE_URL=https://your-app.com\nPLAYWRIGHT_RETRIES=2\n```\n\n### 邮件通知集成：\n```javascript\n// 在测试完成后发送邮件\nconst nodemailer = require('nodemailer');\n\nasync function sendTestReport(results) {\n    const transporter = nodemailer.createTransport({\n        service: 'gmail',\n        auth: {\n            user: 'your-email@gmail.com',\n            pass: 'your-password'\n        }\n    });\n    \n    await transporter.sendMail({\n        from: 'test-bot@company.com',\n        to: 'team@company.com',\n        subject: `Playwright Test Results - ${new Date().toLocaleDateString()}`,\n        html: `<h1>Test Report</h1><pre>${JSON.stringify(results, null, 2)}</pre>`\n    });\n}\n```\n\n## 5. **监控和告警**\n\n```javascript\n// 集成Slack通知\nconst { WebClient } = require('@slack/web-api');\n\nasync function notifySlack(message) {\n    const slack = new WebClient(process.env.SLACK_TOKEN);\n    await slack.chat.postMessage({\n        channel: '#test-reports',\n        text: message\n    });\n}\n```\n\n## 推荐方案：\n\n1. **开发环境**：使用node-cron进行本地调度测试\n2. **生产环境**：使用GitHub Actions/Jenkins进行CI/CD集成\n3. **复杂场景**：考虑使用专门的测试管理平台\n\n您具体需要哪种调度方案？或者您有特定的使用场景需要帮助吗？",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T07:23:49.513Z",
+        "delete_trigger": "user_deleted"
+      },
+      {
+        "id": "mem_1771747257382_d9qn5mql",
+        "timestamp": "2026-02-22T08:00:57.382Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_acb505f6",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771747378365_3lt6vvbi",
+        "timestamp": "2026-02-22T08:02:58.365Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_c4ffd753",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771747404587_oaifn6v7",
+        "timestamp": "2026-02-22T08:03:24.587Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_49b34807",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "**Playwright测试调度方案**\n\n安排Playwright测试执行有多种方法，以下是几种常见的方案：\n\n## 1. 使用CI/CD工具（推荐）\n\n### GitHub Actions 示例\n```yaml\n# .github/workflows/playwright-schedule.yml\nname: Scheduled Playwright Tests\n\non:\n  schedule:\n    # 每天凌晨2点运行\n    - cron: '0 2 * * *'\n  workflow_dispatch:  # 允许手动触发\n\njobs:\n  playwright-tests:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: '18'\n      \n      - name: Install dependencies\n        run: npm ci\n      \n      - name: Install Playwright Browsers\n        run: npx playwright install --with-deps\n      \n      - name: Run Playwright tests\n        run: npx playwright test\n      \n      - name: Upload test results\n        if: always()\n        uses: actions/upload-artifact@v3\n        with:\n          name: playwright-report\n          path: playwright-report/\n          retention-days: 30\n```\n\n### Jenkins Pipeline 示例\n```groovy\npipeline {\n    agent any\n    \n    triggers {\n        cron('H 2 * * *')  // 每天凌晨2点\n    }\n    \n    stages {\n        stage('Setup') {\n            steps {\n                sh 'npm ci'\n                sh 'npx playwright install --with-deps'\n            }\n        }\n        \n        stage('Run Tests') {\n            steps {\n                sh 'npx playwright test'\n            }\n        }\n    }\n    \n    post {\n        always {\n            archiveArtifacts artifacts: 'playwright-report/**'\n        }\n    }\n}\n```\n\n## 2. 使用操作系统调度工具\n\n### Linux/MacOS - Cron Job\n```bash\n# 编辑crontab\ncrontab -e\n\n# 添加以下行（每天凌晨2点运行测试）\n0 2 * * * cd /path/to/your/project && npm test\n```\n\n### Windows - Task Scheduler\n1. 创建批处理文件 `run-tests.bat`：\n```batch\n@echo off\ncd /d \"C:\\path\\to\\your\\project\"\nnpm test\n```\n\n2. 使用Task Scheduler设置定时执行\n\n## 3. 使用Node.js调度库\n\n### 使用node-cron\n```javascript\n// schedule-tests.js\nconst cron = require('node-cron');\nconst { exec } = require('child_process');\n\n// 每天凌晨2点运行\ncron.schedule('0 2 * * *', () => {\n    console.log('Running Playwright tests...');\n    \n    exec('npx playwright test', (error, stdout, stderr) => {\n        if (error) {\n            console.error(`Error: ${error.message}`);\n            return;\n        }\n        if (stderr) {\n            console.error(`Stderr: ${stderr}`);\n            return;\n        }\n        console.log(`Output: ${stdout}`);\n    });\n});\n\nconsole.log('Test scheduler started. Waiting for scheduled runs...');\n```\n\n### 使用node-schedule\n```javascript\nconst schedule = require('node-schedule');\nconst { exec } = require('child_process');\n\n// 每天凌晨2点运行\nconst job = schedule.scheduleJob('0 2 * * *', function() {\n    console.log('Running Playwright tests at:', new Date());\n    \n    exec('npx playwright test', (error, stdout, stderr) => {\n        if (error) {\n            console.error('Test execution failed:', error);\n            // 发送通知或记录到日志\n            return;\n        }\n        console.log('Tests completed successfully');\n    });\n});\n```\n\n## 4. 完整的最佳实践方案\n\n### 项目结构\n```\nproject/\n├── package.json\n├── playwright.config.js\n├── tests/\n│   └── *.spec.js\n├── scripts/\n│   ├── schedule-tests.js\n│   └── run-tests.sh\n└── .github/\n    └── workflows/\n        └── playwright-schedule.yml\n```\n\n### 增强的调度脚本\n```javascript\n// scripts/schedule-tests.js\nconst cron = require('node-cron');\nconst { exec } = require('child_process');\nconst fs = require('fs');\nconst path = require('path');\n\nclass TestScheduler {\n    constructor() {\n        this.logFile = path.join(__dirname, '../logs/test-execution.log');\n        this.ensureLogDirectory();\n    }\n    \n    ensureLogDirectory() {\n        const logDir = path.dirname(this.logFile);\n        if (!fs.existsSync(logDir)) {\n            fs.mkdirSync(logDir, { recursive: true });\n        }\n    }\n    \n    log(message) {\n        const timestamp = new Date().toISOString();\n        const logMessage = `[${timestamp}] ${message}\\n`;\n        \n        console.log(logMessage.trim());\n        fs.appendFileSync(this.logFile, logMessage);\n    }\n    \n    runTests() {\n        this.log('Starting Playwright test execution');\n        \n        return new Promise((resolve, reject) => {\n            exec('npx playwright test --reporter=html,line', \n                { cwd: path.join(__dirname, '..') },\n                (error, stdout, stderr) => {\n                    if (error) {\n                        this.log(`Test execution failed: ${error.message}`);\n                        reject(error);\n                    } else {\n                        this.log('Test execution completed successfully');\n                        this.log(`Output: ${stdout}`);\n                        resolve(stdout);\n                    }\n                    \n                    if (stderr) {\n                        this.log(`Stderr: ${stderr}`);\n                    }\n                }\n            );\n        });\n    }\n    \n    startScheduler() {\n        // 多种调度选项\n        const schedules = {\n            daily: '0 2 * * *',      // 每天凌晨2点\n            hourly: '0 * * * *',     // 每小时\n            every30min: '*/30 * * * *', // 每30分钟\n            businessHours: '0 9-17 * * 1-5' // 工作日9-17点\n        };\n        \n        // 使用每日调度\n        cron.schedule(schedules.daily, async () => {\n            try {\n                await this.runTests();\n                // 可以添加邮件通知、Slack通知等\n                this.sendNotification('Tests completed successfully');\n            } catch (error) {\n                this.sendNotification(`Tests failed: ${error.message}`, 'error');\n            }\n        });\n        \n        this.log(`Test scheduler started with schedule: ${schedules.daily}`);\n    }\n    \n    sendNotification(message, type = 'info') {\n        // 实现通知逻辑（邮件、Slack、Teams等）\n        this.log(`Notification [${type}]: ${message}`);\n    }\n}\n\n// 启动调度器\nconst scheduler = new TestScheduler();\nscheduler.startScheduler();\n```\n\n### package.json配置\n```json\n{\n  \"scripts\": {\n    \"test\": \"playwright test\",\n    \"test:schedule\": \"node scripts/schedule-tests.js\",\n    \"test:once\": \"playwright test --reporter=html,line\",\n    \"test:headed\": \"playwright test --headed\",\n    \"test:debug\": \"playwright test --debug\"\n  },\n  \"dependencies\": {\n    \"node-cron\": \"^3.0.2\",\n    \"playwright\": \"^1.40.0\"\n  }\n}\n```\n\n## 5. 高级调度策略\n\n### 条件执行\n```javascript\n// 只在代码变更后运行\nconst shouldRunTests = () => {\n    // 检查git历史，确定是否有新提交\n    // 检查文件修改时间等\n    return true; // 或根据条件返回\n};\n\n// 负载均衡调度\nconst scheduleWithLoadBalancing = () => {\n    // 检查系统负载\n    // 在低负载时段运行测试\n};\n```\n\n### 并行执行\n```javascript\n// 使用PM2进行进程管理\nconst pm2 = require('pm2');\n\n// 启动多个测试运行实例\npm2.start({\n    script: 'scripts/run-tests.js',\n    instances: 4,  // 并行4个实例\n    exec_mode: 'cluster'\n});\n```\n\n## 建议\n\n1. **生产环境推荐**：使用CI/CD工具（GitHub Actions/Jenkins等）\n2. **本地开发**：使用Node.js调度库\n3. **监控和告警**：添加测试结果通知机制\n4. **日志记录**：确保所有执行都有详细日志\n5. **错误处理**：实现重试机制和失败通知\n\n您具体需要哪种调度方案？或者您有特定的使用场景需要进一步讨论？"
+      },
+      {
+        "id": "mem_1771750884588_bucxicvb",
+        "timestamp": "2026-02-22T09:01:24.588Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_668040de",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771750901188_lgzp5unz",
+        "timestamp": "2026-02-22T09:01:41.188Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_3ab39762",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771750924947_tuno5e0l",
+        "timestamp": "2026-02-22T09:02:04.947Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_8984a30b",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771752538527_5ezzwmth",
+        "timestamp": "2026-02-22T09:28:58.527Z",
+        "is_deleted": true,
+        "deleted_at": "2026-02-22T09:36:48.957Z",
+        "delete_trigger": "user_deleted",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_58c8a499",
+        "user_id": "user_admin_001",
+        "user_message": "根据记录回答我",
+        "bot_message": "你好！我看到你之前询问了关于Playwright测试调度的问题。\n\n根据之前的记录，我为你提供了以下几种Playwright测试调度方案：\n\n## 之前提供的方案回顾：\n\n1. **CI/CD工具集成** - GitHub Actions、GitLab CI的定时任务配置\n2. **操作系统定时任务** - Linux/Mac的cron、Windows任务计划程序\n3. **Node.js调度库** - node-cron、node-schedule的使用方法\n4. **云服务方案** - AWS Lambda + CloudWatch Events\n5. **最佳实践建议** - package.json配置、测试分组管理\n6. **监控和报告** - 邮件通知集成\n\n## 需要我具体帮助什么吗？\n\n- 你是想了解哪种方案的详细配置？\n- 需要针对特定场景（如团队协作、个人项目、云环境）的建议？\n- 遇到了具体的配置问题？\n- 还是需要其他方面的帮助？\n\n请告诉我你的具体需求，我可以为你提供更针对性的指导！"
+      }
+    ],
+    "bot_love_1771742183756_7a587de3": [
+      {
+        "id": "mem_1771742274216_5pb8gjaq",
+        "timestamp": "2026-02-22T06:37:54.216Z",
+        "bot_id": "bot_love_1771742183756_7a587de3",
+        "conversation_id": "conv_4c106a9a-22ee-41a5-a986-b9d54adf315d",
+        "user_id": "user_admin_001",
+        "user_message": "?????? 1771742219469",
+        "bot_message": "您发送了一个时间戳：**1771742219469**。\n\n这是一个13位的Unix时间戳（毫秒级），让我为您分析一下：\n\n## 时间戳分析：\n- **格式**：13位数字，表示从1970年1月1日00:00:00 UTC开始的毫秒数\n- **对应时间**：大约在 **2026年2月22日** 左右（粗略估算）\n- **类型**：未来时间戳（比当前时间晚）\n\n## 您想了解什么？\n1. **精确的日期时间转换**？\n2. **这个时间戳的来源或含义**？\n3. **与某个事件或计划相关**？\n4. **需要我帮您计算具体日期**？\n\n请告诉我您对这个时间戳的具体疑问，我可以为您提供更详细的分析。"
+      },
+      {
+        "id": "mem_1771742301307_8kigyw7n",
+        "timestamp": "2026-02-22T06:38:21.307Z",
+        "bot_id": "bot_love_1771742183756_7a587de3",
+        "conversation_id": "conv_4c106a9a-22ee-41a5-a986-b9d54adf315d",
+        "user_id": "user_admin_001",
+        "user_message": "????? Playwright ????",
+        "bot_message": "Playwright 是一个现代化的自动化测试框架，主要用于 Web 应用程序的端到端测试。它由 Microsoft 开发，支持多种浏览器和编程语言。\n\n## 🎭 **什么是 Playwright？**\n\n**Playwright** 是一个用于 Web 测试和自动化的强大框架，它允许开发者：\n- 自动化浏览器操作（点击、输入、导航等）\n- 进行端到端测试\n- 生成网页截图和 PDF\n- 模拟移动设备\n- 拦截和修改网络请求\n\n## 🌟 **主要特点**\n\n1. **跨浏览器支持**\n   - Chrome/Chromium\n   - Firefox\n   - Safari\n   - Microsoft Edge\n\n2. **多语言支持**\n   - JavaScript/TypeScript\n   - Python\n   - Java\n   - .NET (C#)\n\n3. **智能等待机制**\n   - 自动等待元素出现\n   - 减少测试失败率\n   - 更稳定的测试执行\n\n4. **强大的 API**\n   - 丰富的选择器支持\n   - 网络拦截和模拟\n   - 文件上传/下载处理\n   - 地理位置模拟\n\n## 🔧 **主要用途**\n\n1. **端到端测试** - 完整的用户流程测试\n2. **UI 自动化** - 自动化重复的 Web 操作\n3. **网页截图** - 生成网页截图和 PDF\n4. **性能监控** - 监控网页加载性能\n5. **自动化爬虫** - 数据采集和网页监控\n\n## 📦 **安装示例**\n\n**Node.js 安装：**\n```bash\nnpm init playwright@latest\n```\n\n**Python 安装：**\n```bash\npip install playwright\nplaywright install\n```\n\n## 📝 **基本示例**\n\n**JavaScript 示例：**\n```javascript\nconst { chromium } = require('playwright');\n\n(async () => {\n  const browser = await chromium.launch({ headless: false });\n  const page = await browser.newPage();\n  \n  // 访问网页\n  await page.goto('https://example.com');\n  \n  // 截图\n  await page.screenshot({ path: 'example.png' });\n  \n  // 获取标题\n  const title = await page.title();\n  console.log(`页面标题: ${title}`);\n  \n  await browser.close();\n})();\n```\n\n## 🆚 **与其他框架比较**\n\n| 特性 | Playwright | Selenium | Puppeteer |\n|------|------------|----------|-----------|\n| 跨浏览器 | ✅ 优秀 | ✅ 优秀 | ❌ 仅 Chrome |\n| 自动等待 | ✅ 内置 | ❌ 需要手动 | ✅ 内置 |\n| 性能 | ✅ 优秀 | ⚠️ 一般 | ✅ 优秀 |\n| 网络拦截 | ✅ 强大 | ⚠️ 有限 | ✅ 强大 |\n| 移动设备模拟 | ✅ 支持 | ⚠️ 有限 | ✅ 支持 |\n\n## 🚀 **优势**\n\n1. **现代化架构** - 基于最新的浏览器技术\n2. **更好的稳定性** - 减少测试失败率\n3. **丰富的功能** - 网络拦截、地理位置等\n4. **活跃的社区** - Microsoft 维护，持续更新\n5. **优秀的文档** - 详细的官方文档和示例\n\n您想了解 Playwright 的哪个具体方面呢？比如：\n1. 如何开始使用？\n2. 具体的测试编写方法？\n3. 与 CI/CD 集成？\n4. 最佳实践？\n5. 特定语言的用法？\n\n请告诉我您的具体需求，我可以为您提供更详细的指导！"
+      }
+    ],
+    "bot_work_1771756099197_74221e37": [
+      {
+        "id": "mem_1771756132916_7p7xc9at",
+        "timestamp": "2026-02-22T10:28:52.916Z",
+        "is_deleted": false,
+        "deleted_at": null,
+        "delete_trigger": null,
+        "bot_id": "bot_work_1771756099197_74221e37",
+        "conversation_id": "conv_d4cc1200-30cd-4c07-b9b0-a2094b4d047d",
+        "user_id": "user_admin_001",
+        "user_message": "你好呀",
+        "bot_message": "你好呀！很高兴见到你！😊\n\n我是你的AI助手，可以帮你解答各种问题、提供信息支持，或者陪你聊聊天。今天有什么我可以帮你的吗？"
       }
     ]
   }

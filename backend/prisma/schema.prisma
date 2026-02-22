@@ -69,7 +69,10 @@ model Conversation {
   conversation_id String    @id
   bot_id         String
   user_id        String
+  folder_id      String?
   title          String?
+  extra_context  String?    @db.Text
+  archived_count Int       @default(0)
   is_deleted     Boolean   @default(false)
   deleted_at     DateTime?
   delete_reason  String?
@@ -80,11 +83,51 @@ model Conversation {
   bot     Bot       @relation(fields: [bot_id], references: [bot_id], onDelete: Cascade)
   user    User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   messages Message[]
+  memories ConversationArchiveMemory[]
 
   @@index([bot_id])
   @@index([user_id])
+  @@index([folder_id])
   @@index([bot_id, is_deleted, updated_at])
+  @@index([user_id, folder_id, is_deleted, updated_at])
   @@index([deleted_at])
+}
+
+model Folder {
+  folder_id   String   @id @default(uuid())
+  user_id     String
+  name        String
+  color       String   @default("#6366f1")
+  icon_type   String   @default("random") // random | upload
+  icon_url    String?
+  icon_data   Json?
+  is_deleted  Boolean  @default(false)
+  deleted_at  DateTime?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  memories    ConversationArchiveMemory[]
+
+  @@index([user_id, is_deleted])
+  @@index([deleted_at])
+}
+
+model ConversationArchiveMemory {
+  memory_id        String   @id @default(cuid()) @map("id")
+  folder_id        String
+  conversation_id  String
+  title            String?
+  summary          String?  @db.Text
+  insight          String?  @db.Text
+  tags             Json?
+  archive_index    Int      @default(1)
+  created_at       DateTime @default(now())
+
+  folder        Folder       @relation(fields: [folder_id], references: [folder_id], onDelete: Cascade)
+  conversation  Conversation @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
+
+  @@index([folder_id, created_at])
+  @@index([conversation_id])
+  @@map("memories")
 }
 
 // Message model

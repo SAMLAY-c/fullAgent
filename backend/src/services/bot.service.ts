@@ -106,6 +106,7 @@ class BotService {
     avatar?: string;
     type: string;
     scene: string;
+    status?: string;
     description?: string;
     config?: any;
   }) {
@@ -118,6 +119,11 @@ class BotService {
 
     const bot_id = generateBotId(data.type);
 
+    const normalizedStatus =
+      data.status === 'online' || data.status === 'offline' || data.status === 'suspended'
+        ? data.status
+        : 'offline';
+
     return await prisma.bot.create({
       data: {
         bot_id,
@@ -125,7 +131,7 @@ class BotService {
         avatar: data.avatar || null,
         type: data.type,
         scene: data.scene,
-        status: 'offline',
+        status: normalizedStatus,
         description: data.description || null,
         config: data.config || null
       }

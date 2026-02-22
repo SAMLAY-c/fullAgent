@@ -1,0 +1,84 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Folder Phase 1 Demo</title>
+  <link rel="stylesheet" href="/assets/styles/folders-demo.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <h1>Folder Phase 1 Test Page</h1>
+        <p>Uses current login token to call <code>/api/folders</code>. If not logged in, it redirects to login.</p>
+      </div>
+      <button id="reloadBtn" class="btn secondary">Reload</button>
+    </header>
+
+    <section class="layout-shell">
+      <aside class="sidebar-panel">
+        <div class="sidebar-header">
+          <h2>Topics</h2>
+          <div id="statusBox" class="status"></div>
+        </div>
+
+        <div id="foldersList" class="list"></div>
+
+        <div class="sidebar-footer">
+          <button id="btn-new-topic" class="btn-new-topic" type="button">
+            <span class="icon">+</span>
+            <span class="text">New Topic</span>
+          </button>
+
+          <button id="btn-trash" class="btn-trash" type="button">
+            <span class="icon">🗑</span>
+            <span class="text">Trash (Phase 2)</span>
+          </button>
+        </div>
+      </aside>
+
+      <section class="preview-panel">
+        <h2>Phase 1 Notes</h2>
+        <ul>
+          <li>Create folder with random icon</li>
+          <li>Randomize icon color</li>
+          <li>Soft delete folder</li>
+        </ul>
+      </section>
+    </section>
+  </main>
+
+  <div id="modalCreateTopic" class="modal-overlay hidden" aria-hidden="true">
+    <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h3 id="modalTitle">Create Topic</h3>
+        <button id="btnCloseModal" class="btn-close" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-body">
+          <div class="icon-preview-section">
+          <div id="topicIconPreview" class="icon-preview-box"></div>
+          <div class="icon-actions">
+            <button id="btnRandomIcon" type="button" class="btn-random" title="Random color">↻</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="topicNameInput">Topic name</label>
+          <input type="text" id="topicNameInput" maxlength="50" placeholder="Example: Work Assistant" />
+          <span class="input-hint">Press Enter to create</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btnCancelCreate" class="btn-secondary" type="button">Cancel</button>
+        <button id="btnCreateTopicConfirm" class="btn-primary" type="button">Create Topic</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastHost" class="toast-host" aria-live="polite"></div>
+  <script src="/assets/scripts/folders-demo.js"></script>
+</body>
+</html>
