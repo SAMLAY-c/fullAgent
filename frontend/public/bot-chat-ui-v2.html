@@ -131,132 +131,148 @@
                 </div>
             </div>
 
-            <!-- Tab导航系统 -->
-            <div class="content-tabs">
-                <button class="content-tab-btn active" data-tab="chat">💬 对话</button>
-                <button class="content-tab-btn" data-tab="memory">🧠 记忆</button>
-                <button class="content-tab-btn" data-tab="knowledge">📚 知识库</button>
-                <button class="content-tab-btn" data-tab="settings">⚙️ 设置</button>
-            </div>
-
-            <!-- 对话内容面板 -->
-            <div class="content-panel active" id="chatPanel">
-                <div class="chat-messages" id="messages">
-                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                        加载对话中...
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-input">
-                <div class="chat-input-toolbar">
-                    <button class="composer-tool-btn" id="uploadToolBtn" type="button">📎 上传</button>
-                    <button class="composer-tool-btn" id="recordToolBtn" type="button">🎙️ 录音</button>
-                    <button class="composer-tool-btn" id="injectMemoryBtn" type="button">🧠 注入记忆</button>
-                    <button class="composer-tool-btn muted" id="composerMoreBtn" type="button">···</button>
-                    <button class="composer-tool-btn archive" id="archiveConversationBtn" type="button">🗂️ 归档此次对话</button>
-                    <input type="file" id="chatUploadInput" hidden />
-                </div>
-                <button class="mention-btn" id="mentionBtn" title="@提及Bot" style="display: none;">@</button>
-                <div class="input-wrapper">
-                    <textarea id="input" placeholder="今天想聊点什么呢？我随时都在 💜"></textarea>
-                </div>
-                <button class="send-btn" id="sendBtn">发送 ✨</button>
-            </div>
-
-            <!-- 记忆内容面板 -->
-            <div class="content-panel" id="memoryPanel">
-                <div class="memory-container">
-                    <div class="memory-section-card">
-                        <div class="memory-section-title">
-                            <span>📌</span>
-                            <span>关键要点</span>
-                        </div>
-                        <div class="key-points-list" id="keyPointsList">
+            <div class="chat-content-layout">
+                <div class="chat-content-main">
+                    <!-- 对话内容面板 -->
+                    <div class="content-panel active" id="chatPanel">
+                        <div class="chat-messages" id="messages">
                             <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                                暂无关键要点
+                                加载对话中...
                             </div>
                         </div>
                     </div>
 
-                    <div class="memory-section-card">
-                        <div class="memory-section-title">
-                            <span>📝</span>
-                            <span>上下文记忆</span>
+                    <div class="chat-input">
+                        <div class="chat-input-toolbar">
+                            <button class="composer-tool-btn" id="uploadToolBtn" type="button">📎 上传</button>
+                            <button class="composer-tool-btn" id="recordToolBtn" type="button">🎙️ 录音</button>
+                            <button class="composer-tool-btn" id="injectMemoryBtn" type="button">🧠 注入记忆</button>
+                            <button class="composer-tool-btn muted" id="composerMoreBtn" type="button">···</button>
+                            <button class="composer-tool-btn archive" id="archiveConversationBtn" type="button">🗂️ 归档此次对话</button>
+                            <input type="file" id="chatUploadInput" hidden />
                         </div>
-                        <div class="context-memory-list" id="contextMemoryList">
-                            <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                                暂无上下文记忆
+                        <button class="mention-btn" id="mentionBtn" title="@提及Bot" style="display: none;">@</button>
+                        <div class="input-wrapper">
+                            <textarea id="input" placeholder="今天想聊点什么呢？我随时都在 💜"></textarea>
+                        </div>
+                        <button class="send-btn" id="sendBtn">发送 ✨</button>
+                    </div>
+
+                    <!-- 记忆内容面板 -->
+                    <div class="content-panel" id="memoryPanel">
+                        <div class="memory-container">
+                            <div class="memory-section-card">
+                                <div class="memory-section-title">
+                                    <span>📌</span>
+                                    <span>关键要点</span>
+                                </div>
+                                <div class="key-points-list" id="keyPointsList">
+                                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                        暂无关键要点
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="memory-section-card">
+                                <div class="memory-section-title">
+                                    <span>📝</span>
+                                    <span>上下文记忆</span>
+                                </div>
+                                <div class="context-memory-list" id="contextMemoryList">
+                                    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                        暂无上下文记忆
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 知识库内容面板 -->
+                    <div class="content-panel" id="knowledgePanel">
+                        <div class="knowledge-container">
+                            <div class="upload-zone" id="uploadZone">
+                                <div class="upload-zone-icon">📤</div>
+                                <div class="upload-zone-title">点击上传文件</div>
+                                <div class="upload-zone-desc">支持 PDF, Word, Excel, TXT 等格式</div>
+                            </div>
+
+                            <div class="file-list" id="fileList">
+                                <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                    暂无知识库文件
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 设置内容面板 -->
+                    <div class="content-panel" id="settingsPanel">
+                        <div class="settings-container">
+                            <div class="settings-section">
+                                <div class="settings-section-header">
+                                    <div class="settings-section-title">
+                                        <span>⚙️</span>
+                                        <span>系统提示词</span>
+                                    </div>
+                                    <button class="edit-prompt-btn" id="editPromptBtn">✏️ 编辑</button>
+                                </div>
+                                <div class="prompt-display" id="promptDisplay">
+                                    加载中...
+                                </div>
+                                <div id="promptEditorContainer" style="display: none;">
+                                    <textarea class="prompt-editor" id="promptEditor"></textarea>
+                                    <button class="save-prompt-btn" id="savePromptBtn">保存提示词</button>
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <div class="settings-section-header">
+                                    <div class="settings-section-title">
+                                        <span>🤖</span>
+                                        <span>AI 模型配置</span>
+                                    </div>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="settings-label">模型</label>
+                                    <select class="settings-select" id="modelSelect">
+                                        <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek V3.2（推荐）</option>
+                                        <option value="deepseek-ai/DeepSeek-R1">DeepSeek R1（推理）</option>
+                                        <option value="Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B</option>
+                                    </select>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="settings-label">温度（0-2）</label>
+                                    <input class="settings-input" id="temperatureInput" type="number" min="0" max="2" step="0.1" value="0.7" />
+                                    <div class="settings-hint">越高越随机，建议0.7-1.0</div>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="settings-label">最大 Token 数</label>
+                                    <input class="settings-input" id="maxTokensInput" type="number" min="100" max="8000" step="100" value="2000" />
+                                    <div class="settings-hint">控制回复长度</div>
+                                </div>
+                                <button class="save-config-btn" id="saveConfigBtn">💾 保存配置</button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- 知识库内容面板 -->
-            <div class="content-panel" id="knowledgePanel">
-                <div class="knowledge-container">
-                    <div class="upload-zone" id="uploadZone">
-                        <div class="upload-zone-icon">📤</div>
-                        <div class="upload-zone-title">点击上传文件</div>
-                        <div class="upload-zone-desc">支持 PDF, Word, Excel, TXT 等格式</div>
-                    </div>
-
-                    <div class="file-list" id="fileList">
-                        <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                            暂无知识库文件
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 设置内容面板 -->
-            <div class="content-panel" id="settingsPanel">
-                <div class="settings-container">
-                    <div class="settings-section">
-                        <div class="settings-section-header">
-                            <div class="settings-section-title">
-                                <span>⚙️</span>
-                                <span>系统提示词</span>
-                            </div>
-                            <button class="edit-prompt-btn" id="editPromptBtn">✏️ 编辑</button>
-                        </div>
-                        <div class="prompt-display" id="promptDisplay">
-                            加载中...
-                        </div>
-                        <div id="promptEditorContainer" style="display: none;">
-                            <textarea class="prompt-editor" id="promptEditor"></textarea>
-                            <button class="save-prompt-btn" id="savePromptBtn">保存提示词</button>
-                        </div>
-                    </div>
-
-                    <div class="settings-section">
-                        <div class="settings-section-header">
-                            <div class="settings-section-title">
-                                <span>🤖</span>
-                                <span>AI 模型配置</span>
-                            </div>
-                        </div>
-                        <div class="settings-field">
-                            <label class="settings-label">模型</label>
-                            <select class="settings-select" id="modelSelect">
-                                <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek V3.2（推荐）</option>
-                                <option value="deepseek-ai/DeepSeek-R1">DeepSeek R1（推理）</option>
-                                <option value="Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B</option>
-                            </select>
-                        </div>
-                        <div class="settings-field">
-                            <label class="settings-label">温度（0-2）</label>
-                            <input class="settings-input" id="temperatureInput" type="number" min="0" max="2" step="0.1" value="0.7" />
-                            <div class="settings-hint">越高越随机，建议0.7-1.0</div>
-                        </div>
-                        <div class="settings-field">
-                            <label class="settings-label">最大 Token 数</label>
-                            <input class="settings-input" id="maxTokensInput" type="number" min="100" max="8000" step="100" value="2000" />
-                            <div class="settings-hint">控制回复长度</div>
-                        </div>
-                        <button class="save-config-btn" id="saveConfigBtn">💾 保存配置</button>
-                    </div>
+                <!-- 右侧竖向标签栏：仅改变展示位置，不改变内容层级绑定逻辑 -->
+                <div class="content-tabs" aria-label="内容标签切换">
+                    <button class="content-tab-btn active" data-tab="chat" type="button">
+                        <span class="content-tab-icon" aria-hidden="true">💬</span>
+                        <span class="content-tab-label">对话</span>
+                    </button>
+                    <button class="content-tab-btn" data-tab="memory" type="button">
+                        <span class="content-tab-icon" aria-hidden="true">🧠</span>
+                        <span class="content-tab-label">记忆</span>
+                    </button>
+                    <button class="content-tab-btn" data-tab="knowledge" type="button">
+                        <span class="content-tab-icon" aria-hidden="true">📚</span>
+                        <span class="content-tab-label">知识库</span>
+                    </button>
+                    <button class="content-tab-btn" data-tab="settings" type="button">
+                        <span class="content-tab-icon" aria-hidden="true">⚙️</span>
+                        <span class="content-tab-label">设置</span>
+                    </button>
                 </div>
             </div>
 
