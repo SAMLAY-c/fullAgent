@@ -337,6 +337,12 @@ async function getOwnedConversationForExtraction(userId: string, conversationId:
   });
 }
 
+function buildAutoFolderNameForConversation(conversation: { title: string | null }) {
+  const title = String(conversation.title || '').trim();
+  if (title) return title.slice(0, 50);
+  return '默认主题';
+}
+
 // GET /api/memories/extract/context?conversation_id=xxx
 router.get('/extract/context', async (req: Request, res: Response) => {
   try {
@@ -531,24 +537,31 @@ router.post('/extract/commit', async (req: Request, res: Response) => {
     }
 
     const folderId = requestedFolderId || conversation.folder_id;
-    if (!folderId) {
-      return res.status(400).json({ error: '该话题未绑定主题，无法保存归档记忆' });
-    }
 
     if (conversation.folder_id && requestedFolderId && conversation.folder_id !== requestedFolderId) {
       return res.status(400).json({ error: 'conversation_id does not belong to folder_id' });
     }
 
-    const folder = await prisma.folder.findFirst({
-      where: {
-        folder_id: folderId,
-        user_id: userId,
-        is_deleted: false
-      },
-      select: { folder_id: true }
-    });
-    if (!folder) {
-      return res.status(404).json({ error: 'Folder not found' });
+    const allowAutoCreateFolder =
+      !conversation.folder_id && (!requestedFolderId || requestedFolderId === conversation.bot_id);
+
+    let existingFolderId: string | null = null;
+    if (folderId) {
+      const folder = await prisma.folder.findFirst({
+        where: {
+          folder_id: folderId,
+          user_id: userId,
+          is_deleted: false
+        },
+        select: { folder_id: true }
+      });
+      if (folder) {
+        existingFolderId = folder.folder_id;
+      } else if (!allowAutoCreateFolder) {
+        return res.status(404).json({ error: 'Folder not found' });
+      }
+    } else if (!allowAutoCreateFolder) {
+      return res.status(400).json({ error: '该话题未绑定主题，无法保存归档记忆' });
     }
 
     if (selectedMessageIds.length > 0) {
@@ -578,12 +591,23 @@ router.post('/extract/commit', async (req: Request, res: Response) => {
     const now = new Date();
     const archiveIndex = (conversation.archived_count || 0) + 1;
 
-    const createdRows = await prisma.$transaction(async (tx) => {
+    const commitResult = await prisma.$transaction(async (tx) => {
+      let resolvedFolderId = existingFolderId;
+      if (!resolvedFolderId) {
+        const createdFolder = await tx.folder.create({
+          data: {
+            user_id: userId,
+            name: buildAutoFolderNameForConversation(conversation)
+          }
+        });
+        resolvedFolderId = createdFolder.folder_id;
+      }
+
       const rows = await Promise.all(
         items.map((item) =>
           tx.conversationArchiveMemory.create({
             data: {
-              folder_id: folderId,
+              folder_id: resolvedFolderId,
               conversation_id: conversationId,
               title: item.category,
               summary: item.text,
@@ -603,20 +627,25 @@ router.post('/extract/commit', async (req: Request, res: Response) => {
       await tx.conversation.update({
         where: { conversation_id: conversationId },
         data: {
+          ...(conversation.folder_id ? {} : { folder_id: resolvedFolderId }),
           archived_count: archiveIndex,
           last_memory_archived_at: now
         } as any
       });
 
-      return rows;
+      return {
+        rows,
+        folder_id: resolvedFolderId
+      };
     });
 
     return res.json({
       success: true,
       archive_index: archiveIndex,
-      saved_count: createdRows.length,
+      saved_count: commitResult.rows.length,
+      folder_id: commitResult.folder_id,
       archived_at: now,
-      memories: createdRows.map((m) => ({
+      memories: commitResult.rows.map((m) => ({
         id: m.memory_id,
         title: m.title,
         summary: m.summary,

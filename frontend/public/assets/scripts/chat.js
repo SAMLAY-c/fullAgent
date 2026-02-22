@@ -200,6 +200,24 @@
     return state.folders.find((f) => f.folder_id === state.selectedFolderId) || null;
   }
 
+  function isVirtualThemeFolder(folder) {
+    if (!folder) return false;
+    return folder.is_virtual === true || (!!folder.bot_id && folder.folder_id === folder.bot_id);
+  }
+
+  function isPseudoFolderIdForMemoryCommit(folderId, conversation, draftMeta) {
+    if (!folderId) return false;
+    if (conversation?.folder_id) return false;
+
+    const selectedFolder = getSelectedFolder();
+    if (selectedFolder && selectedFolder.folder_id === folderId && isVirtualThemeFolder(selectedFolder)) {
+      return true;
+    }
+
+    const botId = conversation?.bot_id || draftMeta?.bot_id || state.selectedBotId || null;
+    return !!botId && folderId === botId;
+  }
+
   function getFolderChipLabel(folder) {
     const name = String(folder?.name || '未命名');
     return name.length > 7 ? `${name.slice(0, 7)}…` : name;
@@ -289,6 +307,7 @@
       .flatMap((scene) => (state.botsByScene[scene] || []).map((bot) => ({
         folder_id: bot.bot_id,
         bot_id: bot.bot_id,
+        is_virtual: true,
         name: bot.name,
         scene: bot.scene,
         description: bot.description
@@ -986,10 +1005,14 @@
     const providedTitle = typeof opts.title === 'string' ? opts.title.trim() : '';
     const providedExtraContext = typeof opts.extra_context === 'string' ? opts.extra_context.trim() : '';
     const title = providedTitle || `新话题 ${new Date().toLocaleString('zh-CN')}`;
+    const selectedFolder = getSelectedFolder();
+    const realFolderId =
+      selectedFolder && !isVirtualThemeFolder(selectedFolder) ? selectedFolder.folder_id : null;
 
     const conversation = await authManager.post('/chat/conversations', {
       bot_id: bot.bot_id,
       title,
+      ...(realFolderId ? { folder_id: realFolderId } : {}),
       extra_context: providedExtraContext || undefined
     });
 
@@ -1700,18 +1723,32 @@
     }
 
     const conversation = getCurrentConversation();
+    const fallbackFolderId = conversation?.folder_id || state.selectedFolderId || draft.meta?.folder_id || null;
+    if (!fallbackFolderId && !(conversation?.bot_id || draft.meta?.bot_id)) {
+      alert('请先选择一个主题后再保存记忆');
+      return;
+    }
+
+    const isPseudoFolderId = isPseudoFolderIdForMemoryCommit(fallbackFolderId, conversation, draft.meta);
+    const commitFolderId = isPseudoFolderId ? null : fallbackFolderId;
+    if (isPseudoFolderId) {
+      showLightToast('当前话题未绑定真实主题，将自动创建默认主题后保存记忆', 'info');
+    }
 
     draft.saving = true;
     renderExtractPanel();
 
     try {
-      await authManager.post('/memories/extract/commit', {
+      const commitRes = await authManager.post('/memories/extract/commit', {
         conversation_id: state.selectedConversationId,
+        ...(commitFolderId ? { folder_id: commitFolderId } : {}),
         items: selectedItems,
         focus_note: draft.focusNote,
         selected_message_ids: Array.from(draft.selectedMessageIds),
         selected_archive_memory_ids: Array.from(draft.selectedMemoryIds)
       });
+
+      const resolvedFolderId = commitRes?.folder_id || conversation?.folder_id || commitFolderId || fallbackFolderId || null;
 
       state.archivedConversationIds.add(state.selectedConversationId);
       const existing = state.archivesByConversationId[state.selectedConversationId];
@@ -1721,7 +1758,10 @@
         summary: draft.items[0]?.text || existing?.summary || '',
         insights: draft.items.map((x) => x.text).slice(0, 2).join('；')
       };
-      patchConversationInState(state.selectedConversationId, { archived_count: (conversation?.archived_count || 0) + 1 });
+      patchConversationInState(state.selectedConversationId, {
+        archived_count: (conversation?.archived_count || 0) + 1,
+        folder_id: resolvedFolderId
+      });
       renderSingleBotTopicList();
       renderMemoryArchivePanel();
       showLightToast(`已保存 ${selectedItems.length} 条记忆`, 'success');

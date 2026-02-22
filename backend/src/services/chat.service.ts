@@ -8,6 +8,14 @@ import botMemoryArchiveService from './bot-memory-archive.service';
 const prisma = new PrismaClient();
 
 class ChatService {
+  private buildDefaultFolderNameForConversation(title?: string | null, botName?: string | null) {
+    const fromTitle = String(normalizeUtf8Value(title || '')).trim();
+    if (fromTitle) return fromTitle.slice(0, 50);
+    const fromBot = String(normalizeUtf8Value(botName || '')).trim();
+    if (fromBot) return `${fromBot}`.slice(0, 50);
+    return '默认主题';
+  }
+
   async listConversations(userId: string, botId?: string, folderId?: string) {
     const where: { user_id: string; bot_id?: string; folder_id?: string; is_deleted: boolean } = {
       user_id: userId,
@@ -50,6 +58,7 @@ class ChatService {
       throw new Error('BOT_NOT_FOUND');
     }
 
+    const requestedFolderId = folderId && String(folderId).trim() ? String(folderId).trim() : null;
     let normalizedFolderId: string | null = null;
     if (folderId && String(folderId).trim()) {
       const folder = await prisma.folder.findFirst({
@@ -61,37 +70,56 @@ class ChatService {
         select: { folder_id: true }
       });
       if (!folder) {
-        throw new Error('FOLDER_NOT_FOUND');
+        // Frontend theme chips may still send bot_id as pseudo folder_id; treat it as "no real folder".
+        if (requestedFolderId !== botId) {
+          throw new Error('FOLDER_NOT_FOUND');
+        }
+      } else {
+        normalizedFolderId = folder.folder_id;
       }
-      normalizedFolderId = folder.folder_id;
     }
 
     const normalizedTitle = String(normalizeUtf8Value(title || '')).trim();
     const normalizedExtraContext = String(normalizeUtf8Value(extraContext || '')).trim();
 
-    const conversation = await prisma.conversation.create({
-      data: {
-        conversation_id: `conv_${randomUUID()}`,
-        bot_id: botId,
-        user_id: userId,
-        folder_id: normalizedFolderId,
-        title: normalizedTitle || null,
-        extra_context: normalizedExtraContext || null
-      },
-      include: {
-        bot: {
-          select: {
-            bot_id: true,
-            name: true,
-            avatar: true,
-            scene: true,
-            type: true
-          }
-        },
-        _count: {
-          select: { messages: true }
-        }
+    const conversationId = `conv_${randomUUID()}`;
+    const conversation = await prisma.$transaction(async (tx) => {
+      let resolvedFolderId = normalizedFolderId;
+      if (!resolvedFolderId) {
+        const createdFolder = await tx.folder.create({
+          data: {
+            user_id: userId,
+            name: this.buildDefaultFolderNameForConversation(normalizedTitle || null, bot.name)
+          },
+          select: { folder_id: true }
+        });
+        resolvedFolderId = createdFolder.folder_id;
       }
+
+      return tx.conversation.create({
+        data: {
+          conversation_id: conversationId,
+          bot_id: botId,
+          user_id: userId,
+          folder_id: resolvedFolderId,
+          title: normalizedTitle || null,
+          extra_context: normalizedExtraContext || null
+        },
+        include: {
+          bot: {
+            select: {
+              bot_id: true,
+              name: true,
+              avatar: true,
+              scene: true,
+              type: true
+            }
+          },
+          _count: {
+            select: { messages: true }
+          }
+        }
+      });
     });
 
     return normalizeUtf8Value(conversation);
