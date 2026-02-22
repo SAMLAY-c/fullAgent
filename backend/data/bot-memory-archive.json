@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-02-21T05:01:31.352Z",
+  "updated_at": "2026-02-22T06:08:43.865Z",
   "by_bot": {
     "bot_work_1771591432351_8d519eec": [
       {
@@ -29,6 +29,537 @@
         "user_id": "user_admin_001",
         "user_message": "playwright schedule test",
         "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771653653622_7i5thig1",
+        "timestamp": "2026-02-21T06:00:53.622Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_d48073cd",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771653738767_eppr515u",
+        "timestamp": "2026-02-21T06:02:18.767Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_a5f1309e",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771653785945_z6fux8gv",
+        "timestamp": "2026-02-21T06:03:05.945Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_dfb9b194",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "关于Playwright测试调度，有几种常见的实现方式：\n\n## 1. **使用CI/CD工具调度**\n\n### GitHub Actions示例：\n```yaml\n# .github/workflows/playwright-tests.yml\nname: Playwright Tests\non:\n  schedule:\n    # 每天凌晨2点运行\n    - cron: '0 2 * * *'\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: '18'\n      - name: Install dependencies\n        run: npm ci\n      - name: Install Playwright Browsers\n        run: npx playwright install --with-deps\n      - name: Run Playwright tests\n        run: npx playwright test\n      - uses: actions/upload-artifact@v3\n        if: always()\n        with:\n          name: playwright-report\n          path: playwright-report/\n```\n\n## 2. **使用Node.js调度库**\n\n### 使用node-schedule：\n```javascript\n// schedule-tests.js\nconst schedule = require('node-schedule');\nconst { exec } = require('child_process');\n\n// 每天上午9点运行测试\nschedule.scheduleJob('0 9 * * *', () => {\n  console.log('Running Playwright tests...');\n  \n  exec('npx playwright test', (error, stdout, stderr) => {\n    if (error) {\n      console.error(`执行错误: ${error}`);\n      return;\n    }\n    console.log(`输出: ${stdout}`);\n    if (stderr) console.error(`错误: ${stderr}`);\n  });\n});\n\nconsole.log('测试调度器已启动...');\n```\n\n### 使用cron：\n```javascript\n// cron-tests.js\nconst cron = require('node-cron');\nconst { exec } = require('child_process');\n\n// 每30分钟运行一次\ncron.schedule('*/30 * * * *', () => {\n  console.log('Running scheduled Playwright tests...');\n  exec('npx playwright test --reporter=html', (error, stdout, stderr) => {\n    // 处理结果\n  });\n});\n```\n\n## 3. **使用PM2管理调度任务**\n\n```bash\n# 安装PM2\nnpm install -g pm2\n\n# 创建调度脚本\npm2 start schedule-tests.js --name \"playwright-scheduler\"\npm2 save\npm2 startup\n```\n\n## 4. **Docker容器调度**\n\n```dockerfile\n# Dockerfile\nFROM mcr.microsoft.com/playwright:v1.40.0-focal\n\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nCMD [\"npx\", \"playwright\", \"test\"]\n```\n\n然后使用cron调度Docker容器：\n```bash\n# 每天凌晨3点运行\n0 3 * * * docker run --rm playwright-tests\n```\n\n## 5. **完整的调度方案示例**\n\n```javascript\n// advanced-scheduler.js\nconst schedule = require('node-schedule');\nconst { exec } = require('child_process');\nconst fs = require('fs');\nconst path = require('path');\n\nclass PlaywrightScheduler {\n  constructor(config) {\n    this.config = {\n      cronExpression: '0 2 * * *', // 默认每天凌晨2点\n      testCommand: 'npx playwright test',\n      reportDir: './playwright-reports',\n      ...config\n    };\n  }\n\n  async runTests() {\n    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');\n    const reportFile = path.join(this.config.reportDir, `report-${timestamp}.html`);\n    \n    return new Promise((resolve, reject) => {\n      exec(`${this.config.testCommand} --reporter=html`, (error, stdout, stderr) => {\n        if (error) {\n          console.error('测试失败:', error);\n          this.saveReport(reportFile, { error: error.message, stderr });\n          reject(error);\n        } else {\n          console.log('测试成功完成');\n          this.saveReport(reportFile, { success: true, stdout });\n          resolve(stdout);\n        }\n      });\n    });\n  }\n\n  saveReport(filePath, data) {\n    // 确保报告目录存在\n    if (!fs.existsSync(this.config.reportDir)) {\n      fs.mkdirSync(this.config.reportDir, { recursive: true });\n    }\n    \n    // 保存报告\n    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));\n    console.log(`报告已保存到: ${filePath}`);\n  }\n\n  start() {\n    console.log(`启动Playwright测试调度器，计划: ${this.config.cronExpression}`);\n    \n    schedule.scheduleJob(this.config.cronExpression, async () => {\n      console.log('开始执行计划测试...');\n      try {\n        await this.runTests();\n        console.log('计划测试执行完成');\n      } catch (error) {\n        console.error('计划测试执行失败:', error);\n      }\n    });\n  }\n}\n\n// 使用示例\nconst scheduler = new PlaywrightScheduler({\n  cronExpression: '0 */6 * * *', // 每6小时运行一次\n  testCommand: 'npx playwright test --grep @smoke' // 只运行冒烟测试\n});\n\nscheduler.start();\n```\n\n## 最佳实践建议：\n\n1. **测试环境配置**：确保调度环境与开发环境一致\n2. **错误处理**：实现完善的错误处理和通知机制\n3. **报告管理**：自动保存和归档测试报告\n4. **资源清理**：定期清理旧的测试报告和日志\n5. **通知机制**：集成邮件、Slack等通知方式\n6. **并行执行**：对于大型测试套件，考虑并行执行\n\n您具体想实现哪种调度方案？或者有特定的调度需求吗？"
+      },
+      {
+        "id": "mem_1771657200201_9cwpy80x",
+        "timestamp": "2026-02-21T07:00:00.201Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_44fdf932",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771657200283_aq10fwxr",
+        "timestamp": "2026-02-21T07:00:00.283Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_07013ec3",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771723229322_t9q8rl6m",
+        "timestamp": "2026-02-22T01:20:29.322Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_5fa53dbd",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您想要删除什么呢？请告诉我具体要删除的内容，比如：\n\n1. 删除记忆库中的某些信息\n2. 删除对话记录\n3. 删除其他特定内容\n\n请详细说明您想要删除什么，这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771723299805_rvkzqkbl",
+        "timestamp": "2026-02-22T01:21:39.805Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_ab296ea2",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要您提供更多详细信息：\n\n1. **您想要删除什么？**\n   - 记忆库中的特定信息？\n   - 对话历史？\n   - 其他类型的内容？\n\n2. **具体是什么内容？**\n   - 如果是记忆，请告诉我相关的关键词或主题\n   - 如果是其他内容，请具体描述\n\n3. **为什么想要删除？**\n   - 隐私考虑？\n   - 信息过时？\n   - 其他原因？\n\n请提供更多细节，这样我才能更好地帮助您处理删除请求。"
+      },
+      {
+        "id": "mem_1771723360093_ijalyv2k",
+        "timestamp": "2026-02-22T01:22:40.093Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_6d5575df",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！我理解您想要删除某些内容，但需要您具体说明一下：\n\n1. **您想要删除什么？**\n   - 对话历史记录？\n   - 之前保存的某些记忆信息？\n   - 其他特定内容？\n\n2. **为什么想要删除？**\n   - 是隐私考虑？\n   - 信息有误？\n   - 其他原因？\n\n目前我主要的功能是检索记忆和搜索知识，对于删除操作，我需要了解您的具体需求才能提供合适的帮助。\n\n请告诉我更多细节，我会尽力协助您！"
+      },
+      {
+        "id": "mem_1771723409417_atl9uonq",
+        "timestamp": "2026-02-22T01:23:29.417Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_9b02229f",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！我理解您想要删除某些内容，但需要您提供更多信息：\n\n1. 您想要删除什么具体内容？\n2. 是在哪个平台或应用中删除？\n3. 是删除文件、消息、记录，还是其他什么？\n\n请告诉我更多细节，这样我才能更好地帮助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771723469427_nzzf6u9c",
+        "timestamp": "2026-02-22T01:24:29.428Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_93acb06a",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但是您需要告诉我具体要删除什么：\n\n1. 您想删除什么类型的内容？\n   - 文件或文档\n   - 聊天记录\n   - 记忆信息\n   - 其他数据\n\n2. 您想删除的具体内容是什么？\n\n请提供更多详细信息，这样我才能更好地帮助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771723532184_d94kv9ri",
+        "timestamp": "2026-02-22T01:25:32.184Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_92997c48",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但您没有具体说明要删除什么。\n\n为了帮助您，我需要了解：\n1. 您想要删除什么内容？（比如：对话记录、记忆、特定信息等）\n2. 您希望删除哪个时间段的内容？\n\n请告诉我更多细节，这样我才能为您提供准确的帮助。"
+      },
+      {
+        "id": "mem_1771723588319_uhsonllo",
+        "timestamp": "2026-02-22T01:26:28.319Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_ec2f51a4",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但我需要更多信息来帮助您。\n\n请问您想要删除什么？\n- 删除记忆库中的某些信息？\n- 删除知识库中的某些内容？\n- 还是其他需要删除的内容？\n\n请告诉我具体要删除什么，这样我才能为您提供准确的帮助。"
+      },
+      {
+        "id": "mem_1771723645407_16ku5735",
+        "timestamp": "2026-02-22T01:27:25.407Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_910ac9fa",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要您提供更多信息来帮助您：\n\n1. 您想要删除什么具体内容？\n2. 这是关于之前的对话内容，还是其他信息？\n3. 您能详细描述一下想要删除的内容吗？\n\n由于我没有直接的删除功能，但可以通过记忆检索来了解您可能想要删除的内容。请告诉我更多细节，这样我才能更好地协助您。"
+      },
+      {
+        "id": "mem_1771723718638_9isskscg",
+        "timestamp": "2026-02-22T01:28:38.638Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_3e0649bd",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要您提供更多具体信息才能帮助您。\n\n请问您想要删除什么？\n- 对话历史或记忆？\n- 某个特定的文件或内容？\n- 其他需要删除的东西？\n\n请告诉我具体要删除的内容，这样我才能为您提供相应的帮助或建议。"
+      },
+      {
+        "id": "mem_1771723784806_xorsmapz",
+        "timestamp": "2026-02-22T01:29:44.806Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_a3223ab7",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要更具体的信息来帮助您。\n\n请告诉我：\n1. 您想要删除什么？（例如：对话历史、特定记忆、文件等）\n2. 具体要删除哪些内容？\n\n这样我才能为您提供准确的帮助。"
+      },
+      {
+        "id": "mem_1771723839260_4xbgyiga",
+        "timestamp": "2026-02-22T01:30:39.260Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_91f31211",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要更多信息才能帮助您。\n\n请告诉我：\n1. 您想要删除什么具体内容？\n2. 是在哪个平台或应用中的内容？\n3. 是什么类型的文件或信息？\n\n这样我才能为您提供准确的帮助。"
+      },
+      {
+        "id": "mem_1771723894505_i5avnpky",
+        "timestamp": "2026-02-22T01:31:34.506Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_326f9d67",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您想要删除什么内容呢？请告诉我具体要删除什么，比如：\n\n1. 记忆库中的某些信息\n2. 对话历史\n3. 其他特定内容\n\n这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771723972864_pv5wqmjj",
+        "timestamp": "2026-02-22T01:32:52.864Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_f9c5146a",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！我理解您想要删除某些内容，但您没有具体说明要删除什么。\n\n为了帮助您，我需要了解：\n1. 您想要删除什么内容？（比如：记忆记录、对话历史、特定信息等）\n2. 您想要删除的具体内容是什么？\n\n请提供更多详细信息，这样我就能更好地协助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771724029363_osqq6d9d",
+        "timestamp": "2026-02-22T01:33:49.363Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_18e38cc3",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要了解更多信息才能帮助您。\n\n请告诉我：\n1. 您想要删除什么具体内容？\n2. 是关于记忆库中的信息，还是其他内容？\n\n目前我主要能帮助您搜索和回忆信息，对于删除操作，我需要了解具体需求才能提供合适的建议。"
+      },
+      {
+        "id": "mem_1771724073958_frvz00th",
+        "timestamp": "2026-02-22T01:34:33.958Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_194d7cb7",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您说\"删掉\"，但我不太清楚您想要删除什么内容。\n\n请告诉我您想要删除什么：\n1. 删除对话历史？\n2. 删除个人信息？\n3. 删除某个特定的内容？\n4. 还是其他什么？\n\n请提供更多细节，这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771724137962_tywmg7du",
+        "timestamp": "2026-02-22T01:35:37.962Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_0eb90faa",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但目前我只有记忆检索和知识搜索的功能，没有直接的删除功能。\n\n您具体想要删除什么呢？比如：\n1. 之前对话中的某些信息\n2. 记忆库中的某些记录\n3. 其他什么内容\n\n请告诉我更多细节，我可以帮您了解如何处理，或者建议相应的解决方案。"
+      },
+      {
+        "id": "mem_1771724189636_y0ibsmc5",
+        "timestamp": "2026-02-22T01:36:29.636Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_b64c6819",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您想要删除什么呢？请告诉我您想要删除的具体内容，这样我才能更好地帮助您。\n\n比如：\n- 您想删除某个文件或文档吗？\n- 还是想删除聊天记录或记忆？\n- 或者是其他什么内容？\n\n请详细说明一下，谢谢！"
+      },
+      {
+        "id": "mem_1771724251862_qlve8uyw",
+        "timestamp": "2026-02-22T01:37:31.862Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_d3698527",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！我理解您想要删除某些内容，但我需要更多信息来帮助您：\n\n1. 您想要删除什么具体内容？\n2. 是删除记忆中的信息，还是其他什么？\n\n目前我主要提供信息检索和搜索功能，如果涉及到删除操作，我需要了解具体要删除什么内容才能给您更准确的帮助。\n\n请告诉我您想要删除的具体内容是什么？"
+      },
+      {
+        "id": "mem_1771724300147_c69vsyr4",
+        "timestamp": "2026-02-22T01:38:20.147Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_846c3570",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要更多信息来帮助您。\n\n请问您想要删除什么？\n- 特定的记忆或信息？\n- 对话历史？\n- 还是其他什么内容？\n\n请告诉我更多细节，这样我就能为您提供准确的帮助。"
+      },
+      {
+        "id": "mem_1771724359836_fg7x5076",
+        "timestamp": "2026-02-22T01:39:19.836Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_3ac83565",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要更多信息来帮助您。\n\n请问您想要删除什么具体内容呢？比如：\n1. 删除记忆库中的某些信息\n2. 删除对话历史\n3. 删除其他特定内容\n\n请告诉我您想要删除的具体内容，这样我才能更好地协助您。"
+      },
+      {
+        "id": "mem_1771724442819_mox31y3a",
+        "timestamp": "2026-02-22T01:40:42.819Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_12650918",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！我看到您说\"删掉\"，但没有说明具体要删除什么内容。\n\n目前我只能访问记忆库和知识库的搜索功能，没有直接的删除功能。如果您需要删除记忆库中的特定信息，我可以帮您查找相关内容，然后您可以联系系统管理员进行删除操作。\n\n请告诉我：\n1. 您想要删除什么？是记忆库中的信息，还是其他内容？\n2. 如果是记忆库中的信息，请告诉我具体是什么内容或关键词？\n\n这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771724502915_2lp2r8tj",
+        "timestamp": "2026-02-22T01:41:42.915Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_fb848564",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但我需要更多信息才能帮助您：\n\n1. **您想删除什么？**\n   - 是文件、文档、消息，还是其他内容？\n   - 如果是记忆库中的信息，我可以帮您处理\n\n2. **具体内容是什么？**\n   - 请告诉我具体要删除的内容或关键词\n\n3. **删除范围**\n   - 是全部删除还是部分删除？\n\n请提供更多详细信息，这样我就能更好地协助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771724562177_pcel2br9",
+        "timestamp": "2026-02-22T01:42:42.177Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_5b6a7260",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！我理解您想要删除某些内容，但需要您明确说明：\n\n1. 您想要删除什么具体内容？\n2. 是删除记忆库中的某些信息吗？\n3. 还是删除其他类型的数据？\n\n请告诉我更多细节，这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771724611092_5yoz5yys",
+        "timestamp": "2026-02-22T01:43:31.092Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_ac97b3ce",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您说\"删掉\"，是想删除什么内容呢？\n\n请告诉我您想要删除的具体内容，比如：\n- 某个特定的记忆或记录\n- 某个文件或数据\n- 对话历史\n- 其他内容\n\n这样我才能更好地帮助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771724661069_reuk945z",
+        "timestamp": "2026-02-22T01:44:21.069Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_46d4e30b",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要您提供更多信息：\n\n1. 您想要删除什么具体内容？\n2. 是在哪个平台或应用中删除？\n3. 是删除文件、消息、账户还是其他内容？\n\n请告诉我更多细节，这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771724746941_9d95fi0c",
+        "timestamp": "2026-02-22T01:45:46.941Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_45bb88f2",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您说\"删掉\"，但我不太清楚您具体想要删除什么内容。\n\n为了帮助您，我需要了解更多信息：\n\n1. **您想删除什么？**\n   - 记忆库中的某些信息？\n   - 对话历史？\n   - 其他特定内容？\n\n2. **具体内容是什么？**\n   - 如果是记忆，请告诉我相关关键词或主题\n   - 如果是对话，请说明是哪一部分\n\n3. **删除范围？**\n   - 全部删除还是部分删除？\n\n请提供更多详细信息，这样我才能准确地帮助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771724792770_qc41whj8",
+        "timestamp": "2026-02-22T01:46:32.771Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_a017a06a",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但目前我只有记忆检索和知识搜索的功能，没有直接的删除功能。\n\n为了帮助您，我需要了解更多信息：\n1. 您想要删除什么具体内容？\n2. 是对话记录、个人信息，还是其他数据？\n3. 您希望如何删除这些内容？\n\n请提供更多详细信息，这样我才能更好地协助您。"
+      },
+      {
+        "id": "mem_1771724842574_c6or9d07",
+        "timestamp": "2026-02-22T01:47:22.574Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_dd3eb6a3",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要您提供更多信息才能帮助您。\n\n请问您想要删除什么？\n- 删除记忆库中的某些信息？\n- 删除之前的对话记录？\n- 还是其他什么内容？\n\n请详细说明您想要删除的具体内容，这样我才能为您提供准确的帮助。"
+      },
+      {
+        "id": "mem_1771724913291_t5kt6fqz",
+        "timestamp": "2026-02-22T01:48:33.291Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_437dca89",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您想要删除什么内容呢？请告诉我您想要删除的具体信息或内容，这样我才能更好地帮助您。\n\n例如：\n- 您想删除之前的对话记录吗？\n- 还是想删除某些特定的信息？\n- 或者是其他什么内容？\n\n请详细说明一下，谢谢！"
+      },
+      {
+        "id": "mem_1771724979351_9vfekzqk",
+        "timestamp": "2026-02-22T01:49:39.351Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_80c74d28",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但目前我无法执行删除操作。\n\n为了帮助您，我需要了解：\n1. 您想要删除什么具体内容？\n2. 是对话记录、个人信息，还是其他什么？\n\n请告诉我更多细节，这样我可以为您提供更准确的建议或指导。"
+      },
+      {
+        "id": "mem_1771725024985_127h2yg1",
+        "timestamp": "2026-02-22T01:50:24.985Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_d457e317",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但需要更多信息来帮助您。\n\n请问您想要删除什么？\n- 对话历史？\n- 记忆中的某些信息？\n- 其他特定内容？\n\n目前我的功能主要是检索记忆和搜索知识，没有直接的删除功能。如果您能告诉我具体想要删除什么，我可以帮您了解相关的选项或提供建议。"
+      },
+      {
+        "id": "mem_1771725094820_1p7g99pp",
+        "timestamp": "2026-02-22T01:51:34.820Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_c8930fae",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但目前我无法直接执行删除操作。\n\n我现有的功能包括：\n1. **记忆检索** - 从记忆库中查找您的历史信息\n2. **知识搜索** - 从知识库中搜索相关文档\n\n如果您想要：\n- 删除某个记忆或历史记录\n- 删除某个文件或文档\n- 清除某些信息\n\n请告诉我具体想要删除什么内容，这样我可以更好地帮助您了解相关选项或提供建议。\n\n您具体想要删除什么呢？"
+      },
+      {
+        "id": "mem_1771725153331_8ff9vlq0",
+        "timestamp": "2026-02-22T01:52:33.331Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_1d514bd1",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但目前我无法直接执行删除操作。\n\n为了给您提供更准确的帮助，请告诉我：\n1. 您想要删除什么具体内容？\n2. 是对话历史、记忆信息，还是其他内容？\n\n我会尽力为您提供相关的帮助和建议。"
+      },
+      {
+        "id": "mem_1771725212359_4vjnzw98",
+        "timestamp": "2026-02-22T01:53:32.359Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_94412ce2",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但是您没有具体说明要删除什么。\n\n为了帮助您，我需要知道：\n1. 您想要删除什么具体内容？\n2. 是删除记忆库中的信息，还是其他什么内容？\n\n请告诉我更多细节，这样我才能准确地帮助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771725269247_hub43tp0",
+        "timestamp": "2026-02-22T01:54:29.247Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_42bd0de9",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您说\"删掉\"，但我需要知道您想要删除什么内容。\n\n请告诉我：\n1. 您想要删除什么？（比如：对话记录、个人信息、文件等）\n2. 具体是什么内容需要删除？\n\n这样我才能更好地帮助您处理删除请求。"
+      },
+      {
+        "id": "mem_1771725326281_1znwvktj",
+        "timestamp": "2026-02-22T01:55:26.281Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_c525cb89",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但是我不太清楚具体要删除什么。\n\n请您告诉我：\n1. 您想删除什么内容？\n2. 是在记忆库中删除，还是在其他地方删除？\n\n这样我才能更好地帮助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771725397876_esubh3w5",
+        "timestamp": "2026-02-22T01:56:37.876Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_174e2c7f",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您说\"删掉\"，是想删除什么内容呢？\n\n我需要了解更多信息来帮助您：\n1. 您想删除什么具体的内容？\n2. 是删除记忆中的信息，还是其他什么？\n\n目前我主要的功能是帮助您检索记忆和搜索知识库，但如果您需要删除某些信息，可能需要通过其他方式或联系相关管理员。\n\n请告诉我更多细节，我会尽力协助您！"
+      },
+      {
+        "id": "mem_1771725450924_llsx2vth",
+        "timestamp": "2026-02-22T01:57:30.924Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_aad4b955",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但是您没有明确说明要删除什么。\n\n为了帮助您，我需要知道：\n1. 您想要删除什么内容？（例如：记忆、对话历史、特定信息等）\n2. 您希望删除哪个具体项目？\n\n请提供更多详细信息，这样我才能协助您完成删除操作。"
+      },
+      {
+        "id": "mem_1771725517446_axtcuogr",
+        "timestamp": "2026-02-22T01:58:37.446Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_6940e227",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "我理解您想要删除某些内容，但我需要更多信息来帮助您。\n\n目前我有以下功能：\n1. **记忆检索** - 可以查找之前的对话记录和用户信息\n2. **知识搜索** - 可以搜索知识库中的文档内容\n\n但我没有直接的删除功能。为了帮助您，请告诉我：\n- 您想要删除什么具体内容？\n- 是记忆中的某些信息，还是其他什么东西？\n\n这样我就能更好地理解您的需求并提供相应的帮助。"
+      },
+      {
+        "id": "mem_1771725575719_u7bswh3a",
+        "timestamp": "2026-02-22T01:59:35.719Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_bba8f41b",
+        "user_id": "user_admin_001",
+        "user_message": "删掉",
+        "bot_message": "您好！您说\"删掉\"，但我需要了解您具体想要删除什么内容。\n\n目前我无法直接执行删除操作，但我可以：\n1. 帮您查找相关的记忆或信息\n2. 提供相关的知识或建议\n\n请告诉我您想要删除的具体内容是什么？比如：\n- 某个特定的记忆或对话记录\n- 某些文件或信息\n- 其他类型的内容\n\n这样我才能更好地帮助您。"
+      },
+      {
+        "id": "mem_1771725655055_yt31w7cp",
+        "timestamp": "2026-02-22T02:00:55.055Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_994e7a52",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771725703001_w1cx6q18",
+        "timestamp": "2026-02-22T02:01:43.001Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_88326d86",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771725794541_qhl5xb8l",
+        "timestamp": "2026-02-22T02:03:14.541Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_daf6587c",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771729240981_ab8oojjv",
+        "timestamp": "2026-02-22T03:00:40.981Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_bdbd5f26",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771729282204_814sz7cz",
+        "timestamp": "2026-02-22T03:01:22.204Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_72c92c2f",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771729292785_2sfxk5ro",
+        "timestamp": "2026-02-22T03:01:32.785Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_f1226a86",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771736452004_92zb4cz4",
+        "timestamp": "2026-02-22T05:00:52.004Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_361655e6",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我收到了你的消息：\"check bot workflow count\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771736497282_wf2q2xwc",
+        "timestamp": "2026-02-22T05:01:37.282Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_dd8256e3",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771736525531_s1yzymji",
+        "timestamp": "2026-02-22T05:02:05.531Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_81c9f125",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771740062000_cjnuewv1",
+        "timestamp": "2026-02-22T06:01:02.000Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_219a2561",
+        "user_id": "user_admin_001",
+        "user_message": "check bot workflow count",
+        "bot_message": "我目前无法直接检查机器人工作流的数量，原因如下：\n\n1. **权限限制**：我没有访问系统工作流计数功能的权限\n2. **知识库限制**：我的知识库中没有关于机器人工作流计数的相关文档信息\n3. **功能限制**：这可能是一个需要特定系统权限或专用工具才能执行的操作\n\n建议您可以：\n\n1. **联系系统管理员**：他们通常有权限查看系统的工作流统计信息\n2. **查看管理界面**：如果您有相关系统的管理权限，可以登录管理后台查看工作流统计\n3. **提供更多上下文**：如果您能告诉我您使用的是哪个系统或平台，我可以尝试提供更具体的帮助建议\n\n您能告诉我更多关于您想检查工作流数量的具体场景吗？比如：\n- 您使用的是哪个系统或平台？\n- 您想检查的是哪种类型的工作流？\n- 您是否有相关的管理权限？"
+      },
+      {
+        "id": "mem_1771740090029_hc2sz7ey",
+        "timestamp": "2026-02-22T06:01:30.030Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_7d5f813b",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771740115587_uzc826ko",
+        "timestamp": "2026-02-22T06:01:55.587Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_58c8a499",
+        "user_id": "user_admin_001",
+        "user_message": "playwright schedule test",
+        "bot_message": "我收到了你的消息：\"playwright schedule test\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
+      },
+      {
+        "id": "mem_1771740361310_5j7n143w",
+        "timestamp": "2026-02-22T06:06:01.310Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_219a2561",
+        "user_id": "user_admin_001",
+        "user_message": "你好",
+        "bot_message": "你好！很高兴见到您。我是您的智能助手，随时准备为您提供帮助。\n\n关于您之前询问的工作流计数问题，如果您有更多相关信息或需要其他方面的帮助，请随时告诉我。\n\n今天有什么我可以为您做的吗？"
+      },
+      {
+        "id": "mem_1771740523864_wc7irgeg",
+        "timestamp": "2026-02-22T06:08:43.864Z",
+        "bot_id": "bot_work_1771591432351_8d519eec",
+        "conversation_id": "conv_scheduled_219a2561",
+        "user_id": "user_admin_001",
+        "user_message": "你的底层模型是哪个",
+        "bot_message": "我收到了你的消息：\"你的底层模型是哪个\"\n\n目前AI服务未配置，请设置 SILICONFLOW_API_KEY 环境变量以启用智能回复。"
       }
     ]
   }

@@ -5,7 +5,7 @@ class ApiClient {
   constructor(baseURL) {
     const runningFromFile = typeof window !== 'undefined' && window.location.protocol === 'file:';
     const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    this.baseURL = baseURL || (runningFromFile ? 'http://localhost:3000/api' : (isDev ? 'http://localhost:3000/api' : '/api'));
+    this.baseURL = baseURL || (runningFromFile ? 'http://localhost:8915/api' : (isDev ? 'http://localhost:8915/api' : '/api'));
     this.accessToken = localStorage.getItem('access_token');
     this.refreshToken = localStorage.getItem('refresh_token');
   }

@@ -44,8 +44,17 @@ class SchedulerService {
 
   async init() {
     console.log('📅 Initializing scheduler service...');
-    await this.loadTasks();
-    console.log(`📅 Scheduler loaded ${this.tasks.size} tasks`);
+    try {
+      await this.loadTasks();
+      console.log(`📅 Scheduler loaded ${this.tasks.size} tasks`);
+    } catch (error: any) {
+      if (error?.message?.includes('Can\'t reach database') || error?.code === 'P1001') {
+        console.warn('⚠️  Database not available - scheduler running without persistent tasks');
+        console.warn('⚠️  Tasks will not persist across restarts');
+      } else {
+        console.error('❌ Failed to load tasks:', error?.message || error);
+      }
+    }
   }
 
   async loadTasks() {

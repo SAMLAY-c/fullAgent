@@ -35,36 +35,88 @@ class AuthService {
   private readonly JWT_EXPIRES_IN = '15m';
   private readonly REFRESH_TOKEN_EXPIRES_IN = '7d';
 
+  // 测试模式用户（数据库不可用时使用）
+  private readonly TEST_USERS = {
+    admin: {
+      user_id: 'test_admin_001',
+      username: 'admin',
+      email: 'admin@bot-agent.local',
+      password: 'admin123',
+      role: 'admin',
+      avatar: null
+    }
+  };
+
+  private isDatabaseError(error: any): boolean {
+    const errorMsg = error?.message || '';
+    return errorMsg.includes('Can\'t reach database') ||
+           errorMsg.includes('ECONNREFUSED') ||
+           error?.code === 'P1001';
+  }
+
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const user = await prisma.user.findUnique({
-      where: { username: data.username }
-    });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { username: data.username }
+      });
 
-    if (!user) {
-      throw new Error('用户不存在');
-    }
+      if (!user) {
+        throw new Error('用户不存在');
+      }
 
-    const isValidPassword = await bcrypt.compare(data.password, user.password_hash);
-    if (!isValidPassword) {
-      throw new Error('密码错误');
-    }
+      const isValidPassword = await bcrypt.compare(data.password, user.password_hash);
+      if (!isValidPassword) {
+        throw new Error('密码错误');
+      }
 
-    const tokens = await this.generateTokens({
-      user_id: user.user_id,
-      username: user.username,
-      role: user.role
-    });
-
-    return {
-      ...tokens,
-      user: {
+      const tokens = await this.generateTokens({
         user_id: user.user_id,
         username: user.username,
-        email: user.email,
-        avatar: user.avatar,
         role: user.role
+      });
+
+      return {
+        ...tokens,
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar,
+          role: user.role
+        }
+      };
+    } catch (error: any) {
+      // 数据库不可用时，尝试使用测试账号
+      if (this.isDatabaseError(error)) {
+        console.warn('⚠️  Database unavailable, using test mode');
+
+        const testUser = this.TEST_USERS[data.username as keyof typeof this.TEST_USERS];
+        if (testUser && testUser.password === data.password) {
+          console.log(`✅ Test user login: ${testUser.username}`);
+
+          const tokens = this.generateTokensWithoutDb({
+            user_id: testUser.user_id,
+            username: testUser.username,
+            role: testUser.role
+          });
+
+          return {
+            ...tokens,
+            user: {
+              user_id: testUser.user_id,
+              username: testUser.username,
+              email: testUser.email,
+              avatar: testUser.avatar,
+              role: testUser.role
+            }
+          };
+        }
+
+        throw new Error('用户名或密码错误（测试模式：使用 admin/admin123）');
       }
-    };
+
+      throw error;
+    }
   }
 
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
@@ -123,29 +175,77 @@ class AuthService {
           role: user.role
         }
       };
-    } catch (error) {
+    } catch (error: any) {
+      // 数据库不可用时，检查是否是测试用户
+      if (this.isDatabaseError(error)) {
+        console.warn('⚠️  Database unavailable, using test mode for refresh');
+
+        try {
+          const payload = jwt.verify(refreshToken, this.JWT_SECRET) as TokenPayload;
+
+          // 检查是否是测试用户
+          const testUser = Object.values(this.TEST_USERS).find(u => u.user_id === payload.user_id);
+          if (testUser) {
+            const tokens = this.generateTokensWithoutDb(payload);
+            return {
+              ...tokens,
+              user: {
+                user_id: testUser.user_id,
+                username: testUser.username,
+                email: testUser.email,
+                avatar: testUser.avatar,
+                role: testUser.role
+              }
+            };
+          }
+        } catch (jwtError) {
+          // JWT 验证失败
+        }
+
+        throw new Error('Refresh Token 无效或已过期');
+      }
+
       throw new Error('Refresh Token 无效或已过期');
     }
   }
 
   async getCurrentUser(userId: string) {
-    const user = await prisma.user.findUnique({
-      where: { user_id: userId },
-      select: {
-        user_id: true,
-        username: true,
-        email: true,
-        avatar: true,
-        role: true,
-        created_at: true
-      }
-    });
+    try {
+      const user = await prisma.user.findUnique({
+        where: { user_id: userId },
+        select: {
+          user_id: true,
+          username: true,
+          email: true,
+          avatar: true,
+          role: true,
+          created_at: true
+        }
+      });
 
-    if (!user) {
+      if (!user) {
+        throw new Error('用户不存在');
+      }
+
+      return user;
+    } catch (error: any) {
+      // 数据库不可用时，检查是否是测试用户
+      if (this.isDatabaseError(error)) {
+        const testUser = Object.values(this.TEST_USERS).find(u => u.user_id === userId);
+        if (testUser) {
+          return {
+            user_id: testUser.user_id,
+            username: testUser.username,
+            email: testUser.email,
+            avatar: testUser.avatar,
+            role: testUser.role,
+            created_at: new Date()
+          };
+        }
+      }
+
       throw new Error('用户不存在');
     }
-
-    return user;
   }
 
   async generateTokens(payload: TokenPayload) {
@@ -163,33 +263,60 @@ class AuthService {
     );
 
     // 存储 refresh token 到数据库
-    // 先撤销该用户所有未撤销的旧 refresh tokens，避免重复
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7天后过期
+    try {
+      // 先撤销该用户所有未撤销的旧 refresh tokens，避免重复
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7天后过期
 
-    await prisma.refreshToken.updateMany({
-      where: {
-        user_id: payload.user_id,
-        revoked_at: null
-      },
-      data: {
-        revoked_at: new Date()
-      }
-    });
+      await prisma.refreshToken.updateMany({
+        where: {
+          user_id: payload.user_id,
+          revoked_at: null
+        },
+        data: {
+          revoked_at: new Date()
+        }
+      });
 
-    await prisma.refreshToken.create({
-      data: {
-        token: refresh_token,
-        user_id: payload.user_id,
-        expires_at: expiresAt
-      }
-    });
+      await prisma.refreshToken.create({
+        data: {
+          token: refresh_token,
+          user_id: payload.user_id,
+          expires_at: expiresAt
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️  Failed to store refresh token in database (test mode)');
+    }
 
     return {
       access_token,
       refresh_token,
       token_type: 'Bearer',
       expires_in: 15 * 60 // 15分钟，单位：秒
+    };
+  }
+
+  // 测试模式：生成 token 但不存储到数据库
+  generateTokensWithoutDb(payload: TokenPayload) {
+    const access_token = jwt.sign(payload, this.JWT_SECRET, {
+      expiresIn: this.JWT_EXPIRES_IN
+    });
+
+    const refresh_token = jwt.sign(
+      {
+        user_id: payload.user_id,
+        jti: randomUUID()
+      },
+      this.JWT_SECRET,
+      { expiresIn: this.REFRESH_TOKEN_EXPIRES_IN }
+    );
+
+    return {
+      access_token,
+      refresh_token,
+      token_type: 'Bearer',
+      expires_in: 15 * 60
     };
   }
 
@@ -202,11 +329,20 @@ class AuthService {
   }
 
   async logout(refreshToken: string) {
-    // 撤销 refresh token
-    await prisma.refreshToken.updateMany({
-      where: { token: refreshToken },
-      data: { revoked_at: new Date() }
-    });
+    try {
+      // 撤销 refresh token
+      await prisma.refreshToken.updateMany({
+        where: { token: refreshToken },
+        data: { revoked_at: new Date() }
+      });
+    } catch (error: any) {
+      // 数据库不可用时忽略错误（测试模式）
+      if (this.isDatabaseError(error)) {
+        console.warn('⚠️  Database unavailable, logout in test mode');
+        return;
+      }
+      throw error;
+    }
   }
 }
 

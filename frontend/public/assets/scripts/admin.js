@@ -565,7 +565,7 @@ const Dashboard = (() => {
 
   async function loadDashboardStats() {
     try {
-      const data = await requestJson('http://localhost:3000/api/stats/dashboard');
+      const data = await requestJson('http://localhost:8915/api/stats/dashboard');
 
       // 更新 Bot 统计
       if (el('stat-bot-count')) {
@@ -610,7 +610,7 @@ const Dashboard = (() => {
 
   async function loadRecentActivities() {
     try {
-      const data = await requestJson('http://localhost:3000/api/stats/recent-activities');
+      const data = await requestJson('http://localhost:8915/api/stats/recent-activities');
 
       if (el('recent-activities') && data.activities && data.activities.length > 0) {
         el('recent-activities').innerHTML = data.activities.map(activity => {
@@ -675,7 +675,7 @@ let logsSelectedConversationId = '';
 function toApiEndpoint(url) {
   if (typeof url !== 'string') return url;
   return url
-    .replace(/^https?:\/\/localhost:3000\/api/, '')
+    .replace(/^https?:\/\/localhost:8915\/api/, '')
     .replace(/^\/api/, '');
 }
 
@@ -693,7 +693,7 @@ function formatTrend(value) {
 
 async function updateNavBadges() {
   try {
-    const stats = await requestJson('http://localhost:3000/api/stats/dashboard');
+    const stats = await requestJson('http://localhost:8915/api/stats/dashboard');
     const botsBadge = document.getElementById('nav-bots-badge');
     const workflowsBadge = document.getElementById('nav-workflows-badge');
     const groupsBadge = document.getElementById('nav-groups-badge');
@@ -728,7 +728,7 @@ async function loadGroupsPage() {
   const container = document.getElementById('groups-container');
   if (!container) return;
 
-  const data = await requestJson('http://localhost:3000/api/groups?page=1&page_size=50');
+  const data = await requestJson('http://localhost:8915/api/groups?page=1&page_size=50');
   const groups = Array.isArray(data?.items) ? data.items : [];
 
   if (groups.length === 0) {
@@ -790,8 +790,8 @@ async function loadGroupsPage() {
 
 async function loadAnalyticsPage() {
   const [overview, trends] = await Promise.all([
-    requestJson('http://localhost:3000/api/analytics/overview'),
-    requestJson('http://localhost:3000/api/analytics/trends')
+    requestJson('http://localhost:8915/api/analytics/overview'),
+    requestJson('http://localhost:8915/api/analytics/trends')
   ]);
   const setText = (id, value) => {
     const node = document.getElementById(id);
@@ -829,7 +829,7 @@ function currentLogsFilters() {
 async function ensureLogsBotFilterOptions() {
   const select = document.getElementById('logs-bot-filter');
   if (!select || lazyLoadedPages.has('logs-bot-filter-loaded')) return;
-  const botsRes = await requestJson('http://localhost:3000/api/bots?page=1&page_size=200');
+  const botsRes = await requestJson('http://localhost:8915/api/bots?page=1&page_size=200');
   const bots = Array.isArray(botsRes?.bots) ? botsRes.bots : [];
   const options = ['<option value="">全部 Bot</option>']
     .concat(bots.map((bot) => `<option value="${bot.bot_id}">${bot.name || bot.bot_id}</option>`));
@@ -878,7 +878,7 @@ function bindLogsActions() {
       if (endDate) q.set('end_date', endDate);
 
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:3000/api/logs/export/messages.csv?${q.toString()}`, {
+      const response = await fetch(`http://localhost:8915/api/logs/export/messages.csv?${q.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!response.ok) {
@@ -915,8 +915,8 @@ async function loadLogsPage() {
   if (endDate) q.set('end_date', endDate);
 
   const [conversations, messages] = await Promise.all([
-    requestJson(`http://localhost:3000/api/logs/conversations?${q.toString()}`),
-    requestJson(`http://localhost:3000/api/logs/messages?${q.toString()}`)
+    requestJson(`http://localhost:8915/api/logs/conversations?${q.toString()}`),
+    requestJson(`http://localhost:8915/api/logs/messages?${q.toString()}`)
   ]);
   const cBody = document.getElementById('logs-conversations-body');
   if (cBody) {
@@ -941,7 +941,7 @@ async function loadLogsPage() {
 async function ensureAiInsightsBotFilterOptions() {
   const select = document.getElementById('ai-bot-filter');
   if (!select || lazyLoadedPages.has('ai-bot-filter-loaded')) return;
-  const botsRes = await requestJson('http://localhost:3000/api/bots?page=1&page_size=200');
+  const botsRes = await requestJson('http://localhost:8915/api/bots?page=1&page_size=200');
   const bots = Array.isArray(botsRes?.bots) ? botsRes.bots : [];
   const options = ['<option value="">全部 Bot</option>']
     .concat(bots.map((bot) => `<option value="${bot.bot_id}">${bot.name || bot.bot_id}</option>`));
@@ -978,7 +978,7 @@ function bindAiInsightsActions() {
       if (endDate) q.set('end_date', endDate);
 
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:3000/api/logs/export/messages.csv?${q.toString()}`, {
+      const response = await fetch(`http://localhost:8915/api/logs/export/messages.csv?${q.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!response.ok) {
@@ -1014,7 +1014,7 @@ function bindAiInsightsActions() {
         knowledge_types: collectKnowledgeTypes()
       };
       if (resultNode) resultNode.textContent = '分析中...';
-      const result = await requestJson('http://localhost:3000/api/analytics/ai-analysis', {
+      const result = await requestJson('http://localhost:8915/api/analytics/ai-analysis', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
@@ -1036,7 +1036,7 @@ async function loadAiInsightsPage() {
 }
 
 async function loadTemplatesPage() {
-  const data = await requestJson('http://localhost:3000/api/templates');
+  const data = await requestJson('http://localhost:8915/api/templates');
   const body = document.getElementById('templates-body');
   if (!body) return;
 
@@ -1046,7 +1046,7 @@ async function loadTemplatesPage() {
 
   body.querySelectorAll('button[data-template-id]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      await requestJson(`http://localhost:3000/api/templates/${btn.getAttribute('data-template-id')}`, { method: 'DELETE' });
+      await requestJson(`http://localhost:8915/api/templates/${btn.getAttribute('data-template-id')}`, { method: 'DELETE' });
       await loadTemplatesPage();
     });
   });
@@ -1062,7 +1062,7 @@ async function loadTemplatesPage() {
         alert('请填写完整模板信息');
         return;
       }
-      await requestJson('http://localhost:3000/api/templates', {
+      await requestJson('http://localhost:8915/api/templates', {
         method: 'POST',
         body: JSON.stringify({ name, scene, content })
       });
@@ -1074,7 +1074,7 @@ async function loadTemplatesPage() {
 }
 
 async function loadKnowledgePage() {
-  const data = await requestJson('http://localhost:3000/api/knowledge/files?page=1&page_size=20');
+  const data = await requestJson('http://localhost:8915/api/knowledge/files?page=1&page_size=20');
   const body = document.getElementById('knowledge-body');
   if (!body) return;
   body.innerHTML = (data.items || [])
@@ -1082,14 +1082,14 @@ async function loadKnowledgePage() {
     .join('');
   body.querySelectorAll('button[data-file-id]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      await requestJson(`http://localhost:3000/api/knowledge/files/${btn.getAttribute('data-file-id')}`, { method: 'DELETE' });
+      await requestJson(`http://localhost:8915/api/knowledge/files/${btn.getAttribute('data-file-id')}`, { method: 'DELETE' });
       await loadKnowledgePage();
     });
   });
 }
 
 async function loadSettingsPage() {
-  const data = await requestJson('http://localhost:3000/api/system/settings');
+  const data = await requestJson('http://localhost:8915/api/system/settings');
   const appName = document.getElementById('setting-app-name');
   const model = document.getElementById('setting-model');
   const retention = document.getElementById('setting-retention');
@@ -1103,7 +1103,7 @@ async function loadSettingsPage() {
   if (saveBtn && !lazyLoadedPages.has('settings-save-bind')) {
     lazyLoadedPages.add('settings-save-bind');
     saveBtn.addEventListener('click', async () => {
-      await requestJson('http://localhost:3000/api/system/settings', {
+      await requestJson('http://localhost:8915/api/system/settings', {
         method: 'PUT',
         body: JSON.stringify({
           app_name: document.getElementById('setting-app-name')?.value?.trim() || '',
