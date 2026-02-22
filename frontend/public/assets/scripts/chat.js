@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   function redirectToLoginWithReturnTo() {
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (currentPath.includes('login.html')) {
@@ -49,7 +49,12 @@
     modelSelect: document.getElementById('modelSelect'),
     temperatureInput: document.getElementById('temperatureInput'),
     maxTokensInput: document.getElementById('maxTokensInput'),
-    saveConfigBtn: document.getElementById('saveConfigBtn')
+    saveConfigBtn: document.getElementById('saveConfigBtn'),
+    trashToggleBtn: null,
+    trashModal: null,
+    trashList: null,
+    trashCloseBtn: null,
+    trashRefreshBtn: null
   };
 
   function escapeHtml(text) {
@@ -73,9 +78,68 @@
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
   }
 
+  function formatDateTime(isoOrDate) {
+    const date = isoOrDate instanceof Date ? isoOrDate : new Date(isoOrDate || Date.now());
+    if (Number.isNaN(date.getTime())) return '--';
+    return date.toLocaleString('zh-CN');
+  }
+
   function getCurrentBot() {
     const sceneBots = state.botsByScene[state.selectedScene] || [];
     return sceneBots.find((b) => b.bot_id === state.selectedBotId) || sceneBots[0] || null;
+  }
+
+  function renderChatPlaceholder(text) {
+    ui.messages.innerHTML = `
+      <div class="message bot">
+        <div class="message-avatar">${ui.chatAvatar.textContent || '馃'}</div>
+        <div class="message-wrapper">
+          <div class="message-content">${escapeHtml(text)}</div>
+          <div class="message-time">${formatTime(new Date())}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function ensureTrashUI() {
+    if (!ui.trashToggleBtn) {
+      const tabSwitcher = document.querySelector('.tab-switcher');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.id = 'trashToggleBtn';
+      btn.className = 'sidebar-tool-btn';
+      btn.innerHTML = '<span>🗑️</span><span>回收站</span>';
+      tabSwitcher?.insertAdjacentElement('afterend', btn);
+      ui.trashToggleBtn = btn;
+    }
+
+    if (!ui.trashModal) {
+      const modal = document.createElement('div');
+      modal.id = 'trashModal';
+      modal.className = 'trash-modal-mask';
+      modal.innerHTML = `
+        <div class="trash-modal-card" role="dialog" aria-modal="true" aria-labelledby="trashModalTitle">
+          <div class="trash-modal-header">
+            <div>
+              <div class="trash-modal-title" id="trashModalTitle">会话回收站</div>
+              <div class="trash-modal-subtitle">可恢复已删除的话题，也可彻底删除</div>
+            </div>
+            <div class="trash-modal-actions">
+              <button type="button" class="trash-header-btn" id="trashRefreshBtn">刷新</button>
+              <button type="button" class="trash-header-btn" id="trashCloseBtn">关闭</button>
+            </div>
+          </div>
+          <div class="trash-modal-list" id="trashList">
+            <div class="trash-empty">加载中...</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      ui.trashModal = modal;
+      ui.trashList = modal.querySelector('#trashList');
+      ui.trashCloseBtn = modal.querySelector('#trashCloseBtn');
+      ui.trashRefreshBtn = modal.querySelector('#trashRefreshBtn');
+    }
   }
 
   async function ensureAuth() {
@@ -125,6 +189,118 @@
     return botClient.getBotsByScene();
   }
 
+  async function loadDeletedConversations() {
+    const result = await authManager.get('/chat/conversations/deleted');
+    return result.conversations || [];
+  }
+
+  function renderTrashList(conversations) {
+    if (!ui.trashList) return;
+
+    if (!conversations.length) {
+      ui.trashList.innerHTML = '<div class="trash-empty">回收站为空</div>';
+      return;
+    }
+
+    ui.trashList.innerHTML = conversations.map((c) => {
+      const title = escapeHtml(c.title || '未命名话题');
+      const botName = escapeHtml(c.bot?.name || c.bot_id || '-');
+      const msgCount = c._count?.messages || 0;
+      const deletedAt = formatDateTime(c.deleted_at);
+      return `
+        <div class="trash-item">
+          <div class="trash-item-main">
+            <div class="trash-item-title">${title}</div>
+            <div class="trash-item-meta">${botName} · ${msgCount} 条消息 · 删除于 ${deletedAt}</div>
+          </div>
+          <div class="trash-item-actions">
+            <button type="button" class="trash-item-btn restore" data-trash-action="restore" data-conversation-id="${c.conversation_id}">恢复</button>
+            <button type="button" class="trash-item-btn danger" data-trash-action="purge" data-conversation-id="${c.conversation_id}">彻底删除</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    Array.from(ui.trashList.querySelectorAll('[data-trash-action]')).forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.trashAction;
+        const conversationId = btn.dataset.conversationId || '';
+        if (!conversationId) return;
+
+        try {
+          if (action === 'restore') {
+            await authManager.post(`/chat/conversations/${conversationId}/restore`, {});
+            await refreshAllConversationLists();
+            await refreshSelectionAfterListChange();
+            await openTrashModal();
+            return;
+          }
+
+          if (action === 'purge') {
+            if (!confirm('永久删除后无法恢复，确定继续？')) return;
+            await authManager.delete(`/chat/conversations/${conversationId}/permanent`);
+            await openTrashModal();
+          }
+        } catch (err) {
+          alert(err.message || '操作失败');
+        }
+      });
+    });
+  }
+
+  async function openTrashModal() {
+    ensureTrashUI();
+    if (!ui.trashModal || !ui.trashList) return;
+    ui.trashModal.classList.add('open');
+    ui.trashList.innerHTML = '<div class="trash-empty">加载中...</div>';
+    try {
+      renderTrashList(await loadDeletedConversations());
+    } catch (err) {
+      ui.trashList.innerHTML = `<div class="trash-empty">${escapeHtml(err.message || '加载失败')}</div>`;
+    }
+  }
+
+  function closeTrashModal() {
+    ui.trashModal?.classList.remove('open');
+  }
+
+  async function refreshSelectionAfterListChange() {
+    if (state.selectedGroupId) return;
+    const conversations = await getConversationsByScene(state.selectedScene);
+    if (!conversations.length) {
+      state.selectedConversationId = null;
+      renderChatPlaceholder('当前场景暂无话题，点击“新建话题”开始。');
+      return;
+    }
+
+    if (state.selectedConversationId && conversations.some((c) => c.conversation_id === state.selectedConversationId)) {
+      return;
+    }
+
+    state.selectedConversationId = conversations[0].conversation_id;
+    state.selectedBotId = conversations[0].bot_id;
+    await refreshCurrentHeader();
+    await loadMessages(state.selectedConversationId);
+    await refreshAllConversationLists();
+  }
+
+  async function deleteConversation(conversationId, title) {
+    if (!conversationId) return;
+    if (!confirm(`确认删除话题“${title || '未命名话题'}”？\n删除后可在回收站恢复。`)) return;
+
+    await authManager.delete(`/chat/conversations/${conversationId}`, {
+      body: JSON.stringify({ reason: 'user_deleted' })
+    });
+
+    if (state.selectedConversationId === conversationId) {
+      state.selectedConversationId = null;
+    }
+
+    await refreshAllConversationLists();
+    await refreshSelectionAfterListChange();
+  }
+
   function renderConversations(scene, conversations) {
     const group = document.getElementById(sceneConfig[scene].groupId);
     if (!group) return;
@@ -149,12 +325,33 @@
               <div class="conversation-title">${title}</div>
               <div class="conversation-meta">${count} 条消息 · ${updated}</div>
             </div>
+            <div class="conversation-actions">
+              <button
+                type="button"
+                class="conversation-delete-btn"
+                data-action="delete-conversation"
+                data-conversation-id="${c.conversation_id}"
+                data-conversation-title="${title}"
+                title="删除话题"
+              >✕</button>
+            </div>
           </div>
         `;
       })
       .join('');
 
     Array.from(list.querySelectorAll('.conversation-item')).forEach((item) => {
+      const deleteBtn = item.querySelector('[data-action="delete-conversation"]');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await deleteConversation(
+            deleteBtn.dataset.conversationId || '',
+            deleteBtn.dataset.conversationTitle || '未命名话题'
+          );
+        });
+      }
+
       item.addEventListener('click', async () => {
         state.selectedScene = item.dataset.scene;
         state.selectedBotId = item.dataset.botId;
@@ -202,7 +399,7 @@
     ui.promptDisplay.textContent = systemPrompt;
     ui.promptEditor.value = systemPrompt;
 
-    // 渲染模型配置
+    // 娓叉煋妯″瀷閰嶇疆
     const config = bot.config || {};
     if (ui.modelSelect) ui.modelSelect.value = config.model || 'deepseek-ai/DeepSeek-V3.2';
     if (ui.temperatureInput) ui.temperatureInput.value = config.temperature ?? 0.7;
@@ -228,7 +425,7 @@
     ui.messages.innerHTML = messages
       .map((m) => {
         const klass = m.sender_type === 'user' ? 'user' : 'bot';
-        const avatar = m.sender_type === 'user' ? '👤' : (ui.chatAvatar.textContent || '🤖');
+        const avatar = m.sender_type === 'user' ? '馃懁' : (ui.chatAvatar.textContent || '馃');
 
         return `
           <div class="message ${klass}">
@@ -248,7 +445,7 @@
   async function createConversation(scene) {
     const bot = state.botsByScene[scene]?.[0];
     if (!bot) {
-      alert('该场景暂无 Bot，请先在后台创建。');
+      alert('该场景暂时没有 Bot，请先在后台创建。');
       return;
     }
 
@@ -272,7 +469,7 @@
 
   function appendMessage(senderType, content) {
     const klass = senderType === 'user' ? 'user' : 'bot';
-    const avatar = senderType === 'user' ? '👤' : (ui.chatAvatar.textContent || '🤖');
+    const avatar = senderType === 'user' ? '馃懁' : (ui.chatAvatar.textContent || '馃');
 
     ui.messages.insertAdjacentHTML(
       'beforeend',
@@ -421,7 +618,7 @@
       });
     }
 
-    // 保存模型配置
+    // 淇濆瓨妯″瀷閰嶇疆
     if (ui.saveConfigBtn) {
       ui.saveConfigBtn.addEventListener('click', async () => {
         const bot = getCurrentBot();
@@ -455,9 +652,9 @@
           await botClient.updateBot(bot.bot_id, { config: nextConfig });
           bot.config = nextConfig;
 
-          alert('✅ 模型配置已保存');
+          alert('模型配置已保存');
         } catch (err) {
-          alert(err.message || '保存配置失败');
+          alert(err.message || '淇濆瓨閰嶇疆澶辫触');
         }
       });
     }
@@ -484,6 +681,30 @@
     if (ui.quickSettingsBtn) {
       ui.quickSettingsBtn.addEventListener('click', () => {
         activateContentTab('settings');
+      });
+    }
+
+    if (ui.trashToggleBtn) {
+      ui.trashToggleBtn.addEventListener('click', () => {
+        openTrashModal().catch((err) => alert(err.message || '打开回收站失败'));
+      });
+    }
+
+    if (ui.trashCloseBtn) {
+      ui.trashCloseBtn.addEventListener('click', closeTrashModal);
+    }
+
+    if (ui.trashRefreshBtn) {
+      ui.trashRefreshBtn.addEventListener('click', () => {
+        openTrashModal().catch((err) => alert(err.message || '刷新回收站失败'));
+      });
+    }
+
+    if (ui.trashModal) {
+      ui.trashModal.addEventListener('click', (e) => {
+        if (e.target === ui.trashModal) {
+          closeTrashModal();
+        }
       });
     }
   }
@@ -542,6 +763,7 @@
     state.botsByScene.life = grouped.life || [];
     state.botsByScene.love = grouped.love || [];
 
+    ensureTrashUI();
     wireTabs();
     wireInput();
     wireLogout();
@@ -583,6 +805,7 @@
 
   bootstrap().catch((err) => {
     console.error(err);
-    alert(err.message || '初始化失败，请稍后重试。');
+    alert(err.message || '初始化失败，请稍后重试');
   });
 })();
+

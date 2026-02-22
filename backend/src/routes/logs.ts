@@ -13,6 +13,14 @@ function readInt(value: unknown, defaultValue: number): number {
   return Number.isNaN(raw) ? defaultValue : raw;
 }
 
+function readBool(value: unknown, defaultValue = false): boolean {
+  if (typeof value !== 'string') return defaultValue;
+  const raw = value.trim().toLowerCase();
+  if (['1', 'true', 'yes', 'y'].includes(raw)) return true;
+  if (['0', 'false', 'no', 'n'].includes(raw)) return false;
+  return defaultValue;
+}
+
 function parseDate(value: unknown, endOfDay = false): Date | undefined {
   if (typeof value !== 'string' || !value.trim()) return undefined;
   const raw = value.trim();
@@ -35,10 +43,12 @@ router.get('/conversations', async (req: Request, res: Response) => {
     const botId = typeof req.query.bot_id === 'string' ? req.query.bot_id : undefined;
     const topic = typeof req.query.topic === 'string' ? req.query.topic.trim() : '';
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const includeDeleted = readBool(req.query.include_deleted, false);
     const startDate = parseDate(req.query.start_date, false);
     const endDate = parseDate(req.query.end_date, true);
 
     const where: any = {};
+    if (!includeDeleted) where.is_deleted = false;
     if (botId) where.bot_id = botId;
     if (topic) where.title = { contains: topic, mode: 'insensitive' };
     if (search) where.OR = [{ title: { contains: search, mode: 'insensitive' } }];
@@ -87,17 +97,17 @@ router.get('/messages', async (req: Request, res: Response) => {
     const topic = typeof req.query.topic === 'string' ? req.query.topic.trim() : '';
     const content = typeof req.query.content === 'string' ? req.query.content.trim() : '';
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const includeDeleted = readBool(req.query.include_deleted, false);
     const startDate = parseDate(req.query.start_date, false);
     const endDate = parseDate(req.query.end_date, true);
 
     const where: any = {};
     if (conversationId) where.conversation_id = conversationId;
     if (senderType) where.sender_type = senderType;
-    if (botId || topic) {
-      where.conversation = {};
-      if (botId) where.conversation.bot_id = botId;
-      if (topic) where.conversation.title = { contains: topic, mode: 'insensitive' };
-    }
+    where.conversation = where.conversation || {};
+    if (!includeDeleted) where.conversation.is_deleted = false;
+    if (botId) where.conversation.bot_id = botId;
+    if (topic) where.conversation.title = { contains: topic, mode: 'insensitive' };
     const contentSearch = content || search;
     if (contentSearch) where.content = { contains: contentSearch, mode: 'insensitive' };
     if (startDate || endDate) {
@@ -140,6 +150,7 @@ router.get('/export/messages.csv', async (req: Request, res: Response) => {
     const botId = typeof req.query.bot_id === 'string' ? req.query.bot_id : undefined;
     const topic = typeof req.query.topic === 'string' ? req.query.topic.trim() : '';
     const content = typeof req.query.content === 'string' ? req.query.content.trim() : '';
+    const includeDeleted = readBool(req.query.include_deleted, false);
     const startDate = parseDate(req.query.start_date, false);
     const endDate = parseDate(req.query.end_date, true);
 
@@ -147,11 +158,10 @@ router.get('/export/messages.csv', async (req: Request, res: Response) => {
     if (conversationId) {
       where.conversation_id = conversationId;
     }
-    if (botId || topic) {
-      where.conversation = {};
-      if (botId) where.conversation.bot_id = botId;
-      if (topic) where.conversation.title = { contains: topic, mode: 'insensitive' };
-    }
+    where.conversation = where.conversation || {};
+    if (!includeDeleted) where.conversation.is_deleted = false;
+    if (botId) where.conversation.bot_id = botId;
+    if (topic) where.conversation.title = { contains: topic, mode: 'insensitive' };
     if (content) where.content = { contains: content, mode: 'insensitive' };
     if (startDate || endDate) {
       where.timestamp = {};
@@ -217,13 +227,14 @@ router.get('/bot-memory', async (req: Request, res: Response) => {
   try {
     const botId = typeof req.query.bot_id === 'string' ? req.query.bot_id.trim() : '';
     const limit = Math.max(1, Math.min(5000, readInt(req.query.limit, 200)));
+    const includeDeleted = readBool(req.query.include_deleted, false);
     if (!botId) {
       return res.status(400).json({
         error: { code: 'BAD_REQUEST', message: 'bot_id is required', numeric_code: 400 }
       });
     }
 
-    const records = await botMemoryArchiveService.listByBot(botId, limit);
+    const records = await botMemoryArchiveService.listByBot(botId, limit, includeDeleted);
     return res.json({ bot_id: botId, total: records.length, records });
   } catch (error) {
     return res.status(500).json({

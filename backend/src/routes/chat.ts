@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import chatService from '../services/chat.service';
+import conversationDeletionService from '../services/conversation-deletion.service';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
@@ -61,6 +62,106 @@ router.post('/conversations', async (req: Request, res: Response) => {
       error: {
         code: statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
         message: statusCode === 404 ? 'Bot not found' : message,
+        numeric_code: statusCode
+      }
+    });
+  }
+});
+
+router.get('/conversations/deleted', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({
+        error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+      });
+    }
+
+    const botId = firstString(req.query.bot_id);
+    const conversations = await conversationDeletionService.listDeletedConversations(userId, botId);
+    return res.json({ conversations });
+  } catch (error) {
+    return res.status(500).json({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to list deleted conversations',
+        numeric_code: 500
+      }
+    });
+  }
+});
+
+router.delete('/conversations/:conversation_id', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({
+        error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+      });
+    }
+
+    const conversationId = firstString(req.params.conversation_id) || '';
+    const reason = (req.body?.reason || 'user_deleted').toString().trim() || 'user_deleted';
+    const result = await conversationDeletionService.softDeleteConversation(userId, conversationId, reason);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to delete conversation';
+    const statusCode = message === 'CONVERSATION_NOT_FOUND' ? 404 : 500;
+    return res.status(statusCode).json({
+      error: {
+        code: statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+        message: statusCode === 404 ? 'Conversation not found' : message,
+        numeric_code: statusCode
+      }
+    });
+  }
+});
+
+router.post('/conversations/:conversation_id/restore', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({
+        error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+      });
+    }
+
+    const conversationId = firstString(req.params.conversation_id) || '';
+    const result = await conversationDeletionService.restoreConversation(userId, conversationId);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to restore conversation';
+    const statusCode = message === 'CONVERSATION_NOT_FOUND' ? 404 : 500;
+    return res.status(statusCode).json({
+      error: {
+        code: statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+        message: statusCode === 404 ? 'Conversation not found' : message,
+        numeric_code: statusCode
+      }
+    });
+  }
+});
+
+router.delete('/conversations/:conversation_id/permanent', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({
+        error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+      });
+    }
+
+    const isAdmin = req.user?.role === 'admin';
+    const conversationId = firstString(req.params.conversation_id) || '';
+    const result = await conversationDeletionService.hardDeleteConversation(userId, conversationId, isAdmin);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to permanently delete conversation';
+    const statusCode = message === 'CONVERSATION_NOT_FOUND' ? 404 : 500;
+    return res.status(statusCode).json({
+      error: {
+        code: statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+        message: statusCode === 404 ? 'Conversation not found' : message,
         numeric_code: statusCode
       }
     });

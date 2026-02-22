@@ -133,7 +133,26 @@ class SchedulerService {
         conversationId = conversation.conversation_id;
       }
 
-      await chatService.sendMessage(task.userId, conversationId, task.message);
+      try {
+        await chatService.sendMessage(task.userId, conversationId, task.message);
+      } catch (error: any) {
+        // If bound conversation was soft-deleted, create a fresh scheduled conversation and retry once.
+        if (error?.message === 'CONVERSATION_NOT_FOUND' && task.conversationId) {
+          const fallbackConversation = await prisma.conversation.create({
+            data: {
+              conversation_id: `conv_scheduled_${randomUUID().slice(0, 8)}`,
+              bot_id: task.botId,
+              user_id: task.userId,
+              title: `定时任务 - ${new Date().toLocaleString()}`
+            }
+          });
+          conversationId = fallbackConversation.conversation_id;
+          task.conversationId = conversationId;
+          await chatService.sendMessage(task.userId, conversationId, task.message);
+        } else {
+          throw error;
+        }
+      }
 
       await prisma.workflowExecution.create({
         data: {

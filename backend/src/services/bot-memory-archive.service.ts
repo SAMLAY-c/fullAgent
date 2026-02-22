@@ -12,6 +12,9 @@ export interface ArchivedMemoryRecord {
   user_message: string;
   bot_message: string;
   timestamp: string;
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+  delete_trigger?: string | null;
 }
 
 interface ArchiveStore {
@@ -48,6 +51,9 @@ class BotMemoryArchiveService {
     const next: ArchivedMemoryRecord = {
       id: `mem_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
       timestamp: new Date().toISOString(),
+      is_deleted: false,
+      deleted_at: null,
+      delete_trigger: null,
       ...record
     };
     list.push(next);
@@ -60,15 +66,15 @@ class BotMemoryArchiveService {
     return next;
   }
 
-  async listByBot(botId: string, limit = 200): Promise<ArchivedMemoryRecord[]> {
+  async listByBot(botId: string, limit = 200, includeDeleted = false): Promise<ArchivedMemoryRecord[]> {
     const store = await this.readStore();
-    const list = store.by_bot[botId] || [];
+    const list = (store.by_bot[botId] || []).filter((item) => includeDeleted || !item.is_deleted);
     const safeLimit = Math.max(1, Math.min(5000, Math.floor(limit)));
     return list.slice(Math.max(0, list.length - safeLimit));
   }
 
   async exportByBot(botId: string): Promise<{ bot_id: string; exported_at: string; records: ArchivedMemoryRecord[] }> {
-    const records = await this.listByBot(botId, 5000);
+    const records = await this.listByBot(botId, 5000, true);
     return {
       bot_id: botId,
       exported_at: new Date().toISOString(),
@@ -77,7 +83,7 @@ class BotMemoryArchiveService {
   }
 
   async analyzeByBot(botId: string): Promise<AnalyzeResult> {
-    const records = await this.listByBot(botId, 500);
+    const records = await this.listByBot(botId, 500, false);
     const topKeywords = this.buildTopKeywords(records);
     const defaultSummary = this.buildFallbackSummary(records, topKeywords);
     const lastUpdatedAt = records.length > 0 ? records[records.length - 1].timestamp : null;
@@ -165,6 +171,76 @@ class BotMemoryArchiveService {
       `最近 5 条会话覆盖：${recent.map((x) => x.conversation_id).join('、') || '暂无'}`,
       '建议：将高频主题整理为模板，并对重复问题增加标准回复。'
     ].join('\n');
+  }
+
+  async markDeletedByConversationId(conversationId: string, reason = 'user_deleted'): Promise<number> {
+    const store = await this.readStore();
+    let changed = 0;
+
+    for (const botId of Object.keys(store.by_bot)) {
+      store.by_bot[botId] = (store.by_bot[botId] || []).map((item) => {
+        if (item.conversation_id !== conversationId || item.is_deleted) {
+          return item;
+        }
+        changed += 1;
+        return {
+          ...item,
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          delete_trigger: reason
+        };
+      });
+    }
+
+    if (changed > 0) {
+      await this.writeStore(store);
+    }
+
+    return changed;
+  }
+
+  async restoreByConversationId(conversationId: string): Promise<number> {
+    const store = await this.readStore();
+    let changed = 0;
+
+    for (const botId of Object.keys(store.by_bot)) {
+      store.by_bot[botId] = (store.by_bot[botId] || []).map((item) => {
+        if (item.conversation_id !== conversationId || !item.is_deleted) {
+          return item;
+        }
+        changed += 1;
+        return {
+          ...item,
+          is_deleted: false,
+          deleted_at: null,
+          delete_trigger: null
+        };
+      });
+    }
+
+    if (changed > 0) {
+      await this.writeStore(store);
+    }
+
+    return changed;
+  }
+
+  async purgeByConversationId(conversationId: string): Promise<number> {
+    const store = await this.readStore();
+    let changed = 0;
+
+    for (const botId of Object.keys(store.by_bot)) {
+      const before = store.by_bot[botId] || [];
+      const after = before.filter((item) => item.conversation_id !== conversationId);
+      changed += before.length - after.length;
+      store.by_bot[botId] = after;
+    }
+
+    if (changed > 0) {
+      await this.writeStore(store);
+    }
+
+    return changed;
   }
 }
 

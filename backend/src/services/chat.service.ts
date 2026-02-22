@@ -9,7 +9,10 @@ const prisma = new PrismaClient();
 
 class ChatService {
   async listConversations(userId: string, botId?: string) {
-    const where: { user_id: string; bot_id?: string } = { user_id: userId };
+    const where: { user_id: string; bot_id?: string; is_deleted: boolean } = {
+      user_id: userId,
+      is_deleted: false
+    };
     if (botId) where.bot_id = botId;
 
     const conversations = await prisma.conversation.findMany({
@@ -261,7 +264,8 @@ class ChatService {
     const conversation = await prisma.conversation.findFirst({
       where: {
         conversation_id: conversationId,
-        user_id: userId
+        user_id: userId,
+        is_deleted: false
       },
       include: {
         bot: {

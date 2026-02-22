@@ -70,6 +70,9 @@ model Conversation {
   bot_id         String
   user_id        String
   title          String?
+  is_deleted     Boolean   @default(false)
+  deleted_at     DateTime?
+  delete_reason  String?
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt
 
@@ -80,6 +83,8 @@ model Conversation {
 
   @@index([bot_id])
   @@index([user_id])
+  @@index([bot_id, is_deleted, updated_at])
+  @@index([deleted_at])
 }
 
 // Message model
