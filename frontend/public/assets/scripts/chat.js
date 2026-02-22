@@ -1519,8 +1519,6 @@
 
   function renderExtractPanel() {
     const draft = state.memoryExtractDraft;
-    const now = new Date().toLocaleString('zh-CN');
-
     if (ui.extractFocusNote && ui.extractFocusNote.value !== (draft.focusNote || '')) {
       ui.extractFocusNote.value = draft.focusNote || '';
     }
@@ -1587,15 +1585,15 @@
               aria-label="选择是否保存该条目"
             />
             <div class="result-item-main">
-              <div class="result-item-meta">
-                <span class="result-item-index">${i + 1}.</span>
-                <input class="result-category-input" data-result-index="${i}" value="${escapeAttr(item.category || 'other')}" />
-                <span class="result-item-time">${escapeHtml(item._time || now)}</span>
-              </div>
-              <textarea class="result-text-input" data-result-index="${i}" rows="3">${escapeHtml(item.text || '')}</textarea>
-              <div class="result-item-actions">
-                <button class="result-remove-btn" type="button" data-result-index="${i}">删除</button>
-              </div>
+              <span class="result-item-index">${i + 1}.</span>
+              <div
+                class="result-text-inline"
+                contenteditable="true"
+                data-result-index="${i}"
+                role="textbox"
+                aria-label="编辑提炼条目"
+              >${escapeHtml(item.text || '')}</div>
+              <span class="result-category-pill">${escapeHtml(item.category || 'other')}</span>
             </div>
           </div>
         `).join('');
@@ -1874,14 +1872,15 @@
         updateResultItem(index, 'text', target.value);
       }
     });
-    ui.extractResultList?.addEventListener('click', (e) => {
+    ui.extractResultList?.addEventListener('blur', (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
-      if (!target.classList.contains('result-remove-btn')) return;
+      if (!target.classList.contains('result-text-inline')) return;
       const index = Number(target.getAttribute('data-result-index'));
       if (!Number.isInteger(index) || index < 0) return;
-      removeResultItem(index);
-    });
+      updateResultItem(index, 'text', target.innerText.trim());
+      renderExtractPanel();
+    }, true);
     ui.extractAddResultBtn?.addEventListener('click', addResultItem);
     ui.extractPreviewBtn?.addEventListener('click', () => {
       previewMemoryExtract().catch((err) => alert(err.message || '提炼预览失败'));
