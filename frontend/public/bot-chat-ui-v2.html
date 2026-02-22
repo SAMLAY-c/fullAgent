@@ -279,11 +279,39 @@
                             <button class="save-prompt-btn" id="savePromptBtn">保存提示词</button>
                         </div>
                     </div>
+
+                    <div class="settings-section">
+                        <div class="settings-section-header">
+                            <div class="settings-section-title">
+                                <span>🤖</span>
+                                <span>AI 模型配置</span>
+                            </div>
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-label">模型</label>
+                            <select class="settings-select" id="modelSelect">
+                                <option value="deepseek-ai/DeepSeek-V3.2">DeepSeek V3.2（推荐）</option>
+                                <option value="deepseek-ai/DeepSeek-R1">DeepSeek R1（推理）</option>
+                                <option value="Qwen/Qwen2.5-72B-Instruct">Qwen2.5-72B</option>
+                            </select>
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-label">温度（0-2）</label>
+                            <input class="settings-input" id="temperatureInput" type="number" min="0" max="2" step="0.1" value="0.7" />
+                            <div class="settings-hint">越高越随机，建议0.7-1.0</div>
+                        </div>
+                        <div class="settings-field">
+                            <label class="settings-label">最大 Token 数</label>
+                            <input class="settings-input" id="maxTokensInput" type="number" min="100" max="8000" step="100" value="2000" />
+                            <div class="settings-hint">控制回复长度</div>
+                        </div>
+                        <button class="save-config-btn" id="saveConfigBtn">💾 保存配置</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="assets/scripts/chat.js?v=20260220"></script>
+    <script src="assets/scripts/chat.js?v=20260222"></script>
 </body>
 </html>

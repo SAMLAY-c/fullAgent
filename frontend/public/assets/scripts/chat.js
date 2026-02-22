@@ -45,7 +45,11 @@
     savePromptBtn: document.getElementById('savePromptBtn'),
     sopBtn: document.getElementById('sopBtn'),
     logBtn: document.getElementById('logBtn'),
-    quickSettingsBtn: document.getElementById('quickSettingsBtn')
+    quickSettingsBtn: document.getElementById('quickSettingsBtn'),
+    modelSelect: document.getElementById('modelSelect'),
+    temperatureInput: document.getElementById('temperatureInput'),
+    maxTokensInput: document.getElementById('maxTokensInput'),
+    saveConfigBtn: document.getElementById('saveConfigBtn')
   };
 
   function escapeHtml(text) {
@@ -197,6 +201,12 @@
     const systemPrompt = bot.config?.system_prompt || '你是一个 helpful 的 AI 助手。';
     ui.promptDisplay.textContent = systemPrompt;
     ui.promptEditor.value = systemPrompt;
+
+    // 渲染模型配置
+    const config = bot.config || {};
+    if (ui.modelSelect) ui.modelSelect.value = config.model || 'deepseek-ai/DeepSeek-V3.2';
+    if (ui.temperatureInput) ui.temperatureInput.value = config.temperature ?? 0.7;
+    if (ui.maxTokensInput) ui.maxTokensInput.value = config.max_tokens ?? 2000;
   }
 
   async function refreshCurrentHeader() {
@@ -407,6 +417,47 @@
           ui.promptEditorContainer.style.display = 'none';
         } catch (err) {
           alert(err.message || '保存提示词失败');
+        }
+      });
+    }
+
+    // 保存模型配置
+    if (ui.saveConfigBtn) {
+      ui.saveConfigBtn.addEventListener('click', async () => {
+        const bot = getCurrentBot();
+        if (!bot) {
+          alert('当前没有选中的机器人。');
+          return;
+        }
+
+        const model = ui.modelSelect?.value || 'deepseek-ai/DeepSeek-V3.2';
+        const temperature = parseFloat(ui.temperatureInput?.value || '0.7');
+        const maxTokens = parseInt(ui.maxTokensInput?.value || '2000');
+
+        if (isNaN(temperature) || temperature < 0 || temperature > 2) {
+          alert('温度值必须在 0-2 之间。');
+          return;
+        }
+
+        if (isNaN(maxTokens) || maxTokens < 100 || maxTokens > 8000) {
+          alert('最大 Token 数必须在 100-8000 之间。');
+          return;
+        }
+
+        try {
+          const nextConfig = {
+            ...(bot.config || {}),
+            model,
+            temperature,
+            max_tokens: maxTokens
+          };
+
+          await botClient.updateBot(bot.bot_id, { config: nextConfig });
+          bot.config = nextConfig;
+
+          alert('✅ 模型配置已保存');
+        } catch (err) {
+          alert(err.message || '保存配置失败');
         }
       });
     }
