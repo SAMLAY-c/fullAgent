@@ -37,11 +37,20 @@
                 <div class="folder-chip-section">
                     <div class="folder-chip-divider"></div>
                     <div class="folder-chip-row" id="folderChipRow">
-                        <button class="folder-chip active" data-chip-id="all" type="button">全部12</button>
-                        <button class="folder-chip" data-chip-id="work" type="button">工作5</button>
-                        <button class="folder-chip" data-chip-id="mentor" type="button">职场导师3</button>
-                        <button class="folder-chip" data-chip-id="life" type="button">生活1</button>
-                        <button class="folder-chip add" id="folderChipAddBtn" type="button">+</button>
+                        <div class="folder-chip-toolbar">
+                            <label class="folder-chip-select-wrap" for="folderCategorySelect">
+                                <select id="folderCategorySelect" class="folder-chip-select">
+                                    <option value="all">全部</option>
+                                    <option value="general">通用</option>
+                                    <option value="work" selected>工作</option>
+                                    <option value="study">学习</option>
+                                    <option value="life">生活</option>
+                                </select>
+                                <span class="folder-chip-select-arrow">∨</span>
+                            </label>
+                            <button class="folder-chip-search-btn" id="folderSearchBtn" type="button" title="搜索会话">搜索 🔍</button>
+                            <button class="folder-chip-icon-btn" id="folderChipAddBtn" type="button" title="新增主题">+</button>
+                        </div>
                     </div>
                 </div>
 

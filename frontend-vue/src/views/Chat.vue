@@ -159,7 +159,14 @@ async function handleSceneChange(scene: BotScene) {
 
   if (sceneBots.length > 0) {
     // 场景下有Bot，选中第一个
-    const bot = sceneBots[0]
+    const bot = sceneBots[0] || null
+    if (!bot) {
+      botStore.setCurrentBot(null)
+      chatStore.setCurrentBot(null)
+      chatStore.setCurrentConversation(null)
+      chatStore.clearMessages()
+      return
+    }
     botStore.setCurrentBot(bot)
     chatStore.setCurrentBot(bot)
 

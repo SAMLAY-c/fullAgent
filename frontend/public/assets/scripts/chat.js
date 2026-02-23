@@ -14,11 +14,22 @@
     love: { groupId: 'loveBotGroup', defaultName: '心灵朋友', icon: '💜' }
   };
 
+  const tagCategoryConfig = [
+    { id: 'all', label: '全部', emoji: '📚' },
+    { id: 'general', label: '通用', emoji: '🧩' },
+    { id: 'work', label: '工作', emoji: '💼' },
+    { id: 'study', label: '学习', emoji: '📖' },
+    { id: 'life', label: '生活', emoji: '🌿' }
+  ];
+
   const state = {
     botsByScene: { work: [], life: [], love: [] },
     folders: [],
     selectedFolderId: null,
     selectedFolderChipId: 'all',
+    selectedTagCategoryId: 'all',
+    topicSearchKeyword: '',
+    collapsedThemeIds: new Set(),
     selectedScene: 'work',
     selectedBotId: null,
     selectedConversationId: null,
@@ -326,6 +337,38 @@
     return name.length > 7 ? `${name.slice(0, 7)}…` : name;
   }
 
+  function normalizeThemeCategoryId(value) {
+    const v = String(value || '').trim().toLowerCase();
+    return tagCategoryConfig.some((x) => x.id === v) ? v : 'general';
+  }
+
+  function inferThemeCategoryId(folder) {
+    if (!folder) return 'general';
+    const explicit = normalizeThemeCategoryId(folder.category || folder.tag_category);
+    if (explicit !== 'general' || folder.category || folder.tag_category) return explicit;
+
+    const name = String(folder.name || '').toLowerCase();
+    if (/学习|备考|笔记|问答|课程|读书/.test(name)) return 'study';
+    if (/工作|写作|会议|分析|邮件|汇报|周报|产品/.test(name)) return 'work';
+    if (/生活|旅行|饮食|健康|聊天|日常/.test(name)) return 'life';
+
+    const scene = String(folder.scene || '').toLowerCase();
+    if (scene === 'work') return 'work';
+    if (scene === 'life') return 'life';
+    if (scene === 'love') return 'life';
+    return 'general';
+  }
+
+  function getThemesForSelectedCategory() {
+    const categoryId = state.selectedTagCategoryId || 'all';
+    if (categoryId === 'all') return state.folders.slice();
+    return state.folders.filter((folder) => inferThemeCategoryId(folder) === categoryId);
+  }
+
+  function getConversationsForTheme(folderId) {
+    return getAllConversationsFlat().filter((c) => conversationBucketKey(c) === folderId);
+  }
+
   function conversationBucketKey(conversation) {
     return conversation?.bot_id || 'all';
   }
@@ -357,52 +400,74 @@
     if (!ui.folderChipRow) return;
 
     const allConversations = getAllConversationsFlat();
-    const allCount = allConversations.length;
+    const optionsHtml = tagCategoryConfig.map((category) => {
+      const count = category.id === 'all'
+        ? allConversations.length
+        : allConversations.filter((c) => {
+            const theme = state.folders.find((f) => f.folder_id === conversationBucketKey(c));
+            return inferThemeCategoryId(theme) === category.id;
+          }).length;
+      const selected = (state.selectedTagCategoryId || 'all') === category.id ? ' selected' : '';
+      return `
+        <option value="${category.id}"${selected}>${escapeHtml(category.label)} (${count})</option>
+      `;
+    }).join('');
 
-    const chips = [
-      `<button class="folder-chip${state.selectedFolderChipId === 'all' ? ' active' : ''}" data-chip-id="all" type="button">全部${allCount}</button>`
-    ];
+    const searchActive = state.topicSearchKeyword ? ' active' : '';
+    ui.folderChipRow.innerHTML = `
+      <div class="folder-chip-toolbar">
+        <label class="folder-chip-select-wrap" for="folderCategorySelect">
+          <select id="folderCategorySelect" class="folder-chip-select" aria-label="选择分类">
+            ${optionsHtml}
+          </select>
+          <span class="folder-chip-select-arrow">∨</span>
+        </label>
+        <button class="folder-chip-search-btn${searchActive}" id="folderSearchBtn" type="button" title="${state.topicSearchKeyword ? `当前搜索：${escapeHtml(state.topicSearchKeyword)}` : '搜索会话'}">
+          搜索 🔍
+        </button>
+        <button class="folder-chip-icon-btn" id="folderChipAddBtn" type="button" title="新增主题">+</button>
+      </div>
+    `;
 
-    state.folders.forEach((folder) => {
-      const count = allConversations.filter((c) => conversationBucketKey(c) === folder.folder_id).length;
-      const active = state.selectedFolderChipId === folder.folder_id ? ' active' : '';
-      chips.push(
-        `<button class="folder-chip${active}" data-chip-id="${folder.folder_id}" data-bot-id="${folder.bot_id || folder.folder_id}" data-scene="${escapeHtml(folder.scene || '')}" type="button" title="${escapeHtml(folder.name || '未命名主题')}">${escapeHtml(getFolderChipLabel(folder))}${count}</button>`
-      );
-    });
-
-    chips.push('<button class="folder-chip add" id="folderChipAddBtn" data-chip-id="__add__" type="button">+</button>');
-    ui.folderChipRow.innerHTML = chips.join('');
-
-    Array.from(ui.folderChipRow.querySelectorAll('.folder-chip')).forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const chipId = chip.dataset.chipId || '';
-        if (chipId === '__add__') {
-          openThemeCreateModal();
-          return;
-        }
+    const categorySelect = ui.folderChipRow.querySelector('#folderCategorySelect');
+    if (categorySelect) {
+      categorySelect.addEventListener('change', () => {
+        const chipId = categorySelect.value || 'all';
         state.selectedFolderChipId = chipId;
-        state.selectedFolderId = chipId === 'all' ? null : chipId;
-        if (chipId !== 'all') {
-          const botId = chip.dataset.botId || chipId;
-          const scene = chip.dataset.scene || state.selectedScene;
-          state.selectedBotId = botId;
-          state.selectedScene = scene;
-          state.selectedConversationId = null;
-        }
+        state.selectedTagCategoryId = chipId;
+        state.selectedFolderId = null;
+        state.selectedConversationId = null;
         renderFolderList();
         renderSingleBotTopicList();
         refreshCurrentHeader().catch(() => {});
       });
-    });
+    }
+
+    const addBtn = ui.folderChipRow.querySelector('#folderChipAddBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => openThemeCreateModal());
+    }
+
+    const searchBtn = ui.folderChipRow.querySelector('#folderSearchBtn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', () => {
+        const input = window.prompt('搜索会话标题（留空可清除搜索）', state.topicSearchKeyword || '');
+        if (input === null) return;
+        state.topicSearchKeyword = String(input || '').trim();
+        state.selectedConversationId = null;
+        renderFolderList();
+        renderSingleBotTopicList();
+      });
+    }
 
     updateTopicListTitle();
   }
 
   function updateTopicListTitle() {
     if (!ui.topicListTitle) return;
-    const folder = getSelectedFolder();
-    ui.topicListTitle.textContent = `${folder?.name || '全部'} 的话题`;
+    const category = tagCategoryConfig.find((x) => x.id === (state.selectedTagCategoryId || 'all'));
+    const keywordSuffix = state.topicSearchKeyword ? ` · 搜索: ${state.topicSearchKeyword}` : '';
+    ui.topicListTitle.textContent = `${category?.label || '全部'} · 主题与会话${keywordSuffix}`;
   }
 
   async function refreshFolderList() {
@@ -885,39 +950,121 @@
     if (!ui.topicConversationList) return;
     updateTopicListTitle();
 
-    const conversations = getConversationsForSelectedFolder();
-    if (!conversations.length) {
-      ui.topicConversationList.innerHTML = '<div class="folder-topic-empty">当前 Folder 下暂无话题，点击底部“新建话题”开始。</div>';
+    const themes = getThemesForSelectedCategory()
+      .map((theme) => ({
+        ...theme,
+        __conversations: getConversationsForTheme(theme.folder_id).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      }))
+      .map((theme) => {
+        const keyword = String(state.topicSearchKeyword || '').trim().toLowerCase();
+        if (!keyword) return theme;
+        return {
+          ...theme,
+          __conversations: theme.__conversations.filter((c) =>
+            String(c.title || '').toLowerCase().includes(keyword)
+          )
+        };
+      })
+      .filter((theme) => theme.__conversations.length > 0 || !String(state.topicSearchKeyword || '').trim())
+      .sort((a, b) => {
+        const aCount = a.__conversations.length;
+        const bCount = b.__conversations.length;
+        if (bCount !== aCount) return bCount - aCount;
+        return String(a.name || '').localeCompare(String(b.name || ''), 'zh-CN');
+      });
+
+    if (!themes.length) {
+      ui.topicConversationList.innerHTML = '<div class="folder-topic-empty">当前分类下暂无主题，点击底部“新建话题”开始。</div>';
       return;
     }
 
-    ui.topicConversationList.innerHTML = conversations
-      .map((c) => {
-        const active = c.conversation_id === state.selectedConversationId ? ' active' : '';
-        const title = escapeHtml(c.title || '未命名话题');
-        const timeText = formatRelativeTopicTime(c.updated_at);
-        const archived = state.archivedConversationIds.has(c.conversation_id);
-        return `
-          <div class="topic-row${active}" data-scene="${escapeHtml(c.__scene || '')}" data-conversation-id="${c.conversation_id}" data-bot-id="${c.bot_id}">
-            <div class="topic-row-main">
-              <div class="topic-row-title-line">
-                ${archived ? '<span class="topic-row-archived" title="已归档">🗃️</span>' : ''}
-                <span class="topic-row-title" title="双击或右键可改名">${title}</span>
+    ui.topicConversationList.innerHTML = themes.map((theme) => {
+      const themeId = theme.folder_id;
+      const themeName = escapeHtml(theme.name || '未命名主题');
+      const themeCategoryId = inferThemeCategoryId(theme);
+      const themeCategory = tagCategoryConfig.find((x) => x.id === themeCategoryId);
+      const themeIcon = escapeHtml(themeCategory?.emoji || '🧩');
+      const convCount = theme.__conversations.length;
+      const isCollapsed = state.collapsedThemeIds.has(themeId);
+
+      const conversationHtml = convCount
+        ? theme.__conversations.map((c) => {
+            const active = c.conversation_id === state.selectedConversationId ? ' active' : '';
+            const title = escapeHtml(c.title || '未命名话题');
+            const timeText = formatRelativeTopicTime(c.updated_at);
+            const archived = state.archivedConversationIds.has(c.conversation_id);
+            return `
+              <div class="topic-row topic-row-nested${active}" data-theme-id="${escapeAttr(themeId)}" data-scene="${escapeHtml(c.__scene || '')}" data-conversation-id="${c.conversation_id}" data-bot-id="${c.bot_id}">
+                <div class="topic-row-tree-line" aria-hidden="true"></div>
+                <div class="topic-row-main">
+                  <div class="topic-row-title-line">
+                    ${archived ? '<span class="topic-row-archived" title="已归档">🗃️</span>' : ''}
+                    <span class="topic-row-title" title="双击或右键可改名">${title}</span>
+                  </div>
+                  <div class="topic-row-meta">${timeText}</div>
+                </div>
+                <button
+                  type="button"
+                  class="conversation-delete-btn topic-row-delete"
+                  data-action="delete-conversation"
+                  data-conversation-id="${c.conversation_id}"
+                  data-conversation-title="${title}"
+                  title="删除会话"
+                >✕</button>
               </div>
-              <div class="topic-row-meta">${timeText}</div>
+            `;
+          }).join('')
+        : '<div class="theme-empty-row">该主题下暂无会话</div>';
+
+      return `
+        <section class="topic-theme-group ${themeId === state.selectedFolderId ? 'active' : ''}${isCollapsed ? ' collapsed' : ''}" data-theme-id="${escapeAttr(themeId)}" data-bot-id="${escapeAttr(theme.bot_id || themeId)}" data-scene="${escapeAttr(theme.scene || '')}">
+          <button type="button" class="topic-theme-header">
+            <div class="topic-theme-header-main">
+              <span class="topic-theme-icon">${themeIcon}</span>
+              <span class="topic-theme-name">${themeName}</span>
             </div>
-            <button
-              type="button"
-              class="conversation-delete-btn topic-row-delete"
-              data-action="delete-conversation"
-              data-conversation-id="${c.conversation_id}"
-              data-conversation-title="${title}"
-              title="删除话题"
-            >✕</button>
+            <div class="topic-theme-header-right">
+              <span class="topic-theme-count">${convCount}</span>
+              <span class="topic-theme-arrow" aria-hidden="true">⌄</span>
+            </div>
+          </button>
+          <div class="topic-theme-conversation-list">
+            ${conversationHtml}
           </div>
-        `;
-      })
-      .join('');
+        </section>
+      `;
+    }).join('');
+
+    Array.from(ui.topicConversationList.querySelectorAll('.topic-theme-header')).forEach((header) => {
+      header.addEventListener('click', async () => {
+        const group = header.closest('.topic-theme-group');
+        if (!(group instanceof HTMLElement)) return;
+        const themeId = group.dataset.themeId || '';
+        const botId = group.dataset.botId || themeId;
+        const scene = group.dataset.scene || state.selectedScene;
+        const isCollapsed = state.collapsedThemeIds.has(themeId);
+        if (isCollapsed) {
+          state.collapsedThemeIds.delete(themeId);
+        } else {
+          state.collapsedThemeIds.add(themeId);
+        }
+        state.selectedFolderId = themeId;
+        state.selectedFolderChipId = state.selectedTagCategoryId || 'all';
+        state.selectedBotId = botId;
+        state.selectedScene = scene;
+        const firstConversation = Array.from(group.querySelectorAll('.topic-row')).find((el) => el instanceof HTMLElement);
+        if (isCollapsed && firstConversation instanceof HTMLElement && !state.selectedConversationId) {
+          state.selectedConversationId = firstConversation.dataset.conversationId || null;
+          if (state.selectedConversationId) {
+            await refreshCurrentHeader();
+            await loadMessages(state.selectedConversationId);
+          }
+        } else {
+          await refreshCurrentHeader();
+        }
+        renderSingleBotTopicList();
+      });
+    });
 
     Array.from(ui.topicConversationList.querySelectorAll('.topic-row')).forEach((item) => {
       const deleteBtn = item.querySelector('[data-action="delete-conversation"]');
@@ -932,6 +1079,7 @@
       }
 
       item.addEventListener('click', async () => {
+        state.selectedFolderId = item.dataset.themeId || state.selectedFolderId;
         state.selectedScene = item.dataset.scene || state.selectedScene;
         state.selectedBotId = item.dataset.botId || state.selectedBotId;
         state.selectedConversationId = item.dataset.conversationId || state.selectedConversationId;
@@ -1081,13 +1229,45 @@
       .map((m) => {
         const klass = m.sender_type === 'user' ? 'user' : 'bot';
         const avatar = m.sender_type === 'user' ? '\uD83D\uDC64' : (ui.chatAvatar.textContent || '\uD83E\uDD16');
+        const editCount = Math.max(0, Number(m.version || 1) - 1);
+        const versionBadge = editCount > 0 ? `
+          <span class="message-version-badge" title="消息版本 v${escapeAttr(String(m.version || 1))}">
+            已编辑第 ${editCount} 次
+          </span>
+        ` : '';
+        const editBtn = m.sender_type === 'user' && m.message_id ? `
+          <div class="message-actions">
+            <button
+              class="edit-btn"
+              data-message-id="${escapeAttr(m.message_id)}"
+              data-message-content="${escapeAttr(m.content || '')}"
+              onclick="editUserMessage(this)"
+            >
+              <span class="edit-icon">✏️</span>
+              <span class="edit-text">编辑</span>
+            </button>
+          </div>
+        ` : '';
+        const copyBtn = m.sender_type === 'bot' ? `
+          <div class="message-actions">
+            <button class="copy-btn" data-copy-content="${escapeAttr(m.content)}" onclick="copyMessageContent(this)">
+              <span class="copy-icon">📋</span>
+              <span class="copy-text">复制</span>
+            </button>
+          </div>
+        ` : '';
 
         return `
-          <div class="message ${klass}">
+          <div class="message ${klass}" ${m.message_id ? `data-message-id="${escapeAttr(m.message_id)}"` : ''}>
             <div class="message-avatar">${avatar}</div>
             <div class="message-wrapper">
               <div class="message-content">${escapeHtml(m.content)}</div>
-              <div class="message-time">${formatTime(m.timestamp)}</div>
+              <div class="message-meta">
+                <div class="message-time">${formatTime(m.timestamp)}</div>
+                ${versionBadge}
+              </div>
+              ${editBtn}
+              ${copyBtn}
             </div>
           </div>
         `;
@@ -1135,19 +1315,45 @@
     const klass = senderType === 'user' ? 'user' : 'bot';
     const avatar = senderType === 'user' ? '\uD83D\uDC64' : (ui.chatAvatar.textContent || '\uD83E\uDD16');
     const messageDomId = opts.id || `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const serverMessageId = typeof opts.messageId === 'string' ? opts.messageId : '';
     const isStreaming = !!opts.isStreaming;
     const initialContent = isStreaming
       ? `${escapeHtml(content || '思考中...')}<span class="streaming-cursor"></span>`
       : escapeHtml(content);
+    const editBtn = klass === 'user' && serverMessageId ? `
+      <div class="message-actions">
+        <button
+          class="edit-btn"
+          data-message-id="${escapeAttr(serverMessageId)}"
+          data-message-content="${escapeAttr(content || '')}"
+          onclick="editUserMessage(this)"
+        >
+          <span class="edit-icon">✏️</span>
+          <span class="edit-text">编辑</span>
+        </button>
+      </div>
+    ` : '';
+    const copyBtn = klass === 'bot' && !isStreaming ? `
+      <div class="message-actions">
+        <button class="copy-btn" data-copy-content="${escapeAttr(content || '')}" onclick="copyMessageContent(this)">
+          <span class="copy-icon">📋</span>
+          <span class="copy-text">复制</span>
+        </button>
+      </div>
+    ` : '';
 
     ui.messages.insertAdjacentHTML(
       'beforeend',
       `
-      <div class="message ${klass}" data-local-message-id="${escapeAttr(messageDomId)}">
+      <div class="message ${klass}" data-local-message-id="${escapeAttr(messageDomId)}" ${serverMessageId ? `data-message-id="${escapeAttr(serverMessageId)}"` : ''}>
         <div class="message-avatar">${avatar}</div>
         <div class="message-wrapper">
           <div class="message-content">${initialContent}</div>
-          <div class="message-time">${formatTime(new Date())}</div>
+          <div class="message-meta">
+            <div class="message-time">${formatTime(new Date())}</div>
+          </div>
+          ${editBtn}
+          ${copyBtn}
         </div>
       </div>
       `
@@ -1189,6 +1395,23 @@
     if (!(contentEl instanceof HTMLElement)) return;
     contentEl.innerHTML = renderBotMarkdownHtml(finalText || '');
     contentEl.dataset.mdRendered = '1';
+    
+    // Add copy button for bot messages
+    const wrapperEl = msgEl.querySelector('.message-wrapper');
+    if (wrapperEl && !msgEl.classList.contains('user')) {
+      const existingActions = wrapperEl.querySelector('.message-actions');
+      if (!existingActions) {
+        wrapperEl.insertAdjacentHTML('beforeend', `
+          <div class="message-actions">
+            <button class="copy-btn" data-copy-content="${escapeAttr(finalText || '')}" onclick="copyMessageContent(this)">
+              <span class="copy-icon">📋</span>
+              <span class="copy-text">复制</span>
+            </button>
+          </div>
+        `);
+      }
+    }
+    
     ui.messages.scrollTop = ui.messages.scrollHeight;
   }
 
@@ -1933,10 +2156,23 @@
     const keyPointsList = document.getElementById('keyPointsList');
     const contextMemoryList = document.getElementById('contextMemoryList');
     if (keyPointsList) {
-      keyPointsList.innerHTML = archives.slice(0, 3).map((item) => `
+      // 对关键要点进行去重，避免显示重复的洞察内容
+      const uniqueKeyPoints = [];
+      const seenInsights = new Set();
+      for (const item of archives) {
+        const insightText = item.insights || item.summary || '已归档';
+        // 使用内容作为去重键
+        const dedupeKey = insightText.trim().slice(0, 100); // 取前100字符作为比较键
+        if (!seenInsights.has(dedupeKey)) {
+          seenInsights.add(dedupeKey);
+          uniqueKeyPoints.push({ ...item, displayText: insightText });
+          if (uniqueKeyPoints.length >= 3) break; // 最多显示3条
+        }
+      }
+      keyPointsList.innerHTML = uniqueKeyPoints.map((item) => `
         <div class="key-point-item">
           <div class="key-point-icon">🗂️</div>
-          <div class="key-point-content">${escapeHtml(item.insights || item.summary || '已归档')}</div>
+          <div class="key-point-content">${escapeHtml(item.displayText)}</div>
         </div>
       `).join('');
     }
@@ -2219,6 +2455,178 @@
       ui.topicCreateConfirmBtn.textContent = '开始对话 →';
     }
   }
+
+  window.copyMessageContent = async function copyMessageContent(btn) {
+    const content = btn.dataset.copyContent || '';
+    try {
+      await navigator.clipboard.writeText(content);
+      btn.classList.add('copied');
+      const originalText = btn.querySelector('.copy-text').textContent;
+      btn.querySelector('.copy-text').textContent = '已复制';
+      btn.querySelector('.copy-icon').textContent = '✓';
+      
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.querySelector('.copy-text').textContent = originalText;
+        btn.querySelector('.copy-icon').textContent = '📋';
+      }, 2000);
+    } catch (err) {
+      console.error('复制失败:', err);
+      showLightToast('复制失败，请手动复制', 'error');
+    }
+  };
+
+  window.editUserMessage = async function editUserMessage(btn) {
+    const messageId = btn?.dataset?.messageId || '';
+    if (!messageId) {
+      showLightToast('该消息尚未同步，刷新后再编辑', 'info');
+      return;
+    }
+
+    const msgEl = btn.closest('.message.user');
+    if (!(msgEl instanceof HTMLElement)) return;
+    if (msgEl.classList.contains('is-inline-editing')) return;
+
+    const activeEditor = ui.messages?.querySelector('.message.is-inline-editing');
+    if (activeEditor instanceof HTMLElement && activeEditor !== msgEl) {
+      const cancelBtn = activeEditor.querySelector('.inline-cancel-btn');
+      if (cancelBtn instanceof HTMLButtonElement) {
+        cancelBtn.click();
+      }
+    }
+
+    const wrapperEl = msgEl.querySelector('.message-wrapper');
+    const contentEl = msgEl.querySelector('.message-content');
+    const actionsEl = msgEl.querySelector('.message-actions');
+    if (!(wrapperEl instanceof HTMLElement) || !(contentEl instanceof HTMLElement)) {
+      return;
+    }
+
+    const currentContent = (btn.dataset.messageContent || contentEl.textContent || '').trim();
+    msgEl.classList.add('is-inline-editing');
+    contentEl.style.display = 'none';
+    if (actionsEl instanceof HTMLElement) actionsEl.style.display = 'none';
+
+    const editorHost = document.createElement('div');
+    editorHost.className = 'message-inline-editor';
+    editorHost.innerHTML = `
+      <textarea class="message-inline-editor-textarea" rows="3">${escapeHtml(currentContent)}</textarea>
+      <div class="message-inline-editor-toolbar">
+        <label class="message-inline-editor-check">
+          <input type="checkbox" class="inline-regenerate-checkbox" />
+          <span>重新生成后续回复</span>
+        </label>
+        <div class="message-inline-editor-actions">
+          <button type="button" class="inline-cancel-btn">取消</button>
+          <button type="button" class="inline-save-btn">保存</button>
+        </div>
+      </div>
+    `;
+    contentEl.insertAdjacentElement('afterend', editorHost);
+
+    const textarea = editorHost.querySelector('.message-inline-editor-textarea');
+    const saveBtn = editorHost.querySelector('.inline-save-btn');
+    const cancelBtn = editorHost.querySelector('.inline-cancel-btn');
+    const regenerateCheckbox = editorHost.querySelector('.inline-regenerate-checkbox');
+
+    const teardown = () => {
+      editorHost.remove();
+      contentEl.style.display = '';
+      if (actionsEl instanceof HTMLElement) actionsEl.style.display = '';
+      msgEl.classList.remove('is-inline-editing');
+    };
+
+    const handleCancel = () => {
+      teardown();
+    };
+
+    const handleSave = async () => {
+      const trimmed = String(textarea?.value || '').trim();
+      if (!trimmed) {
+        showLightToast('消息内容不能为空', 'error');
+        textarea?.focus();
+        return;
+      }
+      if (trimmed === currentContent) {
+        teardown();
+        return;
+      }
+
+      const regenerate = !!regenerateCheckbox?.checked;
+      const originalSaveText = saveBtn instanceof HTMLButtonElement ? saveBtn.textContent : '保存';
+      if (saveBtn instanceof HTMLButtonElement) saveBtn.disabled = true;
+      if (cancelBtn instanceof HTMLButtonElement) cancelBtn.disabled = true;
+      if (textarea instanceof HTMLTextAreaElement) textarea.disabled = true;
+      if (regenerateCheckbox instanceof HTMLInputElement) regenerateCheckbox.disabled = true;
+      if (saveBtn instanceof HTMLButtonElement) {
+        saveBtn.textContent = regenerate ? '保存并生成中...' : '保存中...';
+      }
+      if (regenerate) {
+        showLightToast('正在保存并重新生成回复，请稍候...', 'info');
+      }
+
+      try {
+        const editRes = await authManager.patch(`/chat/messages/${encodeURIComponent(messageId)}`, {
+          content: trimmed,
+          regenerate: false
+        });
+
+        if (regenerate) {
+          const latestMessageId = editRes?.new_message?.message_id || messageId;
+          await authManager.post(`/chat/messages/${encodeURIComponent(latestMessageId)}/regenerate`, {});
+        }
+
+        // Editing changes the branch/history context; clear injected memory selections to avoid stale context.
+        state.injectedMemoryIds = new Set();
+        if (ui.memoryPickerList) {
+          ui.memoryPickerList.querySelectorAll('input[type="checkbox"]').forEach((x) => {
+            x.checked = false;
+          });
+        }
+        updateMemoryPickedCount();
+
+        showLightToast(
+          regenerate ? '消息已更新，已重新生成后续回复并刷新记忆选择' : '消息已更新',
+          'success'
+        );
+        teardown();
+        if (state.selectedConversationId) {
+          await loadMessages(state.selectedConversationId);
+        }
+        await refreshAllConversationLists();
+      } catch (err) {
+        console.error('编辑消息失败:', err);
+        showLightToast(err?.message || '编辑失败', 'error');
+        if (saveBtn instanceof HTMLButtonElement) saveBtn.disabled = false;
+        if (cancelBtn instanceof HTMLButtonElement) cancelBtn.disabled = false;
+        if (textarea instanceof HTMLTextAreaElement) textarea.disabled = false;
+        if (regenerateCheckbox instanceof HTMLInputElement) regenerateCheckbox.disabled = false;
+        if (saveBtn instanceof HTMLButtonElement) saveBtn.textContent = originalSaveText || '保存';
+      }
+    };
+
+    if (cancelBtn instanceof HTMLButtonElement) {
+      cancelBtn.addEventListener('click', handleCancel);
+    }
+    if (saveBtn instanceof HTMLButtonElement) {
+      saveBtn.addEventListener('click', () => { handleSave().catch(() => {}); });
+    }
+    if (textarea instanceof HTMLTextAreaElement) {
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          handleCancel();
+          return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          handleSave().catch(() => {});
+        }
+      });
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+  };
 
   window.toggleBotGroup = function toggleBotGroup(groupId) {
     const group = document.getElementById(groupId);
