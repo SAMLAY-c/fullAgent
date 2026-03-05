@@ -139,13 +139,30 @@ model Message {
   sender_id       String
   content         String    @db.Text
   metadata        Json?     // { model, usage, mentioned_bots, etc. }
+  parent_id       String?   // Phase 1: original message id for edit/version chain
+  version         Int       @default(1)
+  edited_at       DateTime?
+  is_deleted      Boolean   @default(false)
+  feedback        String?   // Phase 2: like | dislike | null
+  feedback_reason String?   @db.Text
+  reference_id    String?   // Phase 3: referenced message id
+  checkpoint_id   String?   // Phase 4: conversation checkpoint id
   timestamp       DateTime  @default(now())
 
   // Relations
   conversation Conversation @relation(fields: [conversation_id], references: [conversation_id], onDelete: Cascade)
   user         User?        @relation(fields: [sender_id], references: [user_id], onDelete: Cascade)
+  parent       Message?     @relation("MessageEditChain", fields: [parent_id], references: [message_id], onDelete: SetNull)
+  children     Message[]    @relation("MessageEditChain")
+  reference    Message?     @relation("MessageReference", fields: [reference_id], references: [message_id], onDelete: SetNull)
+  referencedBy Message[]    @relation("MessageReference")
 
   @@index([conversation_id])
+  @@index([parent_id])
+  @@index([reference_id])
+  @@index([checkpoint_id])
+  @@index([conversation_id, version])
+  @@index([conversation_id, is_deleted, timestamp])
   @@index([timestamp])
 }
 

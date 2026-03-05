@@ -172,12 +172,388 @@ class ChatService {
     await this.assertConversationOwner(userId, conversationId);
 
     const messages = await prisma.message.findMany({
-      where: { conversation_id: conversationId },
+      where: { conversation_id: conversationId, is_deleted: false },
       orderBy: { timestamp: 'asc' },
       take: limit
     });
 
     return messages.map((message) => normalizeUtf8Value(message));
+  }
+
+  async editMessage(
+    userId: string,
+    messageId: string,
+    payload: { content: string; regenerate?: boolean }
+  ) {
+    const cleaned = String(normalizeUtf8Value(payload.content || '')).trim();
+    if (!cleaned) {
+      throw new Error('EMPTY_MESSAGE');
+    }
+
+    const target = await prisma.message.findFirst({
+      where: {
+        message_id: messageId,
+        is_deleted: false,
+        conversation: {
+          is: {
+            user_id: userId,
+            is_deleted: false
+          }
+        }
+      },
+      select: {
+        message_id: true,
+        conversation_id: true,
+        sender_type: true,
+        sender_id: true,
+        content: true,
+        metadata: true,
+        parent_id: true,
+        version: true,
+        feedback: true,
+        feedback_reason: true,
+        reference_id: true,
+        checkpoint_id: true,
+        timestamp: true
+      }
+    });
+
+    if (!target) {
+      throw new Error('MESSAGE_NOT_FOUND');
+    }
+    if (target.sender_type === 'system') {
+      throw new Error('MESSAGE_NOT_EDITABLE');
+    }
+    if (payload.regenerate && target.sender_type !== 'user') {
+      throw new Error('REGENERATE_REQUIRES_USER_MESSAGE');
+    }
+
+    const conversation = await this.assertConversationOwner(userId, target.conversation_id);
+
+    const chainRootId = target.parent_id || target.message_id;
+    const latestChainVersion = await prisma.message.findFirst({
+      where: {
+        conversation_id: target.conversation_id,
+        OR: [
+          { message_id: chainRootId },
+          { parent_id: chainRootId }
+        ]
+      },
+      orderBy: { version: 'desc' },
+      select: { version: true }
+    });
+
+    const nextVersion = Math.max(target.version || 1, latestChainVersion?.version || 1) + 1;
+    const editTime = new Date();
+    const regenerate = Boolean(payload.regenerate);
+
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.message.update({
+        where: { message_id: target.message_id },
+        data: {
+          is_deleted: true,
+          edited_at: editTime
+        }
+      });
+
+      let prunedCount = 0;
+      let prunedMessages: Array<{
+        message_id: string;
+        parent_id: string | null;
+        version: number;
+        sender_type: string;
+        timestamp: Date;
+      }> = [];
+      if (regenerate) {
+        prunedMessages = await tx.message.findMany({
+          where: {
+            conversation_id: target.conversation_id,
+            is_deleted: false,
+            timestamp: { gt: target.timestamp }
+          },
+          orderBy: [{ timestamp: 'asc' }, { message_id: 'asc' }],
+          select: {
+            message_id: true,
+            parent_id: true,
+            version: true,
+            sender_type: true,
+            timestamp: true
+          }
+        });
+
+        const pruned = await tx.message.updateMany({
+          where: {
+            conversation_id: target.conversation_id,
+            is_deleted: false,
+            timestamp: { gt: target.timestamp }
+          },
+          data: {
+            is_deleted: true,
+            edited_at: editTime
+          }
+        });
+        prunedCount = pruned.count;
+      }
+
+      const newMessage = await tx.message.create({
+        data: {
+          message_id: `msg_${randomUUID()}`,
+          conversation_id: target.conversation_id,
+          sender_type: target.sender_type,
+          sender_id: target.sender_id,
+          content: cleaned,
+          metadata: target.metadata ?? undefined,
+          parent_id: chainRootId,
+          version: nextVersion,
+          edited_at: editTime,
+          feedback: target.feedback ?? undefined,
+          feedback_reason: target.feedback_reason ?? undefined,
+          reference_id: target.reference_id ?? undefined,
+          checkpoint_id: target.checkpoint_id ?? undefined,
+          timestamp: target.timestamp
+        }
+      });
+
+      await tx.conversation.update({
+        where: { conversation_id: target.conversation_id },
+        data: { updated_at: editTime }
+      });
+
+      return {
+        newMessage,
+        prunedCount,
+        prunedMessages
+      };
+    });
+
+    const regeneratedMessages: any[] = [];
+
+    if (regenerate && result.newMessage.sender_type === 'user') {
+      const messageHistory = await prisma.message.findMany({
+        where: {
+          conversation_id: target.conversation_id,
+          is_deleted: false
+        },
+        orderBy: [{ timestamp: 'asc' }, { message_id: 'asc' }]
+      });
+
+      let messages: ChatMessage[] = messageHistory
+        .filter(msg => msg.sender_type !== 'system')
+        .map(msg => ({
+          role: msg.sender_type === 'user' ? 'user' : 'assistant',
+          content: msg.content
+        }));
+
+      const botConfig = conversation.bot.config as BotConfig | null;
+      let nextBotConfig: BotConfig | undefined = botConfig ? { ...botConfig } : undefined;
+
+      const shouldInjectConversationContext = messageHistory.filter((msg) => msg.sender_type !== 'system').length <= 1;
+      if (shouldInjectConversationContext) {
+        const extraContext = String(normalizeUtf8Value((conversation as any).extra_context || '')).trim();
+        if (extraContext) {
+          nextBotConfig = {
+            ...(nextBotConfig || {}),
+            system_prompt: `${nextBotConfig?.system_prompt || ''}\n\n[Conversation Extra Context]\n${extraContext}`.trim()
+          } as BotConfig;
+        }
+      }
+
+      const regeneratedText = await aiService.generateSimpleResponse(messages, nextBotConfig);
+      const firstPrunedBot = result.prunedMessages.find((msg) => msg.sender_type === 'bot');
+      let regeneratedParentId: string | undefined;
+      let regeneratedVersion = 1;
+
+      if (firstPrunedBot) {
+        const botChainRootId = firstPrunedBot.parent_id || firstPrunedBot.message_id;
+        regeneratedParentId = botChainRootId;
+        const latestBotChainVersion = await prisma.message.findFirst({
+          where: {
+            conversation_id: target.conversation_id,
+            OR: [{ message_id: botChainRootId }, { parent_id: botChainRootId }]
+          },
+          orderBy: { version: 'desc' },
+          select: { version: true }
+        });
+        regeneratedVersion = Math.max(firstPrunedBot.version || 1, latestBotChainVersion?.version || 1) + 1;
+      }
+
+      const regeneratedMessage = await prisma.message.create({
+        data: {
+          message_id: `msg_${randomUUID()}`,
+          conversation_id: target.conversation_id,
+          sender_type: 'bot',
+          sender_id: userId,
+          content: String(normalizeUtf8Value(regeneratedText)),
+          parent_id: regeneratedParentId,
+          version: regeneratedVersion,
+          edited_at: editTime,
+          timestamp: firstPrunedBot?.timestamp,
+          metadata: {
+            model: botConfig?.model || 'deepseek-ai/DeepSeek-V3.2',
+            generated_at: new Date().toISOString(),
+            regenerated: true,
+            regenerated_from_message_id: result.newMessage.message_id,
+            replaced_message_id: firstPrunedBot?.message_id || null
+          }
+        }
+      });
+
+      await prisma.conversation.update({
+        where: { conversation_id: target.conversation_id },
+        data: { updated_at: new Date() }
+      });
+
+      regeneratedMessages.push(normalizeUtf8Value(regeneratedMessage));
+    }
+
+    return {
+      new_message: normalizeUtf8Value(result.newMessage),
+      regenerated_messages: regeneratedMessages,
+      pruned_messages_count: result.prunedCount
+    };
+  }
+
+  async regenerateMessage(userId: string, messageId: string) {
+    const target = await prisma.message.findFirst({
+      where: {
+        message_id: messageId,
+        is_deleted: false,
+        sender_type: 'user',
+        conversation: {
+          is: {
+            user_id: userId,
+            is_deleted: false
+          }
+        }
+      },
+      select: {
+        message_id: true,
+        conversation_id: true,
+        sender_type: true,
+        timestamp: true
+      }
+    });
+
+    if (!target) {
+      throw new Error('MESSAGE_NOT_FOUND');
+    }
+
+    const conversation = await this.assertConversationOwner(userId, target.conversation_id);
+    const opTime = new Date();
+
+    const prunedResult = await prisma.$transaction(async (tx) => {
+      const prunedMessages = await tx.message.findMany({
+        where: {
+          conversation_id: target.conversation_id,
+          is_deleted: false,
+          timestamp: { gt: target.timestamp }
+        },
+        orderBy: [{ timestamp: 'asc' }, { message_id: 'asc' }],
+        select: {
+          message_id: true,
+          parent_id: true,
+          version: true,
+          sender_type: true,
+          timestamp: true
+        }
+      });
+
+      const pruned = await tx.message.updateMany({
+        where: {
+          conversation_id: target.conversation_id,
+          is_deleted: false,
+          timestamp: { gt: target.timestamp }
+        },
+        data: {
+          is_deleted: true,
+          edited_at: opTime
+        }
+      });
+
+      return {
+        prunedMessages,
+        prunedCount: pruned.count
+      };
+    });
+
+    const messageHistory = await prisma.message.findMany({
+      where: {
+        conversation_id: target.conversation_id,
+        is_deleted: false
+      },
+      orderBy: [{ timestamp: 'asc' }, { message_id: 'asc' }]
+    });
+
+    const messages: ChatMessage[] = messageHistory
+      .filter(msg => msg.sender_type !== 'system')
+      .map(msg => ({
+        role: msg.sender_type === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
+
+    const botConfig = conversation.bot.config as BotConfig | null;
+    let nextBotConfig: BotConfig | undefined = botConfig ? { ...botConfig } : undefined;
+
+    const shouldInjectConversationContext = messageHistory.filter((msg) => msg.sender_type !== 'system').length <= 1;
+    if (shouldInjectConversationContext) {
+      const extraContext = String(normalizeUtf8Value((conversation as any).extra_context || '')).trim();
+      if (extraContext) {
+        nextBotConfig = {
+          ...(nextBotConfig || {}),
+          system_prompt: `${nextBotConfig?.system_prompt || ''}\n\n[Conversation Extra Context]\n${extraContext}`.trim()
+        } as BotConfig;
+      }
+    }
+
+    const regeneratedText = await aiService.generateSimpleResponse(messages, nextBotConfig);
+    const firstPrunedBot = prunedResult.prunedMessages.find((msg) => msg.sender_type === 'bot');
+    let regeneratedParentId: string | undefined;
+    let regeneratedVersion = 1;
+
+    if (firstPrunedBot) {
+      const botChainRootId = firstPrunedBot.parent_id || firstPrunedBot.message_id;
+      regeneratedParentId = botChainRootId;
+      const latestBotChainVersion = await prisma.message.findFirst({
+        where: {
+          conversation_id: target.conversation_id,
+          OR: [{ message_id: botChainRootId }, { parent_id: botChainRootId }]
+        },
+        orderBy: { version: 'desc' },
+        select: { version: true }
+      });
+      regeneratedVersion = Math.max(firstPrunedBot.version || 1, latestBotChainVersion?.version || 1) + 1;
+    }
+
+    const regeneratedMessage = await prisma.message.create({
+      data: {
+        message_id: `msg_${randomUUID()}`,
+        conversation_id: target.conversation_id,
+        sender_type: 'bot',
+        sender_id: userId,
+        content: String(normalizeUtf8Value(regeneratedText)),
+        parent_id: regeneratedParentId,
+        version: regeneratedVersion,
+        edited_at: opTime,
+        timestamp: firstPrunedBot?.timestamp,
+        metadata: {
+          model: botConfig?.model || 'deepseek-ai/DeepSeek-V3.2',
+          generated_at: new Date().toISOString(),
+          regenerated: true,
+          regenerated_from_message_id: target.message_id,
+          replaced_message_id: firstPrunedBot?.message_id || null
+        }
+      }
+    });
+
+    await prisma.conversation.update({
+      where: { conversation_id: target.conversation_id },
+      data: { updated_at: new Date() }
+    });
+
+    return {
+      regenerated_messages: [normalizeUtf8Value(regeneratedMessage)],
+      pruned_messages_count: prunedResult.prunedCount
+    };
   }
 
   /**
@@ -193,7 +569,7 @@ class ChatService {
 
     // Fetch conversation history for context
     const messageHistory = await prisma.message.findMany({
-      where: { conversation_id: conversationId },
+      where: { conversation_id: conversationId, is_deleted: false },
       orderBy: { timestamp: 'asc' },
       take: 20 // Last 20 messages for context
     });
@@ -409,7 +785,7 @@ class ChatService {
       }
 
       const messageHistory = await prisma.message.findMany({
-        where: { conversation_id: conversationId },
+        where: { conversation_id: conversationId, is_deleted: false },
         orderBy: { timestamp: 'asc' },
         take: 20
       });

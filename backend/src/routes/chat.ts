@@ -242,6 +242,82 @@ router.get('/conversations/:conversation_id/messages', async (req: Request, res:
   }
 });
 
+router.patch('/messages/:message_id', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({
+        error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+      });
+    }
+
+    const messageId = firstString(req.params.message_id) || '';
+    const content = typeof req.body?.content === 'string' ? req.body.content : '';
+    const regenerate = Boolean(req.body?.regenerate);
+
+    if (!content.trim()) {
+      return res.status(400).json({
+        error: { code: 'BAD_REQUEST', message: 'content is required', numeric_code: 400 }
+      });
+    }
+
+    const result = await chatService.editMessage(userId, messageId, { content, regenerate });
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to edit message';
+    const statusCode =
+      message === 'MESSAGE_NOT_FOUND'
+        ? 404
+        : message === 'EMPTY_MESSAGE' ||
+            message === 'MESSAGE_NOT_EDITABLE' ||
+            message === 'REGENERATE_REQUIRES_USER_MESSAGE'
+          ? 400
+          : 500;
+
+    return res.status(statusCode).json({
+      error: {
+        code: statusCode === 404 ? 'NOT_FOUND' : statusCode === 400 ? 'BAD_REQUEST' : 'INTERNAL_ERROR',
+        message:
+          statusCode === 404
+            ? 'Message not found'
+            : message === 'MESSAGE_NOT_EDITABLE'
+              ? 'System message cannot be edited'
+              : message === 'REGENERATE_REQUIRES_USER_MESSAGE'
+                ? 'regenerate=true only supports user messages'
+              : statusCode === 400
+                ? 'content is required'
+                : message,
+        numeric_code: statusCode
+      }
+    });
+  }
+});
+
+router.post('/messages/:message_id/regenerate', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      return res.status(401).json({
+        error: { code: 'UNAUTHORIZED', message: 'Unauthorized', numeric_code: 401 }
+      });
+    }
+
+    const messageId = firstString(req.params.message_id) || '';
+    const result = await chatService.regenerateMessage(userId, messageId);
+    return res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to regenerate message';
+    const statusCode = message === 'MESSAGE_NOT_FOUND' ? 404 : 500;
+    return res.status(statusCode).json({
+      error: {
+        code: statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+        message: statusCode === 404 ? 'Message not found' : message,
+        numeric_code: statusCode
+      }
+    });
+  }
+});
+
 router.post('/conversations/:conversation_id/messages', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.user_id;
